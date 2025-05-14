@@ -1,0 +1,127 @@
+# TODO(mmschlk): add your project name and description here
+# uncomment the following line and incpororate the build system
+# [build-system]
+
+[project]
+name = "shapiq-student"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    # core dependency
+    "shapiq>=1.2.3",
+]
+
+
+[dependency-groups]
+test = [
+    "pytest>=8.3.5",
+    "pytest-cov>=6.0.0",
+    "pytest-xdist>=3.6.1",
+]
+lint = [
+    "ruff>=0.11.2",
+    "pre-commit>=4.2.0",
+]
+docs = [
+    # TODO(mmschlk): add your documentation dependencies here
+]
+dev = [
+    "build>=1.2.2.post1",
+    "twine>=6.1.0",
+    "notebook>=7.3.3",
+    "ipywidgets",
+    {include-group = "test"},
+    {include-group = "lint"},
+    {include-group = "docs"},
+]
+
+# ruff setup
+[tool.ruff]
+output-format = "full"
+line-length = 100
+target-version = "py310"
+src = ["tests", "shapiq_student", "docs", "tests_grading"]
+[tool.ruff.lint]
+select = [
+    "ALL"
+]
+ignore = [
+    "E501",  # Line too long
+    "N803",  # Variable X in function should be lowercase
+    "N806",  # Variable X in function should be lowercase
+    "COM812",  # this is redundant with the formatter which anyways does this (must be excluded) in the future
+    "N812", # Checks for lowercase imports that are aliased to non-lowercase names (e.g. torch.nn.functional as F)
+    "RET504", # Unnecessary assignment to {name} before return statement
+    "PLR0913", # too many arguments (>5)
+    "TD003",  # TODOs can be written without an issue link
+    "FIX002",  # TODO: remove for final submission but allows todos in code for now
+    # TODO(mmschlk): extend this list below if you need to ignore more rules (do this with care)
+]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    "docs/build",
+]
+# TODO(mmschlk): you can add more exclusions here if you want to ignore certain files  (do this with care)
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    "I002", # __init__.py does not have to import required modules
+    "RUF022",  # we can have unsorted imports in __init__.py
+    "FA",  # init does not require from __future__ import annotations import when using type hints
+]
+"tests*/*.py" = [
+    "S101", # we need asserts in tests
+    "ANN",  # type annotations
+    "ARG",  # some functions are not used
+    "INP",  # inports can be different
+    "N",  # type hints are excludes in tests
+]
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+[tool.ruff.lint.isort]
+known-first-party = ["shapiq_student"]
+force-sort-within-sections = true
+combine-as-imports = true
+force-single-line = false
+no-lines-before = ["future"]
+required-imports = ["from __future__ import annotations"]
+extra-standard-library = ["typing_extensions"]
+
+# pytest stuff
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+minversion = "8.0"
+
+# coverage stuff
+[tool.coverage.report]
+exclude_lines = [
+    "if TYPE_CHECKING",
+]
+
+# TODO(mmschlk): add mypy or ty typing configuration below
