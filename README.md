@@ -6,7 +6,7 @@
 
 `shapiq_student` is intended to work with **Python 3.10 and above**.
 
-Installation and working with `shapiq_student` can be done via `uv`:
+Installation and working with `shapiq_student` can be done via [`uv`](https://docs.astral.sh/uv/):
 
 ```sh
 uv sync
