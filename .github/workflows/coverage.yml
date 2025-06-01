@@ -42,3 +42,5 @@ jobs:
         uses: mshick/add-pr-comment@v2
         with:
           message-path: comment.txt
+        permissions:
+          pull-requests: write
