@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from shapiq_student.foo import Foo
 
 
