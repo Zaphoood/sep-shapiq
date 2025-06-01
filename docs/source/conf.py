@@ -33,7 +33,8 @@ author = "Milana Gurbanova, Lirona Iseni, Tanja Mursch, Max Neuner, Mathis Weber
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx.ext.viewcode",
+    "sphinx.ext.viewcode",  # Insert links to the source code to classes, methods etc.
+    "sphinx.ext.napoleon",  # Enable parsing of Google-style docstrings
 ]
 
 templates_path = ["_templates"]

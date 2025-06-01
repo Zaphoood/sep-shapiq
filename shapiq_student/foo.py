@@ -7,7 +7,15 @@ class Foo:
     """A sample class to illustrate the project structure and DevOps setup."""
 
     def bar(self, x: int, y: int) -> int:
-        """Sample function that performs addition on integers."""
+        """Adds two integers and returns the result.
+
+        Args:
+            x (int): The first integer to add.
+            y (int): The second integer to add.
+
+        Returns:
+            int: The sum of `x` and `y`.
+        """
         return x + y
 
 
