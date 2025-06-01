@@ -12,9 +12,6 @@ jobs:
   test-and-check-coverage:
     name: Check minimum coverage is satisfied
 
-    environment:
-      name: code-coverage
-
     runs-on: ubuntu-latest
 
     steps:
