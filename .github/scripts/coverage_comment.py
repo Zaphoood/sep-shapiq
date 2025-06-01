@@ -6,8 +6,6 @@ import os
 import sys
 import xml.etree.ElementTree as ET
 
-import requests
-
 
 def parse_coverage(xml_file: str) -> float:
     """Parses coverage from a XML file located at the provided path."""
@@ -18,15 +16,6 @@ def parse_coverage(xml_file: str) -> float:
         return float(coverage_attr) * 100
     msg = "Could not find coverage data."
     raise ValueError(msg)
-
-
-def post_comment(pr_number: str, repo: str, token: str, message: str) -> None:
-    """Posts a comment to the given repository and PR."""
-    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
-    headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
-    response = requests.post(url, json={"body": message}, headers=headers)  # noqa: S113
-    if response.status_code >= 400:  # noqa: PLR2004
-        print(f"Failed to post comment: {response.text}", file=sys.stderr)
 
 
 def main() -> None:  # noqa: D103
@@ -41,14 +30,6 @@ def main() -> None:  # noqa: D103
         print(f"Error reading coverage: {e}", file=sys.stderr)
         sys.exit(1)
 
-    token = os.environ.get("GITHUB_TOKEN")
-    repo = os.environ.get("GITHUB_REPOSITORY")
-    pr_number = os.environ.get("GITHUB_PR_NUMBER")
-
-    if not all([token, repo, pr_number]):
-        print("Missing required environment variables.", file=sys.stderr)
-        sys.exit(1)
-
     try:
         min_coverage = float(os.environ.get("MIN_CODE_COVERAGE"))
     except TypeError:
@@ -58,12 +39,12 @@ def main() -> None:  # noqa: D103
         )
         sys.exit(1)
 
-    coverage_msg = (
+    msg = (
         f"✅ Code coverage is **{coverage:.2f}%** -- OK!"
         if coverage >= min_coverage
         else f"❌ Code coverage is **{coverage:.2f}%** -- below required **{min_coverage}%**."
     )
-    post_comment(pr_number, repo, token, coverage_msg)
+    print(msg)
 
     if coverage < min_coverage:
         sys.exit(1)

@@ -22,20 +22,23 @@ jobs:
           activate-environment: true
 
       - name: Install required libraries
-        # The `requests` library is required for the Python script to post a comment to the PR
         run: |
           uv sync --only-group test
-          uv add requests
 
       - name: Run tests with coverage
         run: |
           uv run pytest --cov=. --cov-report=xml
 
-      - name: Validate coverage and post PR comment
+      - name: Validate coverage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
           MIN_CODE_COVERAGE: ${{ vars.MIN_CODE_COVERAGE }}
         run: |
-          python .github/scripts/coverage_comment.py coverage.xml
+          python .github/scripts/coverage_comment.py coverage.xml > comment.txt
+
+      - name: Post PR comment
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-path: comment.txt
