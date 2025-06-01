@@ -1,32 +1,43 @@
+import sklearn.neighbors
 import shapiq
 import numpy as np
 
 
-class KNNShapley:
-    def __init__(self, K=10, distance_fn=None):
+
+class KNNClassifierExplainer:
+    def __init__(self, data = None, model = sklearn.neighbors.KNeighborsClassifier, class_index = 1):
         """
         Initialize the KNN Shapley Calculator.
 
         Parameters:
-        - K (int): Number of Nearest Neighbours.
-        - distance_fn (callable): Optional custom distance function. Defaults to Euclidean.
+        - data (None): Not needed, only to fit the shap-iq structure. Defaults to None.
+        - model: KNN Classifier to be explained. Not actually needed. Defaults to 
+            scikit-learns KNeighborsClassifier.
+        - class_index (int): Number of Nearest Neighbours used. Defaults to 1 as intended by 
+            shapiq.explainer.
         """
-        self.K = K
-        self.distance_fn = distance_fn if distance_fn is not None else self._euclidean_distance
+        self.data = data
+        self.K = class_index
+        self.distance_fn = self._euclidean_distance
         self.support_values = None
 
     def _euclidean_distance(self, x1, x2):
         return np.linalg.norm(x1 - x2)
+    
+    """
+    def explain(self, x, y, X_train, y_train)
+    to be added, just transform the array into 2 dimensions and hand it on to explain_X...
+    """
 
-    def compute(self, X_train, y_train, X_test, y_test):
+    def explain_X(self, X_test, y_test, X_train, y_train):
         """
-        Compute support values for training data.
+        Compute shapley values for training data.
 
         Parameters:
-        - X_train (np.ndarray): Training features, shape (N, d).
-        - y_train (np.ndarray): Training labels, shape (N,).
         - X_test (np.ndarray): Test features, shape (N_test, d).
         - y_test (np.ndarray): Test labels, shape (N_test,).
+        - X_train (np.ndarray): Training features, shape (N, d).
+        - y_train (np.ndarray): Training labels, shape (N,).
 
         Returns:
         - np.ndarray: Shapley values for training data, shape (N,).
