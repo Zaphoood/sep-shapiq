@@ -39,6 +39,13 @@ Some checks (such as `ruff`) will also automatically fix some of the problems in
 
 To manually run `pre-commit` on all files in the repository (not just staged changes), run `uv run pre-commit run --all-files`.
 
+### Documentation
+
+Documentation is generated using [Sphinx](https://www.sphinx-doc.org/en/master/). The documentation source files are stored at `docs/source/` and written in the [reStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html) syntax. A good starting place is `docs/source/index.rst`.
+
+Furthermore, an automatic API reference of the library will be created from the [docstrings](https://peps.python.org/pep-0257/#what-is-a-docstring) in the Python code.
+When adding new modules, classes, functions or methods, include a docstring, and update docstrings when making changes to existing code. Make sure to follow [Google's docstring conventions](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings).
+
 ## 📜 License
 
 This project is licensed under the [MIT License](https://github.com/mmschlk/shapiq/blob/main/LICENSE).
