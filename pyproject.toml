@@ -1,11 +1,11 @@
-# TODO(mmschlk): add your project name and description here
-# uncomment the following line and incpororate the build system
-# [build-system]
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "shapiq-student"
 version = "0.1.0"
-description = "Add your description here"
+description = "Extends the functionalities of the shapiq library with explainers for KNN models, Conditional Data Imputers, and a Coalition Finding Algorithm"
 requires-python = ">=3.10"
 license = "MIT"
 dependencies = [
@@ -36,6 +36,9 @@ dev = [
     {include-group = "lint"},
     {include-group = "docs"},
 ]
+
+[tool.setuptools]
+packages = ["shapiq_student"]
 
 # ruff setup
 [tool.ruff]
