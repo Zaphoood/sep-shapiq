@@ -1,0 +1,56 @@
+"""Configuration file for the Sphinx documentation builder.
+
+For the full list of built-in configuration values, see the documentation:
+https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+# Make sure the `shapiq_student` package can be imported. This assumes this
+# configuration file lives in a directory "./docs/source" relative to the
+# project root.
+project_root = str(Path(__file__).parent.parent.parent)
+sys.path.insert(0, project_root)
+
+# Configuration file for the Sphinx documentation builder.
+#
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
+project = "shapiq_student"
+copyright = "2025, Milana Gurbanova, Lirona Iseni, Tanja Mursch, Max Neuner, Mathis Weber"
+author = "Milana Gurbanova, Lirona Iseni, Tanja Mursch, Max Neuner, Mathis Weber"
+
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.viewcode",
+]
+
+templates_path = ["_templates"]
+exclude_patterns = []
+
+# -- Autodoc ------------------------------------------------------------------
+autosummary_generate = True
+autodoc_default_options = {
+    "members": True,  # Generate documentation for module members
+}
+autoclass_content = "class"  # Use the class' docstring, not the docstring of its __init__ method
+
+# -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+
+html_static_path = ["_static"]
+html_theme = "furo"
+html_css_files = [
+    "custom.css",
+]

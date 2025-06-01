@@ -9,3 +9,8 @@ class Foo:
     def bar(self, x: int, y: int) -> int:
         """Sample function that performs addition on integers."""
         return x + y
+
+
+def baz() -> None:
+    """A top-level function that prints 'Hello, World!'."""
+    print("Hello, world")  # noqa: T201
