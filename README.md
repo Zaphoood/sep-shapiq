@@ -20,6 +20,7 @@ Run `uv sync` to install the project's dependencies, including development tools
 To execute any command from within this virtual environment, use `uv run <your_command>`. For example, use `uv run python` to get start a Python REPL.
 
 To add a new dependency that will be required by the library at runtime, execute `uv add <package_name>`. Dependencies can also be added by manually editing the `pyproject.toml` file, followed by running `uv sync`.
+Both ways will modify files `pyproject.toml` and `uv.lock`. Make sure to commit them afterwards!
 
 If you want to add a dependency that is only needed at development time and not required for the library to function, specify the dependency group `dev` with the argument `--group dev`: For example, to add the `mypy` type checker, you would run `uv add mypy --group dev`. However, the development dependency group is also further subdivided in groups `test`, `lint` etc. (defined in `pyproject.toml`); try to use the most appropriate group for the dependency you adding. This way, no unnecessary dependencies are installed in the GitHub Actions workflows that only require a subset of the development tools.
 
