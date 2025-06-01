@@ -6,8 +6,13 @@ on:
 
 jobs:
   test-and-check-coverage:
+    name: Check minimum coverage is satisfied
+
     environment:
       name: code-coverage
+
+    permissions:
+      pull-requests: write
 
     runs-on: ubuntu-latest
 
@@ -42,5 +47,3 @@ jobs:
         uses: mshick/add-pr-comment@v2
         with:
           message-path: comment.txt
-        permissions:
-          pull-requests: write
