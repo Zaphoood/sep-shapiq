@@ -1,0 +1,38 @@
+name: Code Coverage Check
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test-and-check-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.11'
+          activate-environment: true
+
+      - name: Install required libraries
+        # The `requests` library is required for the Python script to post a comment to the PR
+        run: |
+          uv sync --only-group test
+          uv add requests
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest --cov=. --cov-report=xml
+
+      - name: Validate coverage and post PR comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+          MIN_CODE_COVERAGE: ${{ vars.MIN_CODE_COVERAGE }}
+        run: |
+          python .github/scripts/coverage_comment.py coverage.xml

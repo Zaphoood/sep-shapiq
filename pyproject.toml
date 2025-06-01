@@ -108,7 +108,11 @@ exclude = [
 ]
 "docs/source/*.py" = [
     "A001",  # some conf.py variables shadow builtins which is okay here
-    "INP001"  # docs/source doesn't need an __init__.py
+    "INP001"  # implicit package is okay here
+]
+".github/scripts/*.py" = [
+    "INP001",  # implicit package is okay here
+    "T201",  # it's a script, it should be allowed to print stuff
 ]
 
 [tool.ruff.lint.pydocstyle]
