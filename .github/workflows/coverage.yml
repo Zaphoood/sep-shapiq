@@ -33,7 +33,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          uv run pytest --cov=. --cov-report=xml
+          uv run pytest --cov=shapiq_student --cov-report=xml
 
       - name: Validate coverage
         env:
