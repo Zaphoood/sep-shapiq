@@ -6,6 +6,9 @@ on:
 
 jobs:
   test-and-check-coverage:
+    environment:
+      name: code-coverage
+
     runs-on: ubuntu-latest
 
     steps:
