@@ -5,4 +5,4 @@ from shapiq_student.foo import Foo
 
 def test_bar():
     foo = Foo()
-    assert foo.bar(2, 3) == 5
+    assert foo.bar(2, 3) == 5  # noqa: PLR2004
