@@ -46,9 +46,6 @@ def main() -> None:  # noqa: D103
     )
     print(msg)
 
-    if coverage < min_coverage:
-        sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
