@@ -8,7 +8,7 @@
 
 ## Development
 
-Follow these steps to get started with working on `shapiq_student`
+Follow the instructions below when working on `shapiq_student`.
 
 ### Install `uv`
 
@@ -41,7 +41,7 @@ To manually run `pre-commit` on all files in the repository (not just staged cha
 
 ### Documentation
 
-Documentation is generated using [Sphinx](https://www.sphinx-doc.org/en/master/). The documentation source files are stored at `docs/source/` and written in the [reStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html) syntax. A good starting place is `docs/source/index.rst`.
+Documentation is generated using [Sphinx](https://www.sphinx-doc.org/en/master/). The documentation source files are stored at [`docs/source/`](docs/source/) and are written in the [reStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html) syntax. A good starting place is `docs/source/index.rst`.
 
 Furthermore, an automatic API reference of the library will be created from the [docstrings](https://peps.python.org/pep-0257/#what-is-a-docstring) in the Python code.
 When adding new modules, classes, functions or methods, include a docstring, and update docstrings when making changes to existing code. Make sure to follow [Google's docstring conventions](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings).
