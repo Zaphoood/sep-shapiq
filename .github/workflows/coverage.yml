@@ -4,15 +4,16 @@ on:
   pull_request:
     branches: ["main"]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   test-and-check-coverage:
     name: Check minimum coverage is satisfied
 
     environment:
       name: code-coverage
-
-    permissions:
-      pull-requests: write
 
     runs-on: ubuntu-latest
 
