@@ -6,6 +6,11 @@
 
 `shapiq_student` is intended to work with **Python 3.10 and above**.
 
+## Documentation
+
+Documentation for the library, including an API reference, can be found
+[here](https://zaphoood.github.io/sep-shapiq).
+
 ## Development
 
 Follow the instructions below when working on `shapiq_student`.
@@ -45,6 +50,8 @@ Documentation is generated using [Sphinx](https://www.sphinx-doc.org/en/master/)
 
 Furthermore, an automatic API reference of the library will be created from the [docstrings](https://peps.python.org/pep-0257/#what-is-a-docstring) in the Python code.
 When adding new modules, classes, functions or methods, include a docstring, and update docstrings when making changes to existing code. Make sure to follow [Google's docstring conventions](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings).
+
+After every push to the `main` branch, an updated version of the documentation will be generated and published to [GitHub Pages](https://zaphoood.github.io/sep-shapiq).
 
 ## 📜 License
 
