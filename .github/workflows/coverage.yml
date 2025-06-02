@@ -32,11 +32,8 @@ jobs:
         run: |
           uv run pytest --cov=shapiq_student --cov-report=xml
 
-      - name: Validate coverage
+      - name: Generate comment
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
           MIN_CODE_COVERAGE: ${{ vars.MIN_CODE_COVERAGE }}
         run: |
           python .github/scripts/check_coverage.py coverage.xml > comment.txt
@@ -45,3 +42,9 @@ jobs:
         uses: mshick/add-pr-comment@v2
         with:
           message-path: comment.txt
+
+      - name: Assert minimum coverage is satisfied
+        env:
+          MIN_CODE_COVERAGE: ${{ vars.MIN_CODE_COVERAGE }}
+        run: |
+          python .github/scripts/check_coverage.py --fail-too-low coverage.xml
