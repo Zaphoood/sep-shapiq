@@ -41,6 +41,20 @@ Both ways will modify files `pyproject.toml` and `uv.lock`. Make sure to commit 
 
 If you want to add a dependency that is only needed at development time and not required for the library to function, specify the dependency group `dev` with the argument `--group dev`: For example, to add the `mypy` type checker, you would run `uv add mypy --group dev`. However, the development dependency group is also further subdivided in groups `test`, `lint` etc. (defined in `pyproject.toml`); try to use the most appropriate group for the dependency you're adding. This way, no unnecessary dependencies are installed in the GitHub Actions workflows that only require a subset of the development tools.
 
+### Tests
+
+When adding new functionalities, write corresopnding unittests and add them to the directory `tests/`. Our testing framework is [pytest](https://docs.pytest.org/en/stable/getting-started.html). [Here](https://docs.pytest.org/en/stable/how-to/index.html) you can find some instructions on writing tests and using the `pytest` command.
+
+Our goal is to maintain a code coverage of at least 92%. You can use the following command to generate a nice code coverage report, which you can open in your browser, allowing you to inspect each file for coverage:
+
+```sh
+uv run pytest --cov=shapiq_student --cov-report=html
+```
+
+This will generate a directory `htmlcov`. Open `htmlcov/index.html` in your browser to view the coverage report.
+
+**Note:** PRs which move the code coverage percentage below the minimum threshold will be blocked for merging; in this case, add unittests for untested code to satisfy the threshold.
+
 ## Documentation
 
 Documentation for the library, including an API reference, can be found
