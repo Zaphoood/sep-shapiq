@@ -2,32 +2,27 @@
 
 `shapiq_student` is a Python package that extends the functionalities of [`shapiq`](https://github.com/mmschlk/shapiq), a library for explaining machine learning models with Shapley interactions.
 
-## 🛠️ Install and Workflow
+## Quick Start
 
-`shapiq_student` is intended to work with **Python 3.10 and above**.
+Install the package with `pip install shapiq-student`. For detailed usage instructions and API reference, see our [documentation](https://zaphoood.github.io/sep-shapiq).
 
-## Documentation
-
-Documentation for the library, including an API reference, can be found
-[here](https://zaphoood.github.io/sep-shapiq).
-
-## Development
+## 🛠️ Development Guide
 
 Follow the instructions below when working on `shapiq_student`.
 
 ### Setup
 
-#### Installation and environment
+#### Installation and environment 
 
-Follow [these steps](https://docs.astral.sh/uv/getting-started/installation/) to install the Python package and project manager `uv` on your machine.
+Before starting, please note that `shapiq_student` is intended to work with **Python 3.10 and above**. Follow [these steps](https://docs.astral.sh/uv/getting-started/installation/) to install the Python package and project manager `uv` on your machine.
 
 Run `uv sync` to install the project's dependencies, including development tools. This will automatically create a virtual environment for the project and install everything there.
-To execute any command from within this virtual environment, use `uv run <your_command>`. For example, use `uv run python` to get start a Python REPL.
+To execute any command from within this virtual environment, use `uv run <your_command>`. For example, use `uv run python` to start a Python REPL.
 
 #### Pre-commit hooks
 
 Pre-commit hooks are a feature of git that allows you to run scripts before every commit, e.g. to make sure your changes adhere to code style regulations.
-The tool `pre-commit` helps to install, manage and execute pre-commit hooks. It should already be installed as part of the projects dependencies in the previous step.
+The tool `pre-commit` helps to install, manage and execute pre-commit hooks. It should already be installed as part of the project's dependencies in the previous step.
 To set up `pre-commit` and register it as a git pre-commit hook, run
 
 ```sh
@@ -44,10 +39,14 @@ To manually run `pre-commit` on all files in the repository (not just staged cha
 To add a new dependency that will be required by the library at runtime, execute `uv add <package_name>`. Dependencies can also be added by manually editing the `pyproject.toml` file, followed by running `uv sync`.
 Both ways will modify files `pyproject.toml` and `uv.lock`. Make sure to commit them afterwards!
 
-If you want to add a dependency that is only needed at development time and not required for the library to function, specify the dependency group `dev` with the argument `--group dev`: For example, to add the `mypy` type checker, you would run `uv add mypy --group dev`. However, the development dependency group is also further subdivided in groups `test`, `lint` etc. (defined in `pyproject.toml`); try to use the most appropriate group for the dependency you adding. This way, no unnecessary dependencies are installed in the GitHub Actions workflows that only require a subset of the development tools.
+If you want to add a dependency that is only needed at development time and not required for the library to function, specify the dependency group `dev` with the argument `--group dev`: For example, to add the `mypy` type checker, you would run `uv add mypy --group dev`. However, the development dependency group is also further subdivided in groups `test`, `lint` etc. (defined in `pyproject.toml`); try to use the most appropriate group for the dependency you're adding. This way, no unnecessary dependencies are installed in the GitHub Actions workflows that only require a subset of the development tools.
 
+## Documentation
 
-### Documentation
+Documentation for the library, including an API reference, can be found
+[here](https://zaphoood.github.io/sep-shapiq).
+
+### Documentation Workflow
 
 Documentation is generated using [Sphinx](https://www.sphinx-doc.org/en/master/). The documentation source files are stored at [`docs/source/`](docs/source/) and are written in the [reStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html) syntax. A good starting place is `docs/source/index.rst`.
 
