@@ -23,13 +23,8 @@ class KNNClassifierExplainer:
 
     def _euclidean_distance(self, x1, x2):
         return np.linalg.norm(x1 - x2)
-    
-    """
-    def explain(self, x, y, X_train, y_train)
-    to be added, just transform the array into 2 dimensions and hand it on to explain_X...
-    """
 
-    def explain_X(self, X_test, y_test, X_train, y_train):
+    def explain(self, X_test, y_test, X_train, y_train):
         """
         Compute shapley values for training data.
 
@@ -72,3 +67,8 @@ class KNNClassifierExplainer:
         s /= N_test
         self.support_values = s
         return s
+
+    """
+    def explain_X(self, X_test, y_test, X_train, y_train)
+        to be added, just execute explain() for every X_test/y_test pair.
+    """
