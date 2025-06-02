@@ -1,11 +1,11 @@
-# TODO(mmschlk): add your project name and description here
-# uncomment the following line and incpororate the build system
-# [build-system]
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "shapiq-student"
 version = "0.1.0"
-description = "Add your description here"
+description = "Extends the functionalities of the shapiq library with explainers for KNN models, Conditional Data Imputers, and a Coalition Finding Algorithm"
 requires-python = ">=3.10"
 license = "MIT"
 dependencies = [
@@ -25,7 +25,8 @@ lint = [
     "pre-commit>=4.2.0",
 ]
 docs = [
-    # TODO(mmschlk): add your documentation dependencies here
+    "furo>=2024.8.6",
+    "sphinx>=8.1.3",
 ]
 dev = [
     "build>=1.2.2.post1",
@@ -36,6 +37,9 @@ dev = [
     {include-group = "lint"},
     {include-group = "docs"},
 ]
+
+[tool.setuptools]
+packages = ["shapiq_student"]
 
 # ruff setup
 [tool.ruff]
@@ -102,6 +106,11 @@ exclude = [
     "INP",  # inports can be different
     "N",  # type hints are excludes in tests
 ]
+"docs/source/*.py" = [
+    "A001",  # some conf.py variables shadow builtins which is okay here
+    "INP001"  # docs/source doesn't need an __init__.py
+]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 [tool.ruff.lint.isort]
