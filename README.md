@@ -12,7 +12,7 @@ Follow the instructions below when working on `shapiq_student`.
 
 ### Setup
 
-#### Installation and environment 
+#### Installation and environment
 
 Before starting, please note that `shapiq_student` is intended to work with **Python 3.10 and above**. Follow [these steps](https://docs.astral.sh/uv/getting-started/installation/) to install the Python package and project manager `uv` on your machine.
 
