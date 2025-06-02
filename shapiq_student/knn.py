@@ -11,7 +11,7 @@ class KNNClassifierExplainer:
 
         Parameters:
         - data (None): Not needed, only to fit the shap-iq structure. Defaults to None.
-        - model: KNN Classifier to be explained. Not actually needed, only to be used for predict(x)
+        - model: KNN Classifier to be explained. Not actually needed, only to be used for predict()
           Defaults to scikit-learns KNeighborsClassifier.
         - class_index (int): Number of Nearest Neighbours used. Defaults to 1 as intended by 
           shapiq.explainer.
@@ -71,4 +71,9 @@ class KNNClassifierExplainer:
     """
     def explain_X(self, X_test, y_test, X_train, y_train)
         to be added, just execute explain() for every X_test/y_test pair.
+    """
+
+    """
+    def predict(x)
+        to be added - should return the prediction of the chosen KNN-explainer.
     """
