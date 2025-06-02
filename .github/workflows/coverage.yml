@@ -39,7 +39,7 @@ jobs:
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
           MIN_CODE_COVERAGE: ${{ vars.MIN_CODE_COVERAGE }}
         run: |
-          python .github/scripts/coverage_comment.py coverage.xml > comment.txt
+          python .github/scripts/check_coverage.py coverage.xml > comment.txt
 
       - name: Post PR comment
         uses: mshick/add-pr-comment@v2
