@@ -33,15 +33,19 @@ class KNNClassifierExplainer:
         self.class_index = class_index
         self.model = model
         self.data = data
-        self.K = 5
         self.distance_fn = self._euclidean_distance
         self.support_values = None
 
     def _euclidean_distance(self, x1: any, x2: any) -> any:
         return np.linalg.norm(x1 - x2)
 
-    def explain_knn(
-        self, X_test: np.ndarray, y_test: np.ndarray, X_train: np.ndarray, y_train: np.ndarray
+    def explain(
+        self,
+        X_test: np.ndarray,
+        y_test: np.ndarray,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        K: int = 5,
     ) -> np.ndarray:
         """Compute shapley values for training data.
 
@@ -57,6 +61,7 @@ class KNNClassifierExplainer:
         N = len(X_train)
         N_test = len(X_test)
         s = np.zeros(N)
+        self.K = K
 
         for j in range(N_test):
             x_test_j = X_test[j]
@@ -88,9 +93,5 @@ class KNNClassifierExplainer:
     """
     def explain_X(self, X_test, y_test, X_train, y_train)
         to be added, just execute explain() for every X_test/y_test pair.
-    """
-
-    """
-    def predict(x)
-        to be added - should return the prediction of the chosen KNN-explainer.
+        check: is this necessary or allready usable implemented in shapiq?
     """
