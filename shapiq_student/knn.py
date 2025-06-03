@@ -1,4 +1,4 @@
-"""Is here Top enough?"""
+"""KNN Classifier Explainer."""
 
 from __future__ import annotations
 
@@ -11,10 +11,9 @@ if TYPE_CHECKING:
 
 
 class KNNClassifierExplainer:
-    """Whatever to be written here?
+    """KNN Classifier Explainer.
 
-    Why doesn't that work?
-    So this is better? Whats the point of this
+    For calculating exact shapley values for a KNN Classifier.
     """
 
     def __init__(
