@@ -30,9 +30,10 @@ class KNNClassifierExplainer:
           Defaults to scikit-learns KNeighborsClassifier.
         - class_index (int): Not needed, only to fit the shap-iq structure. Defaults to 1.
         """
+        self.class_index = class_index
         self.model = model
         self.data = data
-        self.K = class_index
+        self.K = 5
         self.distance_fn = self._euclidean_distance
         self.support_values = None
 
