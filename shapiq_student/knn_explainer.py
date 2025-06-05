@@ -1,22 +1,19 @@
-"""KNN_Explainer - Wrapper for the Different KNN Explainers."""
+"""KNN Classifier Explainer."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import shapiq
+import numpy as np
 
 if TYPE_CHECKING:
-    import numpy as np
     import sklearn.neighbors
 
 
-class KNNExplainer(shapiq.Explainer):
-    """KNN Explainer.
+class KNNClassifierExplainer:
+    """KNN Classifier Explainer.
 
-    Wrapper class for KNNClassifierExplainer, KNNThresholdExplainer
-    and WeightedKNNExplainer.
-    Used for handling the model and the interface to shapiq.
+    For calculating exact shapley values for a KNN Classifier.
     """
 
     def __init__(
@@ -29,7 +26,8 @@ class KNNExplainer(shapiq.Explainer):
 
         Parameters:
         - data (None): Not needed, only to fit the shap-iq structure. Defaults to None.
-        - model: Type of the KNN Classifier to be explained.
+        - model: KNN Classifier to be explained. Not actually needed, only to be used for predict()
+          Defaults to scikit-learns KNeighborsClassifier.
         - class_index (int): Not needed, only to fit the shap-iq structure. Defaults to 1.
         """
         self.class_index = class_index
@@ -38,22 +36,56 @@ class KNNExplainer(shapiq.Explainer):
         self.distance_fn = self._euclidean_distance
         self.support_values = None
 
-        self.K: int = 5  # to be taken from the model
-        self.y_test: np.ndarray  # to be taken from the model
-        self.X_train: np.ndarray  # to be taken from the model
-        self.y_train: np.ndarray  # to be taken from the model
+    def _euclidean_distance(self, x1: any, x2: any) -> any:
+        return np.linalg.norm(x1 - x2)
 
-    def explain(self, X_test: np.ndarray) -> np.ndarray:
-        """Handling the explain-Funktion from shapiqs Explainer.
+    def explain(
+        self,
+        X_test: np.ndarray,
+        y_test: np.ndarray,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        K: int = 5,
+    ) -> np.ndarray:
+        """Compute shapley values for training data.
 
-        Explain is called by shapiq.Explainer.explain() and will be used to call the .explain()
-        of the selected explainer.
+        Parameters:
+        - X_test (np.ndarray): Test features, shape (N_test, d).
+        - y_test (np.ndarray): Test labels, shape (N_test,).
+        - X_train (np.ndarray): Training features, shape (N, d).
+        - y_train (np.ndarray): Training labels, shape (N,).
+
+        Returns:
+        - np.ndarray: Shapley values for training data, shape (N,).
         """
-        return self.KNNClassifierExplainer.explain(
-            X_test, self.y_testy, self.X_train, self.y_train, self.K
-        )
+        N = len(X_train)
+        N_test = len(X_test)
+        s = np.zeros(N)
+        self.K = K
 
-    """
-    def predict(x)
-        to be added - should return the prediction of the chosen KNN-explainer.
-    """
+        for j in range(N_test):
+            x_test_j = X_test[j]
+            y_test_j = y_test[j]
+
+            distances = [self.distance_fn(x, x_test_j) for x in X_train]
+            sorted_indices = np.argsort(distances)
+
+            s_j = np.zeros(N)
+            last_idx = sorted_indices[-1]
+            s_j[last_idx] = int(y_train[last_idx] == y_test_j) / N
+
+            for i in reversed(range(N - 1)):
+                idx_i = sorted_indices[i]
+                idx_ip1 = sorted_indices[i + 1]
+
+                label_match_i = int(y_train[idx_i] == y_test_j)
+                label_match_ip1 = int(y_train[idx_ip1] == y_test_j)
+
+                term = (label_match_i - label_match_ip1) * min(self.K, i + 1) / (self.K * (i + 1))
+                s_j[idx_i] = s_j[idx_ip1] + term
+
+            s += s_j
+
+        s /= N_test
+        self.support_values = s
+        return s
