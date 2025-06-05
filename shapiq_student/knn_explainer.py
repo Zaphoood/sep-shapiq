@@ -30,7 +30,7 @@ class KNNClassifierExplainer(KNNExplainer):
         - data (None): Not needed, only to fit the shap-iq structure. Defaults to None.
         - model: KNN Classifier to be explained. Not actually needed, only to be used for predict()
           Defaults to scikit-learns KNeighborsClassifier.
-        - class_index (int): Not needed, only to fit the shap-iq structure. Defaults to 1.
+        - class_index (int): The index of y_test to be explained. Defaults to 1.
         """
         self.class_index = class_index
         self.model = model
@@ -47,18 +47,17 @@ class KNNClassifierExplainer(KNNExplainer):
     def _euclidean_distance(self, x1: any, x2: any) -> any:
         return np.linalg.norm(x1 - x2)
 
-    def explain(self, X_test: np.ndarray, class_index: int = 1) -> np.ndarray:
+    def explain(self, X_test: np.ndarray) -> np.ndarray:
         """Compute shapley values for training data.
 
         Parameters:
         - X_test (np.ndarray): Test features, shape (N_test, d).
-        - class_index (int): The index of y_test to be explained. Defaults to 1.
+        - class_index (int):  Defaults to 1.
 
         Returns:
         - np.ndarray: Shapley values for training data, shape (N,).
         """
         self.X_test = X_test
-        self.class_index = class_index
 
         N = len(self.X_train)
         N_test = len(self.X_test)
