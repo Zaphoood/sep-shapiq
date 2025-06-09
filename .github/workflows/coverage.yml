@@ -1,0 +1,50 @@
+name: Code Coverage Check
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test-and-check-coverage:
+    name: Check minimum coverage is satisfied
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.11'
+          activate-environment: true
+
+      - name: Install required libraries
+        run: |
+          uv sync --only-group test
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest --cov=shapiq_student --cov-report=xml
+
+      - name: Generate comment
+        env:
+          MIN_CODE_COVERAGE: ${{ vars.MIN_CODE_COVERAGE }}
+        run: |
+          python .github/scripts/check_coverage.py coverage.xml > comment.txt
+
+      - name: Post PR comment
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-path: comment.txt
+
+      - name: Assert minimum coverage is satisfied
+        env:
+          MIN_CODE_COVERAGE: ${{ vars.MIN_CODE_COVERAGE }}
+        run: |
+          python .github/scripts/check_coverage.py --fail-too-low coverage.xml
