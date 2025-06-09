@@ -1,6 +1,6 @@
 ---
-name: Ticket template
-about: For creating tickets in the GitHub Project
+name: Ticket
+about: Use this to create a new ticket in the GitHub Project
 title: ''
 labels: ''
 assignees: ''
