@@ -14,7 +14,6 @@ import numpy as np
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
-
 from .approach import Approach
 
 

@@ -1,8 +1,8 @@
-"""Main module for SHAP value calculations.
+"""Main entry point - Data Imputation.
 
 This module provides the main entry point for calculating SHAP values using different
-approaches (Gaussian or Coppola). It handles the initialization of the internal state
-and delegates the actual calculations to the appropriate approach.
+data imputation approaches (Gaussian or Coppola). It handles the initialization of the
+internal state and delegates the actual calculations to the appropriate approach.
 """
 
 from __future__ import annotations
@@ -12,22 +12,27 @@ from typing import TYPE_CHECKING, Any, TypedDict
 if TYPE_CHECKING:
     import numpy as np
     from numpy.typing import NDArray
-
 from .coppola_approach import CoppolaApproach
 from .gaussian_approach import GaussianApproach
 
 
 class InternalState(TypedDict):
-    """Type definition for the internal state dictionary."""
+    """This class stores the internal variable and parameter values when explain() is called."""
 
     parameters: dict[str, Any]
     data: dict[str, NDArray[np.float64]]
     iter_list: list[dict[str, Any]]
-    timing_list: dict[str, Any]
-    objects: dict[str, list[Any]]
+    timing_list: dict[
+        str, Any
+    ]  # TODO (milanagm): if we decide to take this variable, also delete this line
+    objects: dict[
+        str, list[Any]
+    ]  # TODO (milanagm): if we decide to take out the feature_spec variable, also delete this line
 
 
-class ExplainKwargs(TypedDict, total=False):
+class ExplainKwargs(
+    TypedDict, total=False
+):  # TODO (milanagm): if we decide to take this variable out, delete this line too
     """Type definition for the explain function's keyword arguments."""
 
     verbose: list[str]
@@ -39,7 +44,7 @@ def explain(
     x_train: NDArray[np.float64],
     x_explain: NDArray[np.float64],
     approach: str = "gaussian",
-    **kwargs: ExplainKwargs,
+    **kwargs: ExplainKwargs,  # TODO (milanagm): do we need this?
 ) -> InternalState:
     """Main function to explain predictions using either Gaussian or Coppola approach.
 
@@ -84,8 +89,8 @@ def explain(
             "n_MC_samples": kwargs.get("n_MC_samples", 1000),
         },
         "data": {"x_train": x_train, "x_explain": x_explain},
-        "iter_list": [{}],
-        "timing_list": {},
+        "iter_list": [{}],  # TODO (milanagm): do we need this and if so, for what?
+        "timing_list": {},  # TODO (milanagm): do we need this and if so, for what?
         "objects": {
             "feature_specs": []  # TODO (milanagm): i think this need to be changed, we need to check approach-gaussian.R # stattdessen rausnehmen und logic basic checken
         },
