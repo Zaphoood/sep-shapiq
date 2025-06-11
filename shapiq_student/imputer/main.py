@@ -21,7 +21,9 @@ class InternalState(TypedDict):
 
     parameters: dict[str, Any]
     data: dict[str, NDArray[np.float64]]
-    iter_list: list[dict[str, Any]]
+    iter_list: list[
+        dict[str, Any]
+    ]  # TODO (milanagm): if we decide to take this variable, also delete this line
     timing_list: dict[
         str, Any
     ]  # TODO (milanagm): if we decide to take this variable, also delete this line
@@ -32,7 +34,7 @@ class InternalState(TypedDict):
 
 class ExplainKwargs(
     TypedDict, total=False
-):  # TODO (milanagm): if we decide to take this variable out, delete this line too
+):  # TODO (milanagm): if we decide to take this variable out, delete this class too
     """Type definition for the explain function's keyword arguments."""
 
     verbose: list[str]
@@ -40,13 +42,13 @@ class ExplainKwargs(
     n_MC_samples: int
 
 
-def explain(
+def explain(  # TODO (milanagm): we need to add tests - how should that look like?
     x_train: NDArray[np.float64],
     x_explain: NDArray[np.float64],
     approach: str = "gaussian",
     **kwargs: ExplainKwargs,  # TODO (milanagm): do we need this?
 ) -> InternalState:
-    """Main function to explain predictions using either Gaussian or Coppola approach.
+    """Main function to explain predictions using either Gaussian or Coppola Imputation approach.
 
     Gaussian approach is used by default.
 

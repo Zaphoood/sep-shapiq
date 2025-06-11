@@ -17,7 +17,9 @@ if TYPE_CHECKING:
 from .approach import Approach
 
 # Constants
-MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 10  # randomly assigned
+MAX_UNIQUE_VALUES_FOR_CATEGORICAL = (
+    10  # randomly assigned # TODO (milanagm): check with team and tutors, if thats okay
+)
 
 
 class GaussianApproach(Approach):
@@ -28,7 +30,7 @@ class GaussianApproach(Approach):
     are detected.
     """
 
-    def _check_factor_features(self) -> None:
+    def _check_factor_features(self) -> None:  # TODO (milanagm): we need to add tests
         """Check if any features are categorical/factor variables.
 
         Raises:
@@ -64,7 +66,7 @@ class GaussianApproach(Approach):
             )
             raise ValueError(error_msg)
 
-    def _setup_specific(self) -> None:
+    def _setup_specific(self) -> None:  # TODO (milanagm): we need to add tests
         """Check feature types and calculate mean and covariance matrix.
 
         This method checks for categorical features and initializes the mean
@@ -74,13 +76,15 @@ class GaussianApproach(Approach):
         self._check_factor_features()  # TODO (milanagm): do we need to add checks for missing values?
 
         # Initialize mean for each column/feature in the training data if not provided
-        if "mean_per_feature" not in self.internal["parameters"]:
+        if (
+            "mean_per_feature" not in self.internal["parameters"]
+        ):  # TODO (milanagm): we need to add tests
             self.internal["parameters"]["mean_per_feature"] = np.mean(
                 self.internal["data"]["x_train"], axis=0
             )
 
         # Initialize covariance matrix if not provided
-        if "cov_mat" not in self.internal["parameters"]:
+        if "cov_mat" not in self.internal["parameters"]:  # TODO (milanagm): we need to add tests
             self.internal["parameters"]["cov_mat"] = np.cov(self.internal["data"]["x_train"].T)
 
     def prepare_data(
