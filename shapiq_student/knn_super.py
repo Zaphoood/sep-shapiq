@@ -14,46 +14,41 @@ if TYPE_CHECKING:
 class KNNExplainer(shapiq.Explainer):
     """KNN Explainer.
 
-    Wrapper class for KNNClassifierExplainer, KNNThresholdExplainer
-    and WeightedKNNExplainer.
-    Used for handling the model and the interface to shapiq.
+    Used for Extracting the training data from the model.
     """
 
     def __init__(
         self,
-        data: None,
         model: sklearn.neighbors.KNeighborsClassifier,
-        class_index: int = 1,
     ) -> None:
         """Initialize the KNN Shapley Calculator.
 
         Parameters:
-        - data (None): Not needed, only to fit the shap-iq structure. Defaults to None.
         - model: Type of the KNN Classifier to be explained.
-        - class_index (int): Not needed, only to fit the shap-iq structure. Defaults to 1.
         """
-        self.class_index = class_index
         self.model = model
-        self.data = data
-        self.distance_fn = self._euclidean_distance
-        self.support_values = None
 
         self.K: int = 5  # to be taken from the model
-        self.y_test: np.ndarray  # to be taken from the model
         self.X_train: np.ndarray  # to be taken from the model
         self.y_train: np.ndarray  # to be taken from the model
 
-    def explain(self, X_test: np.ndarray) -> np.ndarray:
-        """Handling the explain-Funktion from shapiqs Explainer.
+    def _get_y_train(self) -> np.ndarray:
+        """Getting the y-values of the training data.
 
-        Explain is called by shapiq.Explainer.explain() and will be used to call the .explain()
-        of the selected explainer.
+        Extracts the training data's y-values in a np.array.
         """
-        return self.KNNClassifierExplainer.explain(
-            X_test, self.y_testy, self.X_train, self.y_train, self.K
-        )
+        return self.y_train
 
-    """
-    def predict(x)
-        to be added - should return the prediction of the chosen KNN-explainer.
-    """
+    def _get_x_train(self) -> np.ndarray:
+        """Getting the X-values of the training data.
+
+        Extracts the training data's X-values in a np.array.
+        """
+        return self.X_train
+
+    def _get_k(self) -> int:
+        """Getting K from the model.
+
+        Extracts the number of nearest neighbours from the model.
+        """
+        return self.K
