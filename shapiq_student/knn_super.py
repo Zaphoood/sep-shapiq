@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import shapiq
+from shapiq import Explainer
 
 if TYPE_CHECKING:
     import numpy as np
-    import sklearn.neighbors
+    from sklearn.neighbors import KNeighborsClassifier
 
 
-class KNNExplainer(shapiq.Explainer):
+class KNNExplainerBase(Explainer):
     """KNN Explainer.
 
     Used for Extracting the training data from the model.
@@ -19,7 +19,7 @@ class KNNExplainer(shapiq.Explainer):
 
     def __init__(
         self,
-        model: sklearn.neighbors.KNeighborsClassifier,
+        model: KNeighborsClassifier,
     ) -> None:
         """Initialize the KNN Shapley Calculator.
 
@@ -28,27 +28,8 @@ class KNNExplainer(shapiq.Explainer):
         """
         self.model = model
 
-        self.K: int = 5  # to be taken from the model
+        raise NotImplementedError
+
+        self.k: int = 5  # to be taken from the model
         self.X_train: np.ndarray  # to be taken from the model
         self.y_train: np.ndarray  # to be taken from the model
-
-    def _get_y_train(self) -> np.ndarray:
-        """Getting the y-values of the training data.
-
-        Extracts the training data's y-values in a np.array.
-        """
-        return self.y_train
-
-    def _get_x_train(self) -> np.ndarray:
-        """Getting the X-values of the training data.
-
-        Extracts the training data's X-values in a np.array.
-        """
-        return self.X_train
-
-    def _get_k(self) -> int:
-        """Getting K from the model.
-
-        Extracts the number of nearest neighbours from the model.
-        """
-        return self.K
