@@ -45,8 +45,8 @@ class GaussianApproach(Approach):
         x_train = self.internal["data"]["x_train"]
         feature_names = self.internal["parameters"]["feature_names"]
 
-        # Get data types of each feature
-        dtypes = x_train.dtype  # TODO (milanagm): dtype is callable on numpy arrays - should we adjust it to adress other formats too?
+        # Gets data types of each feature
+        dtypes = x_train.dtype  # callable on numpy arrays
 
         factor_features = []
 
