@@ -18,7 +18,11 @@ from .approach import Approach
 
 # Constants
 MAX_UNIQUE_VALUES_FOR_CATEGORICAL = (
-    10  # randomly assigned # TODO (milanagm): check with team and tutors, if thats okay
+    2  # Below see reasoning for selecting 3
+    # Features with fewer than 3 unique values are likely either:
+    # 1. categorical values as strings before beeing one-hot encoded
+    # 2. Binary features (0/1)
+    # 2. One-hot encoded features (which would have at most 2 values per encoded column)
 )
 
 
@@ -52,7 +56,7 @@ class GaussianApproach(Approach):
                 # np.unique() returns all unique values in the feature
                 # If there are fewer than threshold, we consider it categorical
                 unique_values = np.unique(feature)
-                if len(unique_values) < MAX_UNIQUE_VALUES_FOR_CATEGORICAL:
+                if len(unique_values) <= MAX_UNIQUE_VALUES_FOR_CATEGORICAL:
                     factor_features.append(feature_names[i])
 
             # Check if feature is string/object type
