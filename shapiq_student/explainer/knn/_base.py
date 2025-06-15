@@ -33,6 +33,7 @@ class KNNExplainerBase(Explainer):
         check_is_fitted(model)
 
         self.model = model
+        self.k = self.model.n_neighbors
 
         self.X_train = model._fit_X  # noqa: SLF001
 
