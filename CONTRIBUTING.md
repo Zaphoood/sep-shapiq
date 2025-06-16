@@ -33,6 +33,20 @@ Both ways will modify files `pyproject.toml` and `uv.lock`. Make sure to commit 
 
 If you want to add a dependency that is only needed at development time and not required for the library to function, specify the dependency group `dev` with the argument `--group dev`: For example, to add the `mypy` type checker, you would run `uv add mypy --group dev`. However, the development dependency group is also further subdivided in groups `test`, `lint` etc. (defined in `pyproject.toml`); try to use the most appropriate group for the dependency you're adding. This way, no unnecessary dependencies are installed in the GitHub Actions workflows that only require a subset of the development tools.
 
+## Type checking
+
+This project uses [`mypy`](https://mypy.readthedocs.io/en/stable/) for static type checking. In Python, type annotations (or type hints) can be added to code, which do not have _any impact_ on runtime behavior, but catching type-related errors by static code analysis. An in-depth article on type systems and types in Python can be found [here](https://realpython.com/python-type-checking/). This [cheatsheet](https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html) is very useful for getting started with writing type annotations.
+
+The `mypy` type checker is _not_ configured as a pre-commit hook (for now). Reasons are that it can be quite slow and is annoying to configure. But there is a GitHub Actions workflow that runs the type checker on every PR.
+
+You should run the type checker regularly, and especially before opening a PR, by executing:
+
+```sh
+uv run mypy -p shapiq_student
+```
+
+This tells `mypy` to type checking the entire `shapiq_student` package (hence the `-p` flag). Be warned that this will take several seconds when you run it for the first time; don't despair, subsequent runs will be much faster thanks to caching.
+
 ## Tests
 
 When adding new functionalities, write corresponding unittests and add them to the directory `tests/`. Our testing framework is [pytest](https://docs.pytest.org/en/stable/getting-started.html). [Here](https://docs.pytest.org/en/stable/how-to/index.html) you can find some instructions on writing tests and using the `pytest` command.
