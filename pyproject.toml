@@ -142,4 +142,6 @@ exclude_lines = [
     "if TYPE_CHECKING",
 ]
 
-# TODO(mmschlk): add mypy or ty typing configuration below
+[[tool.mypy.overrides]]
+module = ["shapiq.*"]
+follow_untyped_imports = true
