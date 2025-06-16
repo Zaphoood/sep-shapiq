@@ -98,6 +98,7 @@ exclude = [
     "I002", # __init__.py does not have to import required modules
     "RUF022",  # we can have unsorted imports in __init__.py
     "FA",  # init does not require from __future__ import annotations import when using type hints
+    "F401",  # allow unused imports
 ]
 "tests*/*.py" = [
     "S101", # we need asserts in tests
