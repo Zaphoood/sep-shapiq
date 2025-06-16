@@ -26,9 +26,7 @@ class InternalState(TypedDict):
     objects: dict[str, list[Any]]
 
 
-class ExplainKwargs(
-    TypedDict, total=False
-):  # TODO (milanagm): if we decide to take this variable out, delete this class too
+class ExplainKwargs(TypedDict, total=False):
     """Optional keyword arguments for the `explain()` function.
 
     Parameters
@@ -46,11 +44,11 @@ class ExplainKwargs(
     n_MC_samples: int
 
 
-def explain(  # TODO (milanagm): we need to add tests - how should that look like?
+def explain(
     x_train: NDArray[np.float64],
     x_explain: NDArray[np.float64],
     approach: str = "gaussian",
-    **kwargs: ExplainKwargs,  # TODO (milanagm): do we need this?
+    **kwargs: ExplainKwargs,
 ) -> InternalState:
     """Main function to explain predictions using either Gaussian or Coppola Imputation approach.
 
