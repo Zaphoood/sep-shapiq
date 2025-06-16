@@ -1,5 +1,5 @@
-"""Source code for the shapiq_student package."""
+"""SHAPIQ Student package."""
 
-from shapiq_student.imputer import CustomImputer
+from shapiq_student.imputer import Approach, CoppolaApproach, GaussianApproach
 
-__all__ = ["CustomImputer"]
+__all__ = ["Approach", "GaussianApproach", "CoppolaApproach"]
