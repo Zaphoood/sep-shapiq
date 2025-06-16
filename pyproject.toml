@@ -25,6 +25,7 @@ lint = [
     "pre-commit>=4.2.0",
 ]
 types = [
+    "microsoft-python-type-stubs",
     "mypy>=1.16.1",
 ]
 docs = [
@@ -145,3 +146,6 @@ exclude_lines = [
 [[tool.mypy.overrides]]
 module = ["shapiq.*"]
 follow_untyped_imports = true
+
+[tool.uv.sources]
+microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git" }
