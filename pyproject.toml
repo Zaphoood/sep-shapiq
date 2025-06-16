@@ -143,6 +143,9 @@ exclude_lines = [
     "if TYPE_CHECKING",
 ]
 
+[tool.mypy]
+strict = true
+
 [[tool.mypy.overrides]]
 module = ["shapiq.*"]
 follow_untyped_imports = true
