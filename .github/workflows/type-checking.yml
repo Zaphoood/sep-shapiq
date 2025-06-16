@@ -1,0 +1,33 @@
+# This workflow will install Python and type checking dependencies, then run the mypy type checker
+
+name: Type Checking
+
+on:
+  pull_request:
+    branches:
+      - '*'
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Type Checking
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.11'
+          activate-environment: true
+
+      - name: Install pre-commit
+        run: |
+          uv sync --only-group types
+
+      - name: Run code-quality checks
+        run: uv run mypy -p shapiq_student
