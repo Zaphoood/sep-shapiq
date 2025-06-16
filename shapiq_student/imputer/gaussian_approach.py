@@ -17,9 +17,7 @@ if TYPE_CHECKING:
 from .approach import Approach
 
 # Constants
-MAX_UNIQUE_VALUES_FOR_CATEGORICAL = (
-    10  # randomly assigned # TODO (milanagm): check with team and tutors, if thats okay
-)
+MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 10  # randomly assigned
 
 
 class GaussianApproach(Approach):
@@ -30,7 +28,7 @@ class GaussianApproach(Approach):
     are detected.
     """
 
-    def _check_factor_features(self) -> None:  # TODO (milanagm): we need to add tests
+    def _check_factor_features(self) -> None:
         """Check if any features are categorical/factor variables.
 
         Raises:

@@ -21,21 +21,25 @@ class InternalState(TypedDict):
 
     parameters: dict[str, Any]
     data: dict[str, NDArray[np.float64]]
-    iter_list: list[
-        dict[str, Any]
-    ]  # TODO (milanagm): if we decide to take this variable, also delete this line
-    timing_list: dict[
-        str, Any
-    ]  # TODO (milanagm): if we decide to take this variable, also delete this line
-    objects: dict[
-        str, list[Any]
-    ]  # TODO (milanagm): if we decide to take out the feature_spec variable, also delete this line
+    iter_list: list[dict[str, Any]]
+    timing_list: dict[str, Any]
+    objects: dict[str, list[Any]]
 
 
 class ExplainKwargs(
     TypedDict, total=False
 ):  # TODO (milanagm): if we decide to take this variable out, delete this class too
-    """Type definition for the explain function's keyword arguments."""
+    """Optional keyword arguments for the `explain()` function.
+
+    Parameters
+    ----------
+    verbose : list[str]
+        List of strings for verbosity control.
+    feature_names : list[str]
+        List of names for each feature.
+    n_MC_samples : int
+        Number of Monte Carlo samples for estimating the Shapley values. Default is 1000.
+    """
 
     verbose: list[str]
     feature_names: list[str]
@@ -76,25 +80,37 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
     ValueError
         If an unknown approach is specified.
     """
+    # Handle defaults
+    # Use default feature names if none are provided
+    feature_names = kwargs.get("feature_names", [f"X{i}" for i in range(x_train.shape[1])])
+    # Number of Monte Carlo samples to use (default: 1000)
+    n_MC_samples = kwargs.get("n_MC_samples", 1000)
+    # List of strings for verbosity control (default: empty list)
+    verbose = kwargs.get("verbose", [])
+
     # Initialize internal structure
     internal: InternalState = {
         "parameters": {
-            "verbose": kwargs.get(
-                "verbose", []
-            ),  # TODO (milanagm): do we need this and if so, for what?
             "approach": approach,
-            "feature_names": kwargs.get(
-                "feature_names", [f"X{i}" for i in range(x_train.shape[1])]
-            ),
-            "n_explain": x_explain.shape[0],
+            "feature_names": feature_names,
             "n_features": x_train.shape[1],
-            "n_MC_samples": kwargs.get("n_MC_samples", 1000),
+            "n_explain": x_explain.shape[0],
+            "n_MC_samples": n_MC_samples,
+            "verbose": verbose,
         },
-        "data": {"x_train": x_train, "x_explain": x_explain},
-        "iter_list": [{}],  # TODO (milanagm): do we need this and if so, for what?
-        "timing_list": {},  # TODO (milanagm): do we need this and if so, for what?
+        "data": {
+            # Original training data
+            "x_train": x_train,
+            # Data to be explained
+            "x_explain": x_explain,
+        },
+        # Placeholder for iterative process state (default: empty dict)
+        "iter_list": [{}],
+        # Placeholder for timing logs (default: empty dict)
+        "timing_list": {},
+        # Placeholder for feature specifications (default: empty list)
         "objects": {
-            "feature_specs": []  # TODO (milanagm): i think this need to be changed, we need to check approach-gaussian.R # stattdessen rausnehmen und logic basic checken
+            "feature_specs": [],
         },
     }
 
@@ -111,5 +127,4 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
         raise ValueError(error_msg)
 
     internal = approach_instance.setup_approach()
-
     return internal
