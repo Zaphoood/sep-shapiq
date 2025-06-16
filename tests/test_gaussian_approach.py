@@ -36,7 +36,11 @@ def gaussian_approach(sample_data):
     """
     internal = {
         "data": {"x_train": sample_data},
-        "parameters": {"feature_names": ["X1", "X2", "X3"], "n_features": 3},
+        "parameters": {
+            "feature_names": ["X1", "X2", "X3"],
+            "n_features": 3,
+            "verbose": [],
+        },
     }
     return GaussianApproach(internal)
 
@@ -53,11 +57,8 @@ def test_calculate_mean_per_feature(gaussian_approach, sample_data):
     gaussian_approach.calculate_mean_per_feature()
     calculated_mean = gaussian_approach.internal["parameters"]["mean_per_feature"]
 
-    # Check if mean was calculated and stored
     assert "mean_per_feature" in gaussian_approach.internal["parameters"]
-    # Check if calculation is correct
     np.testing.assert_array_almost_equal(calculated_mean, expected_mean)
-    # Check if mean has correct shape
     assert calculated_mean.shape == (3,)
 
 
@@ -68,7 +69,11 @@ def test_calculate_mean_per_feature_empty_data():
     """
     internal = {
         "data": {"x_train": np.array([])},
-        "parameters": {"feature_names": [], "n_features": 0},
+        "parameters": {
+            "feature_names": [],
+            "n_features": 0,
+            "verbose": [],
+        },
     }
     approach = GaussianApproach(internal)
     with pytest.raises(ValueError, match="Training data is empty"):
@@ -82,7 +87,11 @@ def test_calculate_mean_per_feature_invalid_data():
     """
     internal = {
         "data": {"x_train": [1, 2, 3]},  # Not a numpy array
-        "parameters": {"feature_names": ["X1"], "n_features": 1},
+        "parameters": {
+            "feature_names": ["X1"],
+            "n_features": 1,
+            "verbose": [],
+        },
     }
     approach = GaussianApproach(internal)
     with pytest.raises(TypeError, match="Training data must be a numpy array"):
@@ -101,11 +110,8 @@ def test_calculate_covariance_matrix(gaussian_approach, sample_data):
     gaussian_approach.calculate_covariance_matrix()
     calculated_cov = gaussian_approach.internal["parameters"]["cov_mat"]
 
-    # Check if covariance was calculated and stored
     assert "cov_mat" in gaussian_approach.internal["parameters"]
-    # Check if calculation is correct
     np.testing.assert_array_almost_equal(calculated_cov, expected_cov)
-    # Check if covariance matrix has correct shape
     assert calculated_cov.shape == (3, 3)
 
 
@@ -116,7 +122,11 @@ def test_calculate_covariance_matrix_empty_data():
     """
     internal = {
         "data": {"x_train": np.array([])},
-        "parameters": {"feature_names": [], "n_features": 0},
+        "parameters": {
+            "feature_names": [],
+            "n_features": 0,
+            "verbose": [],
+        },
     }
     approach = GaussianApproach(internal)
     with pytest.raises(ValueError, match="Training data is empty"):
@@ -130,7 +140,11 @@ def test_calculate_covariance_matrix_invalid_data():
     """
     internal = {
         "data": {"x_train": [1, 2, 3]},  # Not a numpy array
-        "parameters": {"feature_names": ["X1"], "n_features": 1},
+        "parameters": {
+            "feature_names": ["X1"],
+            "n_features": 1,
+            "verbose": [],
+        },
     }
     approach = GaussianApproach(internal)
     with pytest.raises(TypeError, match="Training data must be a numpy array"):
