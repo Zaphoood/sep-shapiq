@@ -43,6 +43,9 @@ dev = [
     {include-group = "docs"},
 ]
 
+[tool.uv.sources]
+microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git" }
+
 [tool.setuptools]
 packages = ["shapiq_student"]
 
@@ -149,6 +152,3 @@ strict = true
 [[tool.mypy.overrides]]
 module = ["shapiq.*"]
 follow_untyped_imports = true
-
-[tool.uv.sources]
-microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git" }
