@@ -35,9 +35,9 @@ class KNNExplainerBase(Explainer):
         self.model = model
         self.k = self.model.n_neighbors
 
-        self.X_train = model._fit_X  # noqa: SLF001
+        self.X_train = model._fit_X  # type: ignore[attr-defined] # noqa: SLF001
 
-        y_train_indices = model._y  # noqa: SLF001
+        y_train_indices = model._y  # type: ignore[attr-defined] # noqa: SLF001
         y_train_classes = model.classes_
 
         # TODO(Zaphoood): Consider disallowing y_train being a matrix
