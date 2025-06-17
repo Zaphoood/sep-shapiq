@@ -11,6 +11,10 @@ Before starting, please note that `shapiq_student` is intended to work with **Py
 Run `uv sync` to install the project's dependencies, including development tools. This will automatically create a virtual environment for the project and install everything there.
 To execute any command from within this virtual environment, use `uv run <your_command>`. For example, use `uv run python` to start a Python REPL.
 
+Before you start commiting any changes, run `uv run pre-commit install` to enable pre-commit hooks. For an explanation on what pre-commit hooks are, see [below](#pre-commit-hooks).
+
+## Code quality checks
+
 ### Pre-commit hooks
 
 Pre-commit hooks are a feature of git that allows you to run scripts before every commit, e.g. to make sure your changes adhere to code style regulations.
@@ -25,6 +29,59 @@ Now, every time you run `git commit`, a bunch of scripts defined in `.pre-commit
 Some checks (such as `ruff`) will also automatically fix some of the problems in your code. These will then appear as unstaged changes in the repository. You now have the option to check the automatic fixes, then stage them and run `git commit` again.
 
 To manually run `pre-commit` on all files in the repository (not just staged changes), run `uv run pre-commit run --all-files`.
+
+### Linting with `ruff`
+
+This project uses [`ruff`](https://docs.astral.sh/ruff/) for linting. When you run `ruff` on a file that has problems, it will provide an error code and message for each one (such as `D104 Missing docstring in public package`). Paste the error code into the search box at the `ruff` [homepage](https://docs.astral.sh/ruff/) to get an in-depth explanation (like [this one](https://docs.astral.sh/ruff/rules/undocumented-public-package/)) on why the code in question is problematic and what to do instead.
+
+Linter errors can be very strict, so sometimes it makes sense to surpress (disable) them. However, you should do this with caution. Always try fixing the linter error first rather than surpressing it.
+
+There are generally three ways to disable linter errors:
+
+#### In-line
+
+If you wish to disable an error only for a specific line, add `  # noqa: <error code>` at the end of the line in question.
+For example, you may need to use an import statement that's not at the top of the file, since you need to set an environment variable first to configure a library import. In this case it's perfectly fine to surpress `E402 Module level import not at top of file`:
+
+```python
+import os
+os.environ["MY_SETTING"] = "value"
+import my_library  # noqa: E402
+```
+
+#### Per file
+
+If you wish to disable an error for a specific file or a set of files, add a corresponding entry to the section `[tool.ruff.lint.per-file-ignores]` in `pyproject.toml`.
+For example, we often want to re-export classes or functions in `__init__.py` files, since this makes writing import statements less cumbersome for the library users. This would
+trigger an error ```F401 `SomeClass` imported but unused```, wich we can surpress like so:
+
+```toml
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    "F401",  # unused imports are okay here
+    ...
+]
+```
+
+Ideally, add a comment explaining why it is okay to surpress this kind of error in this kind of file, or at least paste the explanation of the error code. For more info, see the `ruff` docs for [per-file ignores](https://docs.astral.sh/ruff/settings/#lint_per-file-ignores).
+
+#### Everywhere
+
+To disable a specific error code everywhere, add it to the array `ignore` in the section `[tool.ruff.lint]` in `pyproject.toml`. Use this option with care and only if you are completely sure that this kind of error should never be flagged by `ruff`! Always include a justification or the explanation of the error code as a comment:
+
+```toml
+[tool.ruff.lint]
+ignore = [
+    "D203",  # conflicts with D211
+    ...
+]
+```
+
+The example above illustrates a situation where it is useful to surpress a rule completely: The rules `D203` and `D211` are in conflict with one another, since the first requires a blank line before a class docstring, while the second requires there to be _no_ blank line. Therefore, either the first or the second rule will always trigger an error, unless one of them is disabled.
+
+Note that in our case, the `D203` rule is automatically disabled by setting the `google` style convention (see section `[tool.ruff.lint.pydocstyle]` of `pyproject.toml`).
+
+For more info, see the `ruff` docs for [ignore](https://docs.astral.sh/ruff/settings/#lint_ignore).
 
 ## Managing project dependencies
 
