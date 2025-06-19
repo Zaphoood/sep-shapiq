@@ -73,12 +73,17 @@ class GaussianApproach(Approach):
         if categorical_features:
             raise CategoricalFeatureError(categorical_features)
 
-    def _setup_specific(self) -> None:  # TODO (milanagm): we need to add tests
-        """Check feature types and calculate mean and covariance matrix.
+    def __init__(self, internal: dict[str, Any]) -> None:
+        """Initialize the GaussianApproach with internal parameters and perform categorical feature check.
 
-        This method checks for categorical features and initializes the mean
-        and covariance matrix for the Gaussian approach.
+        Parameters
+        ----------
+        internal : dict[str, Any]
+            Internal dictionary containing data and parameters for the approach.
         """
+        super().__init__(internal)
+
+        # Categorical-Check
         self._check_categorical_features()
 
         # Initialize mean for each column/feature in the training data if not provided

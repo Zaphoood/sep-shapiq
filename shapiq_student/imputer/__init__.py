@@ -25,7 +25,7 @@ explain : function
 """
 
 from .approach import Approach
-from .Copula_approach import CopulaApproach
+from .copula_approach import CopulaApproach
 from .gaussian_approach import GaussianApproach
 from .main import explain
 

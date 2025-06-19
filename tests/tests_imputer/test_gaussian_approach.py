@@ -27,9 +27,7 @@ def test_check_categorical_features_valid():
             "x_explain": np.array([[2.0, 3.0, 4.0]]),
         },
     }
-    inst = GaussianApproach(internal)
-    # No exception expected
-    inst._check_categorical_features()  # noqa: SLF001
+    GaussianApproach(internal)  # No exception expected
 
 
 def test_check_categorical_features_binary_integer():
@@ -51,9 +49,8 @@ def test_check_categorical_features_binary_integer():
             "x_explain": np.array([[2.0, 1.0, 4.0]]),
         },
     }
-    inst = GaussianApproach(internal)
     with pytest.raises(CategoricalFeatureError, match="f2") as exc:
-        inst._check_categorical_features()  # noqa: SLF001
+        GaussianApproach(internal)
     msg = str(exc.value)
     assert "f2" in msg
     assert "f1" not in msg
@@ -80,9 +77,8 @@ def test_check_categorical_features_string():
             "x_explain": np.array([[2.0, "b", 4.0]], dtype=object),
         },
     }
-    inst = GaussianApproach(internal)
     with pytest.raises(CategoricalFeatureError, match="f2") as exc:
-        inst._check_categorical_features()  # noqa: SLF001
+        GaussianApproach(internal)
     msg = str(exc.value)
     assert "f2" in msg
     assert "f1" not in msg
@@ -109,9 +105,8 @@ def test_check_categorical_features_mixed():
             "x_explain": np.array([[2.0, 1.0, "b", 4.0]], dtype=object),
         },
     }
-    inst = GaussianApproach(internal)
     with pytest.raises(CategoricalFeatureError, match="f2.*f3") as exc:
-        inst._check_categorical_features()  # noqa: SLF001
+        GaussianApproach(internal)
     msg = str(exc.value)
     # Both f2 (binary) and f3 (string) must be mentioned
     assert "f2" in msg

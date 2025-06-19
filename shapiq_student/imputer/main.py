@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     import numpy as np
     from numpy.typing import NDArray
 
-from .Copula_approach import CopulaApproach
+from .copula_approach import CopulaApproach
 from .gaussian_approach import GaussianApproach
 
 

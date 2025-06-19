@@ -25,12 +25,15 @@ class CopulaApproach(Approach):
     these bins to generate appropriate samples.
     """
 
-    def _setup_specific(self) -> None:
+    def __init__(self, internal: dict[str, Any]) -> None:
         """Initialize Copula-specific parameters.
 
         Sets up the number of bins and minimum bin size if not already specified
         in the internal parameters.
         """
+        super().__init__(internal)
+        _ = self.internal["parameters"]
+
         # Initialize Copula-specific parameters
         if "Copula.n_bins" not in self.internal["parameters"]:
             self.internal["parameters"]["Copula.n_bins"] = 10
