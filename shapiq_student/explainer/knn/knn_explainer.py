@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from knn_super import KNNExplainer
 import numpy as np
+
+from ._base import KNNExplainerBase
 
 if TYPE_CHECKING:
     import sklearn.neighbors
 
 
-class KNNClassifierExplainer(KNNExplainer):
+class KNNClassifierExplainer(KNNExplainerBase):
     """KNN Classifier Explainer.
 
     For calculating exact shapley values for a KNN Classifier.
@@ -31,16 +32,20 @@ class KNNClassifierExplainer(KNNExplainer):
           the training data from the model
         - class_index (int): The index of y_test to be explained. Defaults to 1.
         """
+        self.data = data
         self.class_index = class_index
         self.model = model
-        self.data = data
         self.distance_fn = self._euclidean_distance
-        self.support_values = None
+        self.shapley_values = None
 
-        self.y_test: np.ndarray = None  # TODO(max): extract from model
-        self.X_train: np.ndarray = None  # TODO(max): extract from model
-        self.y_train: np.ndarray = None  # TODO(max): extract from model
-        self.K: int = 5  # TODO(max): extract from model
+        KNNExplainerBase.__init__(self.model)
+
+        self.X_train = super.X_train
+        self.y_train_indices = super.y_train_indices
+        self.y_train_classes = super.y_train_classes
+        self.K = super.k
+
+        # self.y_test =
 
     def _euclidean_distance(self, x1: any, x2: any) -> any:
         return np.linalg.norm(x1 - x2)
@@ -85,5 +90,5 @@ class KNNClassifierExplainer(KNNExplainer):
             s += s_j
 
         s /= N_test
-        self.support_values = s
+        self.shapley_values = s
         return s
