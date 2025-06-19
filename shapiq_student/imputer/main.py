@@ -12,8 +12,6 @@ from typing import TYPE_CHECKING, Any, TypedDict
 import pandas as pd
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     import numpy as np
     from numpy.typing import NDArray
 
@@ -56,22 +54,13 @@ class InternalState(TypedDict):
     ]  # TODO (milanagm): if we decide to take out the feature_spec variable, also delete this line
 
 
-class ExplainKwargs(TypedDict, total=False):
-    """Type definition for the explain function's keyword arguments.
-
-    All parameters (verbose, feature_names and n_MC_samples)can be optionally passed within explain() method
-    """
-
-    verbose: list[str]  # if we want specific logging
-    feature_names: list[str]
-    n_MC_samples: int  # TODO (milanagm): does it make sense to make this passable in explain()?
-
-
 def explain(  # TODO (milanagm): we need to add tests - how should that look like?
     x_train: pd.DataFrame | NDArray[np.float64],  # accepting both pandas and numpy
     x_explain: pd.DataFrame | NDArray[np.float64],
     approach: str = "gaussian",
-    **kwargs: ExplainKwargs,  # this enables the variables in ExplainKwargs to be passed (optionally)
+    feature_names: list[str] | None = None,
+    n_MC_samples: int = 1000,
+    verbose: list[str] | None = None,
 ) -> InternalState:
     """Main function to explain predictions using either Gaussian or Copula Imputation approach.
 
@@ -87,12 +76,12 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
         Data to be explained. Can be either a pandas DataFrame or numpy array.
     approach : str, optional
         The approach to use ('gaussian' or 'Copula'), by default 'gaussian'.
-    **kwargs : ExplainKwargs
-        Additional parameters for the specific approach:
-        - verbose: List of strings for verbosity control, by default []
-        - feature_names: List of feature names, by default None (extracted from DataFrame columns
-          or generated as X0, X1, etc. for numpy arrays)
-        - n_MC_samples: Number of Monte Carlo samples, by default 1000
+    verbose : list[str], optional
+        List of strings for verbosity control, by default None (interpreted as empty list)
+    feature_names : list[str], optional
+        List of feature names, by default None (extracted from DataFrame columns or generated as X0, X1, etc. for numpy arrays)
+    n_MC_samples : int, optional
+        Number of Monte Carlo samples, by default 1000
 
     Returns:
     -------
@@ -113,10 +102,9 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
     # TODO (milanagm): add tests for set_up?
 
     # 1) Handle DataFrame inputs and extract columns if provided
-    feature_names: Sequence[str] | None = kwargs.get("feature_names")
     if isinstance(x_train, pd.DataFrame):
         if feature_names is None:
-            feature_names = list(x_train.columns)  # extracts column names if not in kwargs
+            feature_names = list(x_train.columns)  # extracts column names if not in args
         x_train_arr = x_train.to_numpy()  # convert to numpy
     else:
         x_train_arr = x_train
@@ -141,14 +129,12 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
     # Initialize internal structure
     internal: InternalState = {
         "parameters": {
-            "verbose": kwargs.get("verbose", []),
+            "verbose": verbose if verbose is not None else [],
             "approach": approach,
             "feature_names": list(feature_names),
             "n_explain": x_explain_arr.shape[0],
             "n_features": n_features,
-            "n_MC_samples": kwargs.get(
-                "n_MC_samples", 1000
-            ),  # TODO (milanagm): what is being done here?
+            "n_MC_samples": n_MC_samples,
         },
         "data": {"x_train": x_train_arr, "x_explain": x_explain_arr},
         "iter_list": [{}],  # TODO (milanagm): do we need this and if so, for what?
@@ -157,17 +143,14 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
 
     # Select approach based on input
     if approach == "gaussian":
-        approach_instance = GaussianApproach(internal)
+        GaussianApproach(internal)
     elif approach == "Copula":
-        approach_instance = CopulaApproach(internal)
+        CopulaApproach(internal)
     else:
         error_msg = (
             f"Unknown approach: {approach}. "
             "Please use either 'gaussian' or 'Copula' as approach parameter."
         )
         raise ValueError(error_msg)
-
-    internal = approach_instance.setup_approach()
-    # TODO (milanagm): this method so far is not explaining anything but only calling setup_specific (mathod 1 in r script)
 
     return internal
