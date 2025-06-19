@@ -1,8 +1,8 @@
-# TODO (milanagm): review the whole coppola part
+# TODO (milanagm): review the whole Copula part
 
-"""Coppola's approach for imputation in SHAP value calculations.
+"""Copula's approach for imputation in SHAP value calculations.
 
-This module implements Coppola's binning strategy for generating samples in SHAP value
+This module implements Copula's binning strategy for generating samples in SHAP value
 calculations. It uses a binning approach to handle the distribution of features.
 """
 
@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 from .approach import Approach
 
 
-class CoppolaApproach(Approach):
-    """Implementation of Coppola's binning strategy for SHAP value calculations.
+class CopulaApproach(Approach):
+    """Implementation of Copula's binning strategy for SHAP value calculations.
 
     This approach uses a binning strategy to handle feature distributions and generate
     samples for SHAP value calculations. It creates bins for each feature and uses
@@ -26,20 +26,20 @@ class CoppolaApproach(Approach):
     """
 
     def _setup_specific(self) -> None:
-        """Initialize Coppola-specific parameters.
+        """Initialize Copula-specific parameters.
 
         Sets up the number of bins and minimum bin size if not already specified
         in the internal parameters.
         """
-        # Initialize Coppola-specific parameters
-        if "coppola.n_bins" not in self.internal["parameters"]:
-            self.internal["parameters"]["coppola.n_bins"] = 10
+        # Initialize Copula-specific parameters
+        if "Copula.n_bins" not in self.internal["parameters"]:
+            self.internal["parameters"]["Copula.n_bins"] = 10
 
-        if "coppola.min_bin_size" not in self.internal["parameters"]:
-            self.internal["parameters"]["coppola.min_bin_size"] = 5
+        if "Copula.min_bin_size" not in self.internal["parameters"]:
+            self.internal["parameters"]["Copula.min_bin_size"] = 5
 
     def prepare_data(self, index_features: list[int] | None = None) -> dict[str, Any]:
-        """Prepare data for Coppola approach.
+        """Prepare data for Copula approach.
 
         Parameters
         ----------
@@ -53,18 +53,16 @@ class CoppolaApproach(Approach):
         """
         x_train = self.internal["data"]["x_train"]
         x_explain = self.internal["data"]["x_explain"]
-        n_bins = self.internal["parameters"]["coppola.n_bins"]
+        n_bins = self.internal["parameters"]["Copula.n_bins"]
 
-        # Implement Coppola's binning strategy
+        # Implement Copula's binning strategy
         bins = self._create_bins(x_train, n_bins)
 
-        # Generate samples based on Coppola's approach
+        # Generate samples based on Copula's approach
         # Note: This will raise NotImplementedError until implemented
-        self._generate_coppola_samples(
-            x_explain=x_explain, bins=bins, index_features=index_features
-        )
+        self._generate_copula_samples(x_explain=x_explain, bins=bins, index_features=index_features)
 
-        return {}  # TODO (milanagm): Implement actual return value when _generate_coppola_samples is implemented
+        return {}  # TODO (milanagm): Implement actual return value when _generate_copula_samples is implemented
 
     def _create_bins(
         self, x_train: NDArray[np.float64], n_bins: int
@@ -89,13 +87,13 @@ class CoppolaApproach(Approach):
             bins[feature] = np.histogram(values, bins=n_bins, density=True)[1]
         return bins
 
-    def _generate_coppola_samples(
+    def _generate_copula_samples(
         self,
         x_explain: NDArray[np.float64],
         bins: dict[int, NDArray[np.float64]],
         index_features: list[int] | None,
     ) -> NoReturn:
-        """Generate samples using Coppola's approach.
+        """Generate samples using Copula's approach.
 
         Parameters
         ----------
@@ -112,7 +110,7 @@ class CoppolaApproach(Approach):
             This method is not yet implemented.
         """
         error_msg = (
-            "The Coppola sampling strategy is not yet implemented. "
+            "The Copula sampling strategy is not yet implemented. "
             "This method needs to be implemented according to the specific requirements."
         )
         raise NotImplementedError(error_msg)

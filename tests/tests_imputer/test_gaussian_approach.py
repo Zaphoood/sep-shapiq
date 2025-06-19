@@ -5,26 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from shapiq_student.imputer.gaussian_approach import GaussianApproach
-
-
-class CategoricalFeatureError(ValueError):
-    """Exception raised when categorical features are detected."""
-
-    def __init__(self, feature_names: list[str]) -> None:
-        """Initialize the error with the categorical feature names.
-
-        Parameters
-        ----------
-        feature_names : list[str]
-            List of feature names that are categorical
-        """
-        self.feature_names = feature_names
-        message = (
-            f"The following are categorical features: {', '.join(feature_names)}. "
-            "Gaussian approach does not support categorical features."
-        )
-        super().__init__(message)
+from shapiq_student.imputer.gaussian_approach import CategoricalFeatureError, GaussianApproach
 
 
 def test_check_categorical_features_valid():

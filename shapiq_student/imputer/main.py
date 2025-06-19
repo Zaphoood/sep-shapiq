@@ -1,7 +1,7 @@
 """Main entry point - Data Imputation.
 
 This module provides the main entry point for calculating SHAP values using different
-data imputation approaches (Gaussian or Coppola). It handles the initialization of the
+data imputation approaches (Gaussian or Copula). It handles the initialization of the
 internal state and delegates the actual calculations to the appropriate approach.
 """
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     import numpy as np
     from numpy.typing import NDArray
 
-from .coppola_approach import CoppolaApproach
+from .Copula_approach import CopulaApproach
 from .gaussian_approach import GaussianApproach
 
 
@@ -73,7 +73,7 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
     approach: str = "gaussian",
     **kwargs: ExplainKwargs,  # this enables the variables in ExplainKwargs to be passed (optionally)
 ) -> InternalState:
-    """Main function to explain predictions using either Gaussian or Coppola Imputation approach.
+    """Main function to explain predictions using either Gaussian or Copula Imputation approach.
 
     This function handles both pandas DataFrame and numpy array inputs. For DataFrames, it automatically
     extracts feature names from column names if not provided. For numpy arrays, it generates default
@@ -86,7 +86,7 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
     x_explain : Union[pd.DataFrame, NDArray[np.float64]]
         Data to be explained. Can be either a pandas DataFrame or numpy array.
     approach : str, optional
-        The approach to use ('gaussian' or 'coppola'), by default 'gaussian'.
+        The approach to use ('gaussian' or 'Copula'), by default 'gaussian'.
     **kwargs : ExplainKwargs
         Additional parameters for the specific approach:
         - verbose: List of strings for verbosity control, by default []
@@ -158,12 +158,12 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
     # Select approach based on input
     if approach == "gaussian":
         approach_instance = GaussianApproach(internal)
-    elif approach == "coppola":
-        approach_instance = CoppolaApproach(internal)
+    elif approach == "Copula":
+        approach_instance = CopulaApproach(internal)
     else:
         error_msg = (
             f"Unknown approach: {approach}. "
-            "Please use either 'gaussian' or 'coppola' as approach parameter."
+            "Please use either 'gaussian' or 'Copula' as approach parameter."
         )
         raise ValueError(error_msg)
 
