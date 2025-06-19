@@ -24,6 +24,10 @@ lint = [
     "ruff>=0.11.2",
     "pre-commit>=4.2.0",
 ]
+types = [
+    "microsoft-python-type-stubs",
+    "mypy>=1.16.1",
+]
 docs = [
     "furo>=2024.8.6",
     "sphinx>=8.1.3",
@@ -35,8 +39,12 @@ dev = [
     "ipywidgets",
     {include-group = "test"},
     {include-group = "lint"},
+    {include-group = "types"},
     {include-group = "docs"},
 ]
+
+[tool.uv.sources]
+microsoft-python-type-stubs = { git = "https://github.com/microsoft/python-type-stubs.git" }
 
 [tool.setuptools]
 packages = ["shapiq_student"]
@@ -138,4 +146,9 @@ exclude_lines = [
     "if TYPE_CHECKING",
 ]
 
-# TODO(mmschlk): add mypy or ty typing configuration below
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["shapiq.*"]
+follow_untyped_imports = true
