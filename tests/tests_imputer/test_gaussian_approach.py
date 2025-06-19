@@ -21,13 +21,13 @@ class CategoricalFeatureError(ValueError):
         """
         self.feature_names = feature_names
         message = (
-            f"The following are categorical/factor features: {', '.join(feature_names)}. "
+            f"The following are categorical features: {', '.join(feature_names)}. "
             "Gaussian approach does not support categorical features."
         )
         super().__init__(message)
 
 
-def test_check_factor_features_valid():
+def test_check_categorical_features_valid():
     """Should pass silently when all features are continuous with >2 uniques."""
     internal = {
         "parameters": {
@@ -48,10 +48,10 @@ def test_check_factor_features_valid():
     }
     inst = GaussianApproach(internal)
     # No exception expected
-    inst._check_factor_features()  # noqa: SLF001
+    inst._check_categorical_features()  # noqa: SLF001
 
 
-def test_check_factor_features_binary_integer():
+def test_check_categorical_features_binary_integer():
     """Should raise ValueError naming column f2 when it has only 0/1 values."""
     internal = {
         "parameters": {
@@ -72,14 +72,14 @@ def test_check_factor_features_binary_integer():
     }
     inst = GaussianApproach(internal)
     with pytest.raises(CategoricalFeatureError, match="f2") as exc:
-        inst._check_factor_features()  # noqa: SLF001
+        inst._check_categorical_features()  # noqa: SLF001
     msg = str(exc.value)
     assert "f2" in msg
     assert "f1" not in msg
     assert "f3" not in msg
 
 
-def test_check_factor_features_string():
+def test_check_categorical_features_string():
     """Should raise ValueError naming column f2 when it contains strings."""
     internal = {
         "parameters": {
@@ -101,14 +101,14 @@ def test_check_factor_features_string():
     }
     inst = GaussianApproach(internal)
     with pytest.raises(CategoricalFeatureError, match="f2") as exc:
-        inst._check_factor_features()  # noqa: SLF001
+        inst._check_categorical_features()  # noqa: SLF001
     msg = str(exc.value)
     assert "f2" in msg
     assert "f1" not in msg
     assert "f3" not in msg
 
 
-def test_check_factor_features_mixed():
+def test_check_categorical_features_mixed():
     """Should raise ValueError naming columns f2 and f3 for binary+string mix."""
     internal = {
         "parameters": {
@@ -130,7 +130,7 @@ def test_check_factor_features_mixed():
     }
     inst = GaussianApproach(internal)
     with pytest.raises(CategoricalFeatureError, match="f2.*f3") as exc:
-        inst._check_factor_features()  # noqa: SLF001
+        inst._check_categorical_features()  # noqa: SLF001
     msg = str(exc.value)
     # Both f2 (binary) and f3 (string) must be mentioned
     assert "f2" in msg

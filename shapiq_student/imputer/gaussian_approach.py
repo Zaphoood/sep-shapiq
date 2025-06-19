@@ -16,14 +16,10 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 from .approach import Approach
 
-# Constants
-MAX_UNIQUE_VALUES_FOR_CATEGORICAL = (
-    2  # Below see reasoning for selecting 3
-    # Features with fewer than 3 unique values are likely either:
-    # 1. categorical values as strings before beeing one-hot encoded
-    # 2. Binary features (0/1)
-    # 2. One-hot encoded features (which would have at most 2 values per encoded column)
-)
+# We disallow columns with <= 2 unique values, since they are likely either:
+# - Binary features
+# - One-hot encoded features (which would have at most 2 values per encoded column)
+MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 2
 
 
 class CategoricalFeatureError(ValueError):
@@ -39,7 +35,7 @@ class CategoricalFeatureError(ValueError):
         """
         self.feature_names = feature_names
         message = (
-            f"The following are categorical/factor features: {', '.join(feature_names)}. "
+            f"The following are categorical features: {', '.join(feature_names)}. "
             "Gaussian approach does not support categorical features."
         )
         super().__init__(message)
@@ -53,8 +49,8 @@ class GaussianApproach(Approach):
     are detected.
     """
 
-    def _check_factor_features(self) -> None:
-        """Check if any features are categorical/factor variables. This method just needs to be passed.
+    def _check_categorical_features(self) -> None:
+        """Check if any features are categorical variables. This method just needs to be passed.
 
         Raises:
         ------
@@ -64,20 +60,18 @@ class GaussianApproach(Approach):
         x_train = self.internal["data"]["x_train"]
         feature_names = self.internal["parameters"]["feature_names"]
 
-        factor_features: list[str] = []
+        categorical_features: list[str] = []
         for i, col in enumerate(x_train.T):
-            # 1) If we have strings, immediately categorical:
             if any(isinstance(v, str) for v in col):
-                factor_features.append(feature_names[i])
+                categorical_features.append(feature_names[i])
                 continue
 
-            # 2) Otherwise, count unique values:
             unique_count = len(np.unique(col))
             if unique_count <= MAX_UNIQUE_VALUES_FOR_CATEGORICAL:
-                factor_features.append(feature_names[i])
+                categorical_features.append(feature_names[i])
 
-        if factor_features:
-            raise CategoricalFeatureError(factor_features)
+        if categorical_features:
+            raise CategoricalFeatureError(categorical_features)
 
     def _setup_specific(self) -> None:  # TODO (milanagm): we need to add tests
         """Check feature types and calculate mean and covariance matrix.
@@ -85,8 +79,7 @@ class GaussianApproach(Approach):
         This method checks for categorical features and initializes the mean
         and covariance matrix for the Gaussian approach.
         """
-        # Check for factor features
-        self._check_factor_features()
+        self._check_categorical_features()
 
         # Initialize mean for each column/feature in the training data if not provided
         if (
