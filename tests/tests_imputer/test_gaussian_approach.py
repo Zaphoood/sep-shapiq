@@ -1,11 +1,12 @@
-"""Tests for the GaussianApproach class."""
+"""Tests for the GaussianImputer class."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from shapiq_student.imputer.gaussian_approach import CategoricalFeatureError, GaussianApproach
+from shapiq_student.imputer.exceptions import CategoricalFeatureError
+from shapiq_student.imputer.gaussian import GaussianImputer
 
 
 def test_check_categorical_features_valid():
@@ -27,7 +28,7 @@ def test_check_categorical_features_valid():
             "x_explain": np.array([[2.0, 3.0, 4.0]]),
         },
     }
-    GaussianApproach(internal)  # No exception expected
+    GaussianImputer(internal)  # No exception expected
 
 
 def test_check_categorical_features_binary_integer():
@@ -50,7 +51,7 @@ def test_check_categorical_features_binary_integer():
         },
     }
     with pytest.raises(CategoricalFeatureError, match="f2") as exc:
-        GaussianApproach(internal)
+        GaussianImputer(internal)
     msg = str(exc.value)
     assert "f2" in msg
     assert "f1" not in msg
@@ -78,7 +79,7 @@ def test_check_categorical_features_string():
         },
     }
     with pytest.raises(CategoricalFeatureError, match="f2") as exc:
-        GaussianApproach(internal)
+        GaussianImputer(internal)
     msg = str(exc.value)
     assert "f2" in msg
     assert "f1" not in msg
@@ -106,7 +107,7 @@ def test_check_categorical_features_mixed():
         },
     }
     with pytest.raises(CategoricalFeatureError, match="f2.*f3") as exc:
-        GaussianApproach(internal)
+        GaussianImputer(internal)
     msg = str(exc.value)
     # Both f2 (binary) and f3 (string) must be mentioned
     assert "f2" in msg
