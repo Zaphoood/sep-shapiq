@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 from ._base import GaussianImputerBase
 
+# TODO(Zaphoood): adjust this to new base class layout
+
 
 class GaussianCopulaImputer(GaussianImputerBase):
     """Implementation of Copula's binning strategy for SHAP value calculations.

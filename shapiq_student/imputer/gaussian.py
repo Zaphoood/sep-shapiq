@@ -22,6 +22,8 @@ from .exceptions import CategoricalFeatureError
 # - One-hot encoded features (which would have at most 2 values per encoded column)
 MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 2
 
+# TODO(Zaphoood): adjust this to new base class layout
+
 
 class GaussianImputer(GaussianImputerBase):
     """Implementation of Gaussian-based approach for SHAP value calculations.
