@@ -11,11 +11,8 @@ from typing import Any
 # TODO (milanagm): do we even need this script? I think we could already implement the specifics in the specific scripts
 
 
-# TODO(Zaphoood): remove the comment below
-# Adding this comment so that GitHub lets me comment on this file
-
-
-class Approach:
+# TODO(Zaphood): Make this inherit from shapiq.imputer.base.Imputer
+class GaussianImputerBase:
     """Abstract base class for imputation approaches.
 
     This class defines the interface that all specific imputation approaches must implement.
