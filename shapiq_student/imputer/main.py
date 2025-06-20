@@ -15,9 +15,9 @@ if TYPE_CHECKING:
     import numpy as np
     from numpy.typing import NDArray
 
-from .copula_approach import CopulaApproach
 from .exceptions import FeatureNamesLengthError
-from .gaussian_approach import GaussianApproach
+from .gaussian import GaussianImputer
+from .gaussian_copula import GaussianCopulaImputer
 
 
 class InternalState(TypedDict):
@@ -125,9 +125,9 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
 
     # Select approach based on input
     if approach == "gaussian":
-        GaussianApproach(internal)
+        GaussianImputer(internal)
     elif approach == "Copula":
-        CopulaApproach(internal)
+        GaussianCopulaImputer(internal)
     else:
         error_msg = (
             f"Unknown approach: {approach}. "
