@@ -41,7 +41,7 @@ class CategoricalFeatureError(ValueError):
         super().__init__(message)
 
 
-class GaussianApproach(Approach):
+class GaussianImputer(Approach):
     """Implementation of Gaussian-based approach for SHAP value calculations.
 
     This approach uses multivariate normal distribution for generating samples.
