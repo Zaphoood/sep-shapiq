@@ -133,7 +133,6 @@ class GaussianApproach(Approach):
         )
 
         # Convert to N(mean_per_feature_{Sbar|S}, Sigma_{Sbar|S})
-        # Note: This will raise NotImplementedError until implemented
         self._prepare_gaussian_data(  # TODO (milanagm): check if method is correct and compare with in approach_gasussian.R # Guassian.cpp in python übertragen
             MC_samples_mat=MC_samples_mat,
             x_explain_mat=x_explain_mat,

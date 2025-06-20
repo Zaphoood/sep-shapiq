@@ -55,7 +55,7 @@ class InternalState(TypedDict):
 
 
 def explain(  # TODO (milanagm): we need to add tests - how should that look like?
-    x_train: pd.DataFrame | NDArray[np.float64],  # accepting both pandas and numpy
+    x_train: pd.DataFrame | NDArray[np.float64],
     x_explain: pd.DataFrame | NDArray[np.float64],
     approach: str = "gaussian",
     feature_names: list[str] | None = None,
@@ -104,8 +104,8 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
     # 1) Handle DataFrame inputs and extract columns if provided
     if isinstance(x_train, pd.DataFrame):
         if feature_names is None:
-            feature_names = list(x_train.columns)  # extracts column names if not in args
-        x_train_arr = x_train.to_numpy()  # convert to numpy
+            feature_names = list(x_train.columns)
+        x_train_arr = x_train.to_numpy()
     else:
         x_train_arr = x_train
 
@@ -129,7 +129,7 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
     # Initialize internal structure
     internal: InternalState = {
         "parameters": {
-            "verbose": verbose if verbose is not None else [],
+            "verbose": verbose,
             "approach": approach,
             "feature_names": list(feature_names),
             "n_explain": x_explain_arr.shape[0],
