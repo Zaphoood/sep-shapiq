@@ -16,10 +16,29 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 from .approach import Approach
 
-# Constants
-MAX_UNIQUE_VALUES_FOR_CATEGORICAL = (
-    10  # randomly assigned # TODO (milanagm): check with team and tutors, if thats okay
-)
+# We disallow columns with <= 2 unique values, since they are likely either:
+# - Binary features
+# - One-hot encoded features (which would have at most 2 values per encoded column)
+MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 2
+
+
+class CategoricalFeatureError(ValueError):
+    """Exception raised when categorical features are detected."""
+
+    def __init__(self, feature_names: list[str]) -> None:
+        """Initialize the error with the categorical feature names.
+
+        Parameters
+        ----------
+        feature_names : list[str]
+            List of feature names that are categorical
+        """
+        self.feature_names = feature_names
+        message = (
+            f"The following are categorical features: {', '.join(feature_names)}. "
+            "Gaussian approach does not support categorical features."
+        )
+        super().__init__(message)
 
 
 class GaussianApproach(Approach):
@@ -30,50 +49,42 @@ class GaussianApproach(Approach):
     are detected.
     """
 
-    def _check_factor_features(self) -> None:  # TODO (milanagm): we need to add tests
-        """Check if any features are categorical/factor variables.
+    def _check_categorical_features(self) -> None:
+        """Check if any features are categorical variables. This method just needs to be passed.
 
         Raises:
         ------
-        ValueError
+        CategoricalFeatureError
             If any categorical features are detected.
         """
         x_train = self.internal["data"]["x_train"]
         feature_names = self.internal["parameters"]["feature_names"]
 
-        # Gets data types of each feature
-        dtypes = x_train.dtype  # callable on numpy arrays
+        categorical_features: list[str] = []
+        for i, col in enumerate(x_train.T):
+            if any(isinstance(v, str) for v in col):
+                categorical_features.append(feature_names[i])
+                continue
 
-        factor_features = []
+            unique_count = len(np.unique(col))
+            if unique_count <= MAX_UNIQUE_VALUES_FOR_CATEGORICAL:
+                categorical_features.append(feature_names[i])
 
-        for i, feature in enumerate(x_train.T):
-            # Check for integer object type
-            if np.issubdtype(dtypes[i], np.integer):
-                # np.unique() returns all unique values in the feature
-                # If there are fewer than threshold, we consider it categorical
-                unique_values = np.unique(feature)
-                if len(unique_values) < MAX_UNIQUE_VALUES_FOR_CATEGORICAL:
-                    factor_features.append(feature_names[i])
+        if categorical_features:
+            raise CategoricalFeatureError(categorical_features)
 
-            # Check if feature is string/object type
-            elif np.issubdtype(dtypes[i], np.object_):
-                factor_features.append(feature_names[i])
+    def __init__(self, internal: dict[str, Any]) -> None:
+        """Initialize the GaussianApproach with internal parameters and perform categorical feature check.
 
-        if factor_features:
-            error_msg = (
-                f"The following are categorical/factor features: {', '.join(factor_features)}. "
-                "Gaussian approach does not support categorical features."
-            )
-            raise ValueError(error_msg)
-
-    def _setup_specific(self) -> None:  # TODO (milanagm): we need to add tests
-        """Check feature types and calculate mean and covariance matrix.
-
-        This method checks for categorical features and initializes the mean
-        and covariance matrix for the Gaussian approach.
+        Parameters
+        ----------
+        internal : dict[str, Any]
+            Internal dictionary containing data and parameters for the approach.
         """
-        # Check for factor features
-        self._check_factor_features()  # TODO (milanagm): do we need to add checks for missing values?
+        super().__init__(internal)
+
+        # Categorical-Check
+        self._check_categorical_features()
 
         # Initialize mean for each column/feature in the training data if not provided
         if (
@@ -122,7 +133,6 @@ class GaussianApproach(Approach):
         )
 
         # Convert to N(mean_per_feature_{Sbar|S}, Sigma_{Sbar|S})
-        # Note: This will raise NotImplementedError until implemented
         self._prepare_gaussian_data(  # TODO (milanagm): check if method is correct and compare with in approach_gasussian.R # Guassian.cpp in python übertragen
             MC_samples_mat=MC_samples_mat,
             x_explain_mat=x_explain_mat,
