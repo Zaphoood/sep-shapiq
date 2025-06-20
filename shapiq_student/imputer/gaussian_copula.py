@@ -14,10 +14,10 @@ import numpy as np
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
-from .approach import Approach
+from ._base import GaussianImputerBase
 
 
-class GaussianCopulaImputer(Approach):
+class GaussianCopulaImputer(GaussianImputerBase):
     """Implementation of Copula's binning strategy for SHAP value calculations.
 
     This approach uses a binning strategy to handle feature distributions and generate

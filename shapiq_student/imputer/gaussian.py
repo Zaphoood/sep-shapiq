@@ -14,7 +14,7 @@ from numpy.random import Generator, default_rng
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
-from .approach import Approach
+from ._base import GaussianImputerBase
 
 # We disallow columns with <= 2 unique values, since they are likely either:
 # - Binary features
@@ -41,7 +41,7 @@ class CategoricalFeatureError(ValueError):
         super().__init__(message)
 
 
-class GaussianImputer(Approach):
+class GaussianImputer(GaussianImputerBase):
     """Implementation of Gaussian-based approach for SHAP value calculations.
 
     This approach uses multivariate normal distribution for generating samples.
