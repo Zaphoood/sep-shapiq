@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from ._base import KNNExplainerBase
+from shapiq_student.explainer.knn import KNNExplainerBase
 
 if TYPE_CHECKING:
     import sklearn.neighbors
@@ -35,15 +35,13 @@ class KNNClassifierExplainer(KNNExplainerBase):
         self.data = data
         self.class_index = class_index
         self.model = model
-        self.distance_fn = self._euclidean_distance
-        self.shapley_values = None
 
-        KNNExplainerBase.__init__(self.model)
+        basis = KNNExplainerBase(model=self.model)
 
-        self.X_train = super.X_train
-        self.y_train_indices = super.y_train_indices
-        self.y_train_classes = super.y_train_classes
-        self.K = super.k
+        self.X_train = basis.X_train
+        self.y_train_indices = model._y  # noqa: SLF001
+        self.y_train_classes = model.classes_
+        self.K = basis.k
 
     def explain_function(self, X_test: np.ndarray) -> np.ndarray:
         """Compute shapley values for training data.
@@ -58,7 +56,7 @@ class KNNClassifierExplainer(KNNExplainerBase):
         self.X_test = X_test
 
         N = len(self.X_train)
-        s = np.zeros(self.N)
+        s = np.zeros(N)
 
         sorted_indices = self.model.kneighbors(
             X=[self.X_test], n_neighbors=N, return_distance=False
