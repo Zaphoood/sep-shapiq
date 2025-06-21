@@ -45,22 +45,22 @@ class KNNClassifierExplainer(KNNExplainerBase):
         self.y_train_classes = super.y_train_classes
         self.K = super.k
 
-        # self.y_test =
-
     def _euclidean_distance(self, x1: any, x2: any) -> any:
         return np.linalg.norm(x1 - x2)
 
-    def explain(self, X_test: np.ndarray) -> np.ndarray:
+    def explain_function(self, X_test: np.ndarray) -> np.ndarray:
         """Compute shapley values for training data.
 
         Parameters:
         - X_test (np.ndarray): Test features, shape (N_test, d).
-        - class_index (int):  Defaults to 1.
+        - class_index (int):  The index to be explained. Defaults to 1.
 
         Returns:
         - np.ndarray: Shapley values for training data, shape (N,).
         """
         self.X_test = X_test
+
+        self.y_test = self.model.predict(self.X_test, self.K)
 
         N = len(self.X_train)
         N_test = len(self.X_test)
