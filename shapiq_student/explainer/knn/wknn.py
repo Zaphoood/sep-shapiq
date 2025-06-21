@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 from typing_extensions import override
 
-from .base import KNNExplainerBase, interaction_values_from_knn_shapley_values
+from .base import KNNExplainerBase, interaction_values_from_array
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -43,9 +43,33 @@ class ArrayGame(Game):
     def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         bases = np.repeat(2 ** np.arange(self.n_players)[None, :], coalitions.shape[0], axis=0)
         bases *= coalitions
-        indices = cast("npt.NDArray[np.integer]", np.sum(bases, axis=1))
+        indices = cast("npt.NDArray[np.int64]", np.sum(bases, axis=1))
 
         return self.utility[indices]
+
+
+class WKNNExplainerBase(KNNExplainerBase):
+    """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
+
+    def _get_training_data_dists_and_weights(
+        self, x_val: npt.NDArray[np.floating]
+    ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
+        """Calculate weights and sorting permutation training data points (called X_train hereinafter) with respect to to a given validation data point x_val.
+
+        Args:
+            x_val: The validation data point.
+
+        Returns:
+            A tuple `(sortperm, dists, weights)`, where all are `numpy.ndarray`s with dimensions `(n_training_samples,)` and
+                - `sortperm` is a permutation that sorts X_train by distance to x_val
+                - `weights` contains the corresponding weights for each point in X_train
+        """
+        distances, sortperm = cast(
+            "tuple[npt.NDArray[np.floating], npt.NDArray[np.integer]]",
+            self.model.kneighbors(x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0]),
+        )
+        weights = 1 / distances
+        return sortperm[0], weights[0]
 
 
 class BruteForceWKNNExplainer(KNNExplainerBase):
@@ -81,9 +105,7 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
         n_classes = len(self.y_train_classes)
 
         if n_classes == 1:
-            return interaction_values_from_knn_shapley_values(
-                np.zeros((n_players,), dtype=np.floating)
-            )
+            return interaction_values_from_array(np.zeros((n_players,), dtype=np.floating))
 
         for other_class in self.y_train_classes:
             if other_class == self.class_index:
@@ -93,7 +115,7 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
 
         sv /= n_classes - 1
 
-        return interaction_values_from_knn_shapley_values(sv)
+        return interaction_values_from_array(sv)
 
     def _explain_binary(
         self,
@@ -178,3 +200,94 @@ def _first_n_true(mask: npt.NDArray[np.bool], n: int) -> npt.NDArray[np.bool]:
             return out
 
     return mask
+
+
+class WKNNExplainer(WKNNExplainerBase):
+    """Efficient implementation of WKNN according to `Wang et. al (2024)` [Wng24]_.
+
+    References:
+        .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024.
+    """
+
+    def __init__(
+        self,
+        model: KNeighborsClassifier,
+        class_index: int,
+        n_digits: int = 1,
+    ) -> None:
+        """Initializes the BruteForceWKNNExplainer.
+
+        Args:
+            model: The KNN model to explain.
+            n_digits: The number of decimal digits to use for discretizing weights.
+            class_index: The class index of the model to explain.
+        """
+        super().__init__(model, class_index)
+
+        if self.model.weights != "distance":
+            msg = f"KNeighboursClassifier must use weights='distance', but has weights='{self.model.weights}'"
+            raise ValueError(msg)
+
+        self.n_digits = n_digits
+        self._discretization_interval = 10 ** (-self.n_digits)
+
+    # TODO(Zaphoood): remove 'noqa's below after simplifying function
+    @override
+    def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
+        n_train_points = len(self.y_train)
+        n_classes = len(self.y_train_classes)
+
+        # TODO(Zaphoood): Honor self.class_index and handle multi-class prediction
+
+        if n_classes != 2:  # noqa: PLR2004
+            msg = f"Only binary classification is supported, but {n_classes=}"
+            raise NotImplementedError(msg)
+
+        # TODO(Zaphoood): Move this check to the constructor
+        if self.k <= 1:
+            msg = f"Only values of k > 1 are supported, but {self.k=}"
+            raise NotImplementedError(msg)
+
+        y_pred = self.model.predict(x.reshape(1, -1))[0]
+
+        sortperm, weights = self._get_training_data_dists_and_weights(x)
+        # Normalize weights to [0, 1]
+        if np.max(weights) - np.min(weights) > 0:
+            weights = (weights - np.min(weights)) / (np.max(weights) - np.min(weights))
+
+        # Change sign of weights where corresponding class disagrees with validation point prediction class
+        weights[(self.y_train != y_pred)[sortperm]] *= -1
+
+        weights_discrete, weights_space = self._discretize_weights(weights)
+
+        weight_idx = {}
+        for j, val in enumerate(weights_space):
+            weight_idx[np.round(val, self.n_digits)] = j
+
+        sv = np.zeros(n_train_points)
+        for i in range(n_train_points):
+            pass
+
+        raise NotImplementedError(weights_discrete, sv)
+
+    def _discretize_weights(
+        self, weights: npt.NDArray[np.floating]
+    ) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+        """Discretize weights and generate the weights space, i. e. the range of all possible sums of weights.
+
+        Args:
+            weights: The (non-discrete) weights.
+
+        Returns:
+            A tuple `(weights_discrete, weights_space)`, both `np.ndarray`s.
+        """
+        weights_discrete = np.round(weights, self.n_digits)
+
+        weight_max_disc = np.round(np.sum(weights_discrete[weights_discrete > 0]), self.n_digits)
+        weight_min_disc = np.round(np.sum(weights_discrete[weights_discrete < 0]), self.n_digits)
+        weights_space_size = (
+            int(np.round((weight_max_disc - weight_min_disc) / self._discretization_interval)) + 1
+        )
+        weights_space = np.linspace(weight_min_disc, weight_max_disc, weights_space_size)
+
+        return weights_discrete, weights_space

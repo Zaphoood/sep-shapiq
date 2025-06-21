@@ -27,6 +27,7 @@ lint = [
 types = [
     "microsoft-python-type-stubs",
     "mypy>=1.16.1",
+    "scipy-stubs>=1.15.3.0",
 ]
 docs = [
     "furo>=2024.8.6",
