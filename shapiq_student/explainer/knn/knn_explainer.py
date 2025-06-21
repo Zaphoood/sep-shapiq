@@ -45,9 +45,6 @@ class KNNClassifierExplainer(KNNExplainerBase):
         self.y_train_classes = super.y_train_classes
         self.K = super.k
 
-    def _euclidean_distance(self, x1: any, x2: any) -> any:
-        return np.linalg.norm(x1 - x2)
-
     def explain_function(self, X_test: np.ndarray) -> np.ndarray:
         """Compute shapley values for training data.
 
@@ -60,35 +57,31 @@ class KNNClassifierExplainer(KNNExplainerBase):
         """
         self.X_test = X_test
 
-        self.y_test = self.model.predict(self.X_test, self.K)
-
         N = len(self.X_train)
-        N_test = len(self.X_test)
         s = np.zeros(self.N)
 
-        for j in range(N_test):
-            x_test_j = X_test[j]
-            y_test_j = self.y_test[j]
+        sorted_indices = self.model.kneighbors(
+            X=[self.X_test], n_neighbors=N, return_distance=False
+        )
 
-            distances = [self.distance_fn(x, x_test_j) for x in self.X_train]
-            sorted_indices = np.argsort(distances)
+        for i in range(N):
+            if self.y_train_indices[sorted_indices[i]] == self.class_index:
+                s[i] = 1 / N
 
-            s_j = np.zeros(N)
-            last_idx = sorted_indices[-1]
-            s_j[last_idx] = int(self.y_train[last_idx] == y_test_j) / N
+        for j in reversed(range(N - 1)):
+            if (self.y_train_indices[sorted_indices[j]] == self.class_index) and (
+                self.y_train_indices[sorted_indices[j + 1]] == self.class_index
+            ):
+                s[j] = s[j + 1]
+            elif (self.y_train_indices[sorted_indices[j]] == self.class_index) and (
+                self.y_train_indices[sorted_indices[j + 1]] != self.class_index
+            ):
+                s[j] = s[j + 1] + (1 / self.K) * ((min(self.K, j)) / j)
+            elif (self.y_train_indices[sorted_indices[j]] != self.class_index) and (
+                self.y_train_indices[sorted_indices[j + 1]] == self.class_index
+            ):
+                s[j] = s[j + 1] - (1 / self.K) * ((min(self.K, j)) / j)
+            else:
+                s[j] = s[j + 1]
 
-            for i in reversed(range(N - 1)):
-                idx_i = sorted_indices[i]
-                idx_ip1 = sorted_indices[i + 1]
-
-                label_match_i = int(self.y_train[idx_i] == y_test_j)
-                label_match_ip1 = int(self.y_train[idx_ip1] == y_test_j)
-
-                term = (label_match_i - label_match_ip1) * min(self.K, i + 1) / (self.K * (i + 1))
-                s_j[idx_i] = s_j[idx_ip1] + term
-
-            s += s_j
-
-        s /= N_test
-        self.shapley_values = s
         return s
