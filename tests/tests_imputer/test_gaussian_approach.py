@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from shapiq_student.imputer.gaussian_approach import CategoricalFeatureError, GaussianApproach
+from shapiq_student.imputer.main import impute
 
 
 def test_check_categorical_features_valid():
@@ -116,7 +117,9 @@ def test_check_categorical_features_mixed():
     assert "f4" not in msg
 
 
-# Tests for Cov Mat and Mean Calculation ---
+##############################################
+# Tests for Cov Mat and Mean Calculation --- #
+##############################################
 
 
 def test_calculate_mean_per_feature_valid():
@@ -248,3 +251,48 @@ def test_calculate_covariance_matrix_invalid_data():
     }
     with pytest.raises(AttributeError, match="object has no attribute 'T'"):
         GaussianApproach(internal)
+
+
+##############################################
+# Test for Imputation --- #
+##############################################
+
+
+def test_gaussian_imputation_basic():
+    """Test basic functionality of Gaussian imputation."""
+    # Small synthetic dataset
+    x_train = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0],
+        ]
+    )
+    x_explain = np.array(
+        [
+            [2.0, 3.0, 4.0],
+            [5.0, 6.0, 7.0],
+        ]
+    )
+    n_features = x_train.shape[1]
+    n_explain = x_explain.shape[0]
+    n_MC_samples = 10
+
+    result_cube = impute(
+        x_train=x_train,
+        x_explain=x_explain,
+        approach="gaussian",
+        feature_names=[f"f{i + 1}" for i in range(n_features)],
+        n_MC_samples=n_MC_samples,
+        verbose=["progress"],
+    )
+
+    # There are 2^n_features coalitions, n_explain explicands, n_MC_samples samples, n_features features
+    expected_shape = (n_MC_samples, n_explain * 2**n_features, n_features)
+    assert result_cube.shape == expected_shape, (
+        f"Shape mismatch: {result_cube.shape} != {expected_shape}"
+    )
+    # Verify the result has the expected properties
+    assert result_cube is not None
+    assert result_cube.shape[0] == n_MC_samples
+    assert result_cube.shape[2] == n_features

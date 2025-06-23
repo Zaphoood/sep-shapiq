@@ -7,19 +7,19 @@ continuous features only.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import Any
 
 import numpy as np
 from numpy.random import Generator, default_rng
 
-if TYPE_CHECKING:
-    from numpy.typing import NDArray
 from .approach import Approach
 
 # We disallow columns with <= 2 unique values, since they are likely either:
 # - Binary features
 # - One-hot encoded features (which would have at most 2 values per encoded column)
 MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 2
+# Threshold for coalition membership (0.5 separates 0 and 1 in binary representation)
+COALITION_THRESHOLD = 0.5
 
 
 class CategoricalFeatureError(ValueError):
@@ -96,6 +96,33 @@ class GaussianApproach(Approach):
         if "mean_per_feature" not in self.internal["parameters"]:
             self.internal["parameters"]["mean_per_feature"] = np.mean(x_train, axis=0)
 
+    def _ensure_positive_definite(
+        self, cov_mat: np.ndarray, min_eigen_value: float = 1e-06
+    ) -> np.ndarray:
+        """Ensure covariance matrix is positive definite by correcting eigenvalues if necessary.
+
+        Parameters
+        ----------
+        cov_mat : np.ndarray
+            Input covariance matrix
+        min_eigen_value : float, optional
+            Minimum allowed eigenvalue, by default 1e-06
+
+        Returns:
+        -------
+        np.ndarray
+            Positive definite covariance matrix
+        """
+        eigen_values = np.linalg.eigvalsh(cov_mat)
+
+        # If any eigenvalue is too small (close to zero or negative)
+        if np.any(eigen_values <= min_eigen_value):
+            # Add regularization to make it positive definite
+            min_eig = np.min(eigen_values)
+            cov_mat = cov_mat + np.eye(cov_mat.shape[0]) * (min_eigen_value - min_eig)
+
+        return cov_mat
+
     def calculate_covariance_matrix(self) -> None:
         """Compute the covariance matrix of the training data.
 
@@ -117,7 +144,10 @@ class GaussianApproach(Approach):
             msg = "Training data is empty."
             raise ValueError(msg)
         if "cov_mat" not in self.internal["parameters"]:
-            self.internal["parameters"]["cov_mat"] = np.cov(x_train.T)
+            cov_mat = np.cov(x_train.T)
+            # Ensure positive definiteness
+            cov_mat = self._ensure_positive_definite(cov_mat)
+            self.internal["parameters"]["cov_mat"] = cov_mat
 
     def __init__(self, internal: dict[str, Any]) -> None:
         """Initialize the GaussianApproach with internal parameters and perform categorical feature check.
@@ -136,81 +166,112 @@ class GaussianApproach(Approach):
         self.calculate_mean_per_feature()
         self.calculate_covariance_matrix()
 
-    def prepare_data(
-        self, index_features: list[int] | None = None
-    ) -> dict[
-        str, Any
-    ]:  # TODO (milanagm): check if we really need to set index_features= None #index features sind die indices die wir haben wollen # nochmal ansehen wie das passiert
-        """Prepare data for Gaussian approach.
+    def gaussian_imputation(self) -> np.ndarray:
+        """Perform Gaussian imputation for SHAP value calculations.
 
-        Parameters
-        ----------
-        index_features : list[int] | None, optional
-            List of feature indices to consider, by default None.
+        This method generates samples from a multivariate normal distribution
+        based on the training data and calculates the SHAP values for each feature.
 
         Returns:
         -------
-        dict[str, Any]
-            Dictionary containing the prepared data.
+        np.ndarray
+            Resulting SHAP values for each feature.
         """
         n_features = self.internal["parameters"]["n_features"]
-        n_MC_samples = self.internal["parameters"][
-            "n_MC_samples"
-        ]  # TODO (milanagm): check how this variable is set and compare to approach_gasussian.R
+        n_MC_samples = self.internal["parameters"]["n_MC_samples"]
         x_explain_mat = np.array(self.internal["data"]["x_explain"])
+        n_explain = self.internal["parameters"]["n_explain"]
         mean_per_feature = self.internal["parameters"]["mean_per_feature"]
         cov_mat = self.internal["parameters"]["cov_mat"]
-        # TODO (milanagm): in approach_gasussian.R we also have n_coalitions_now set as index_features. we need to check where it is from and if we need it
 
-        # TODO (milanagm): right now we are ignoring casual shapley values case. myb we need to add it still # keep it like that
+        # Calculating Coalition Matrix S
+        n_coalitions = 2**n_features
+        S = np.zeros((n_coalitions, n_features), dtype=int)
+        for i in range(n_coalitions):
+            # Binary representation: 1 = feature present in coalition, 0 = not present
+            S[i, :] = [(i >> j) & 1 for j in range(n_features - 1, -1, -1)]
+        # S now has shape (n_coalitions, n_features), each row is a coalition
 
-        # Generate MC samples from N(0,1)
+        # Calculating MC Samples
         rng: Generator = default_rng()
-        MC_samples_mat = rng.normal(  # TODO (milanagm): check if method is correct and compare with in approach_gasussian.R
-            size=(n_MC_samples, n_features)
+        # Draw directly from multivariate normal: samples ~ N(mu, cov)
+        MC_samples_mat = rng.multivariate_normal(
+            mean=mean_per_feature, cov=cov_mat, size=n_MC_samples
         )
 
-        # Convert to N(mean_per_feature_{Sbar|S}, Sigma_{Sbar|S})
-        self._prepare_gaussian_data(  # TODO (milanagm): check if method is correct and compare with in approach_gasussian.R # Guassian.cpp in python übertragen
-            MC_samples_mat=MC_samples_mat,
-            x_explain_mat=x_explain_mat,
-            S=self.internal["iter_list"][-1]["S"][index_features],
-            mean_per_feature=mean_per_feature,
-            cov_mat=cov_mat,
-        )
+        # Result array: [n_MC_samples, n_explain * n_coalitions, n_features]
+        result_cube = np.zeros((n_MC_samples, n_explain * n_coalitions, n_features))
 
-        return {}  # TODO (milanagm): Implement actual return value when _prepare_gaussian_data is implemented
+        for S_ind in range(n_coalitions):
+            # Iterate over all rows of S
+            # Imputing for every coalition
 
-    def _prepare_gaussian_data(
-        self,
-        MC_samples_mat: NDArray[np.float64],
-        x_explain_mat: NDArray[np.float64],
-        S: NDArray[np.float64],
-        mean_per_feature: NDArray[np.float64],
-        cov_mat: NDArray[np.float64],
-    ) -> NoReturn:
-        """Prepare Gaussian data for sampling.
+            S_now = S[S_ind, :]  # current coalition
+            S_now_idx_known = np.where(S_now > COALITION_THRESHOLD)[0]  # Indices of known features
+            S_now_idx_unkown = np.where(S_now < COALITION_THRESHOLD)[
+                0
+            ]  # Indices of features to impute
 
-        Parameters
-        ----------
-        MC_samples_mat : NDArray[np.float64]
-            Matrix of Monte Carlo samples.
-        x_explain_mat : NDArray[np.float64]
-            Matrix of data to be explained.
-        S : NDArray[np.float64]
-            Feature set matrix.
-        mean_per_feature : NDArray[np.float64]
-            Mean vector for features.
-        cov_mat : NDArray[np.float64]
-            Covariance matrix.
+            # Means and covariance submatrices
+            mu_S_known = mean_per_feature[S_now_idx_known]
+            mu_S_unknown = mean_per_feature[S_now_idx_unkown]
 
-        Raises:
-        ------
-        NotImplementedError
-            This method is not yet implemented.
-        """
-        error_msg = (
-            "The Gaussian data preparation is not yet implemented. "
-            "This method needs to be implemented according to the Gaussian.cpp logic."
-        )
-        raise NotImplementedError(error_msg)
+            cov_S_known_and_S_known = cov_mat[np.ix_(S_now_idx_known, S_now_idx_known)]
+            cov_S_known_and_S_unknown = cov_mat[np.ix_(S_now_idx_known, S_now_idx_unkown)]
+
+            cov_S_unknown_and_S_known = cov_mat[np.ix_(S_now_idx_unkown, S_now_idx_known)]
+            cov_S_unknown_and_S_unknown = cov_mat[np.ix_(S_now_idx_unkown, S_now_idx_unkown)]
+
+            # Conditional covariance and mean
+            cov_SS_inv = (
+                np.linalg.inv(cov_S_known_and_S_known)
+                if cov_S_known_and_S_known.size
+                else np.zeros((0, 0))
+            )
+            cov_SbarS_cov_SS_inv = (
+                cov_S_unknown_and_S_known @ cov_SS_inv
+                if cov_S_known_and_S_known.size
+                else np.zeros((len(S_now_idx_unkown), 0))
+            )
+            cond_cov = (
+                cov_S_unknown_and_S_unknown - cov_SbarS_cov_SS_inv @ cov_S_known_and_S_unknown
+                if cov_S_known_and_S_known.size
+                else cov_S_unknown_and_S_unknown
+            )
+
+            # Cholesky decomposition for imputation
+            chol_cond_cov = np.linalg.cholesky(cond_cov) if cond_cov.size else np.zeros((0, 0))
+
+            for idx_now in range(n_explain):
+                # Known values for this observation
+                x_S_star = (
+                    x_explain_mat[idx_now, S_now_idx_known]
+                    if S_now_idx_known.size
+                    else np.array([])
+                )
+
+                # Conditional mean for this observation
+                if S_now_idx_known.size:
+                    x_Sbar_mean = cov_SbarS_cov_SS_inv @ (x_S_star - mu_S_known) + mu_S_unknown
+                else:
+                    x_Sbar_mean = mu_S_unknown
+
+                # Imputed values for the unknown features
+                if S_now_idx_unkown.size:
+                    MC_samples_now = (
+                        MC_samples_mat[:, S_now_idx_unkown] @ chol_cond_cov + x_Sbar_mean
+                    )
+                else:
+                    MC_samples_now = np.zeros((n_MC_samples, 0))
+
+                # Helper array for all features
+                aux_mat = np.zeros((n_MC_samples, n_features))
+                if S_now_idx_known.size:
+                    aux_mat[:, S_now_idx_known] = x_S_star  # known features: always the same
+                if S_now_idx_unkown.size:
+                    aux_mat[:, S_now_idx_unkown] = MC_samples_now  # imputed features
+
+                # Store in result
+                result_cube[:, S_ind * n_explain + idx_now, :] = aux_mat
+
+        return result_cube

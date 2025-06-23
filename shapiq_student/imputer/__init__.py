@@ -27,6 +27,6 @@ explain : function
 from .approach import Approach
 from .copula_approach import CopulaApproach
 from .gaussian_approach import GaussianApproach
-from .main import explain
+from .main import impute
 
-__all__ = ["Approach", "GaussianApproach", "CopulaApproach", "explain"]
+__all__ = ["Approach", "GaussianApproach", "CopulaApproach", "impute"]
