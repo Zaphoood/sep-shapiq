@@ -37,17 +37,17 @@ class KNNExplainerBase(Explainer):
 
         self.X_train = model._fit_X  # type: ignore[attr-defined] # noqa: SLF001
 
-        y_train_indices = model._y  # type: ignore[attr-defined] # noqa: SLF001
-        y_train_classes = model.classes_
+        self.y_train_indices = model._y  # type: ignore[attr-defined] # noqa: SLF001
+        self.y_train_classes = model.classes_
 
         # TODO(Zaphoood): Consider disallowing y_train being a matrix
-        if y_train_indices.ndim == 1:
-            self.y_train = y_train_classes[y_train_indices]
+        if self.y_train_indices.ndim == 1:
+            self.y_train = self.y_train_classes[self.y_train_indices]
         else:
-            n_outputs = y_train_indices.shape[1]
+            n_outputs = self.y_train_indices.shape[1]
             self.y_train = np.empty((self.X_train.shape[0], n_outputs))
 
             for col, (y_current_train_classes, y_current_train_indices) in enumerate(
-                zip(y_train_classes, y_train_indices.T, strict=False)
+                zip(self.y_train_classes, self.y_train_indices.T, strict=False)
             ):
                 self.y_train[:, col] = y_current_train_classes[y_current_train_indices]
