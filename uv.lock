@@ -2812,10 +2812,7 @@ dev = [
     { name = "build" },
     { name = "furo" },
     { name = "ipywidgets" },
-<<<<<<< HEAD
     { name = "microsoft-python-type-stubs" },
-=======
->>>>>>> bd0beb2 (add scikit-learn to test-dependencies)
     { name = "mypy" },
     { name = "notebook" },
     { name = "pre-commit" },
@@ -2856,10 +2853,7 @@ dev = [
     { name = "build", specifier = ">=1.2.2.post1" },
     { name = "furo", specifier = ">=2024.8.6" },
     { name = "ipywidgets" },
-<<<<<<< HEAD
     { name = "microsoft-python-type-stubs", git = "https://github.com/microsoft/python-type-stubs.git" },
-=======
->>>>>>> bd0beb2 (add scikit-learn to test-dependencies)
     { name = "mypy", specifier = ">=1.16.1" },
     { name = "notebook", specifier = ">=7.3.3" },
     { name = "pre-commit", specifier = ">=4.2.0" },
