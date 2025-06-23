@@ -28,4 +28,4 @@ def test_explain_function():
 
     testoutput = knn_expl.explain_function(X_test=X_test[5])
 
-    assert (len(testoutput)) == (len(y))
+    assert (len(testoutput)) == (len(y_train))
