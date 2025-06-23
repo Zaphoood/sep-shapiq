@@ -73,6 +73,52 @@ class GaussianApproach(Approach):
         if categorical_features:
             raise CategoricalFeatureError(categorical_features)
 
+    def calculate_mean_per_feature(self) -> None:
+        """Calculate the mean value for each feature in the training data.
+
+        This method computes the mean value for each feature (column) in the training data
+        and stores it in the internal parameters dictionary.
+
+        Raises:
+        ------
+        TypeError
+            If training data is not a numpy array.
+        ValueError
+            If training data is empty.
+        """
+        x_train = self.internal.get("data", {}).get("x_train")
+        if not isinstance(x_train, np.ndarray):
+            msg = "Training data must be a numpy array."
+            raise TypeError(msg)
+        if x_train.size == 0:
+            msg = "Training data is empty."
+            raise ValueError(msg)
+        if "mean_per_feature" not in self.internal["parameters"]:
+            self.internal["parameters"]["mean_per_feature"] = np.mean(x_train, axis=0)
+
+    def calculate_covariance_matrix(self) -> None:
+        """Compute the covariance matrix of the training data.
+
+        This method calculates the covariance matrix from the training data
+        and stores it in the internal parameters dictionary.
+
+        Raises:
+        ------
+        TypeError
+            If training data is not a numpy array.
+        ValueError
+            If training data is empty.
+        """
+        x_train = self.internal.get("data", {}).get("x_train")
+        if not isinstance(x_train, np.ndarray):
+            msg = "Training data must be a numpy array."
+            raise TypeError(msg)
+        if x_train.size == 0:
+            msg = "Training data is empty."
+            raise ValueError(msg)
+        if "cov_mat" not in self.internal["parameters"]:
+            self.internal["parameters"]["cov_mat"] = np.cov(x_train.T)
+
     def __init__(self, internal: dict[str, Any]) -> None:
         """Initialize the GaussianApproach with internal parameters and perform categorical feature check.
 
@@ -86,17 +132,9 @@ class GaussianApproach(Approach):
         # Categorical-Check
         self._check_categorical_features()
 
-        # Initialize mean for each column/feature in the training data if not provided
-        if (
-            "mean_per_feature" not in self.internal["parameters"]
-        ):  # TODO (milanagm): we need to add tests
-            self.internal["parameters"]["mean_per_feature"] = np.mean(
-                self.internal["data"]["x_train"], axis=0
-            )
-
-        # Initialize covariance matrix if not provided
-        if "cov_mat" not in self.internal["parameters"]:  # TODO (milanagm): we need to add tests
-            self.internal["parameters"]["cov_mat"] = np.cov(self.internal["data"]["x_train"].T)
+        # Ensure mean and covariance are initialized via helper methods
+        self.calculate_mean_per_feature()
+        self.calculate_covariance_matrix()
 
     def prepare_data(
         self, index_features: list[int] | None = None
