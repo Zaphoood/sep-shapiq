@@ -58,25 +58,29 @@ class KNNClassifierExplainer(KNNExplainerBase):
         N = len(self.X_train)
         s = np.zeros(N)
 
-        sorted_indices = self.model.kneighbors(
+        sorted_indices_get = self.model.kneighbors(
             X=[self.X_test], n_neighbors=N, return_distance=False
         )
+        sorted_indices = sorted_indices_get[0]
 
         for i in range(N):
-            if self.y_train_indices[sorted_indices[i]] == self.class_index:
+            idx = sorted_indices[i]
+            if self.y_train_indices[idx] == self.class_index:
                 s[i] = 1 / N
 
         for j in reversed(range(N - 1)):
-            if (self.y_train_indices[sorted_indices[j]] == self.class_index) and (
-                self.y_train_indices[sorted_indices[j + 1]] == self.class_index
+            idxj = sorted_indices[j]
+            idxj_plusplus = sorted_indices[j + 1]
+            if (self.y_train_indices[idxj] == self.class_index) and (
+                self.y_train_indices[idxj_plusplus] == self.class_index
             ):
                 s[j] = s[j + 1]
-            elif (self.y_train_indices[sorted_indices[j]] == self.class_index) and (
-                self.y_train_indices[sorted_indices[j + 1]] != self.class_index
+            elif (self.y_train_indices[idxj] == self.class_index) and (
+                self.y_train_indices[idxj_plusplus] != self.class_index
             ):
                 s[j] = s[j + 1] + (1 / self.K) * ((min(self.K, j)) / j)
-            elif (self.y_train_indices[sorted_indices[j]] != self.class_index) and (
-                self.y_train_indices[sorted_indices[j + 1]] == self.class_index
+            elif (self.y_train_indices[idxj] != self.class_index) and (
+                self.y_train_indices[idxj_plusplus] == self.class_index
             ):
                 s[j] = s[j + 1] - (1 / self.K) * ((min(self.K, j)) / j)
             else:
