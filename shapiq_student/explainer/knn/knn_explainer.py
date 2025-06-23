@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class KNNClassifierExplainer(KNNExplainerBase):
     """KNN Classifier Explainer.
 
-    For calculating exact shapley values for a KNN Classifier.
+    For calculating exact shapley values for an unweighted KNN Classifier.
     """
 
     def __init__(
@@ -27,7 +27,7 @@ class KNNClassifierExplainer(KNNExplainerBase):
         """Initialize the KNN Shapley Calculator.
 
         Parameters:
-        - data (None): Not needed, only to fit the shap-iq structure. Defaults to None.
+        - data (None): Not needed, only to fit the shap-iq structure.
         - model: KNN Classifier to be explained. Is used to call __knn_super to extract
           the training data from the model
         - class_index (int): The index of y_test to be explained. Defaults to 1.
@@ -39,8 +39,8 @@ class KNNClassifierExplainer(KNNExplainerBase):
         basis = KNNExplainerBase(model=self.model)
 
         self.X_train = basis.X_train
-        self.y_train_indices = model._y  # noqa: SLF001
-        self.y_train_classes = model.classes_
+        self.y_train_indices = super.y_train_indices
+        self.y_train_classes = super.y_train_classes
         self.K = basis.k
 
     def explain_function(self, X_test: np.ndarray) -> np.ndarray:
