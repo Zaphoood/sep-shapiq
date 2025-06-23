@@ -32,16 +32,10 @@ class KNNClassifierExplainer(KNNExplainerBase):
           the training data from the model
         - class_index (int): The index of y_test to be explained. Defaults to 1.
         """
+        super().__init__(model)
         self.data = data
         self.class_index = class_index
         self.model = model
-
-        basis = KNNExplainerBase(model=self.model)
-
-        self.X_train = basis.X_train
-        self.y_train_indices = super.y_train_indices
-        self.y_train_classes = super.y_train_classes
-        self.K = basis.k
 
     def explain_function(self, X_test: np.ndarray) -> np.ndarray:
         """Compute shapley values for training data.
@@ -78,11 +72,11 @@ class KNNClassifierExplainer(KNNExplainerBase):
             elif (self.y_train_indices[idxj] == self.class_index) and (
                 self.y_train_indices[idxj_plusplus] != self.class_index
             ):
-                s[j] = s[j + 1] + (1 / self.K) * ((min(self.K, j)) / j)
+                s[j] = s[j + 1] + (1 / self.k) * ((min(self.k, j)) / j)
             elif (self.y_train_indices[idxj] != self.class_index) and (
                 self.y_train_indices[idxj_plusplus] == self.class_index
             ):
-                s[j] = s[j + 1] - (1 / self.K) * ((min(self.K, j)) / j)
+                s[j] = s[j + 1] - (1 / self.k) * ((min(self.k, j)) / j)
             else:
                 s[j] = s[j + 1]
 
