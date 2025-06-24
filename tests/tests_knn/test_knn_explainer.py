@@ -46,11 +46,11 @@ def test_output_range():
     probierModel = KNeighborsClassifier(n_neighbors=20)
     probierModel.fit(X_train, y_train)
 
-    outarray = np.zeros(np.len(y_test))
+    outarray = np.zeros(len(y_test))
 
     for i in range(len(y_test)):
         knn_expl = KNNClassifierExplainer(data=None, model=probierModel, class_index=y_test[i])
-        outarray[i] = knn_expl.explain_function(X_test=X_test[i])
+        outarray[i] = np.sum(knn_expl.explain_function(X_test=X_test[i]))
 
     def between_all_and(arr, a, b):
         return np.all((arr > a) & (arr < b))
