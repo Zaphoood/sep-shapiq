@@ -35,14 +35,13 @@ class KNNClassifierExplainer(KNNExplainerBase):
         super().__init__(model)
         self.data = data
         self.class_index = class_index
-        self.model = model
 
     def explain_function(self, X_test: np.ndarray) -> np.ndarray:
         """Compute shapley values for training data.
 
         Parameters:
         - X_test (np.ndarray): Test features, shape (N_test, d).
-        - class_index (int):  The index to be explained. Defaults to 1.
+        - class_index (int): The class index to be explained. Defaults to 1.
 
         Returns:
         - np.ndarray: Shapley values for training data, shape (N,).
@@ -80,4 +79,7 @@ class KNNClassifierExplainer(KNNExplainerBase):
             else:
                 s[j] = s[j + 1]
 
-        return s
+        backsort = sorted(zip(sorted_indices, s, strict=False))
+        indices, backsorted_s = np.array(list(zip(*backsort, strict=False)))
+
+        return backsorted_s
