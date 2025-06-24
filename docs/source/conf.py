@@ -67,6 +67,7 @@ html_theme = "furo"
 html_css_files = [
     "custom.css",
 ]
+html_favicon = "_static/shapiq.ico"
 
 # -- Jupyter Notebooks -------------------------------------------------------
 nbsphinx_prolog = """
