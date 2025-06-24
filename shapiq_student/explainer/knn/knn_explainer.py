@@ -71,11 +71,11 @@ class KNNClassifierExplainer(KNNExplainerBase):
             elif (self.y_train_indices[idxj] == self.class_index) and (
                 self.y_train_indices[idxj_plusplus] != self.class_index
             ):
-                s[j] = s[j + 1] + (1 / self.k) * ((min(self.k, j)) / j)
+                s[j] = s[j + 1] + (1 / self.k) * ((min(self.k, (j + 1))) / (j + 1))
             elif (self.y_train_indices[idxj] != self.class_index) and (
                 self.y_train_indices[idxj_plusplus] == self.class_index
             ):
-                s[j] = s[j + 1] - (1 / self.k) * ((min(self.k, j)) / j)
+                s[j] = s[j + 1] - (1 / self.k) * ((min(self.k, (j + 1))) / (j + 1))
             else:
                 s[j] = s[j + 1]
 
