@@ -71,7 +71,7 @@ def interaction_lookup_from_knn_shapley_values(
 
     return InteractionValues(
         shapley_values,
-        "SII",
+        "SV",
         min_order=1,
         max_order=1,
         n_players=n_players,

@@ -80,3 +80,6 @@ def test_interaction_lookup_from_knn_shapley_values():
     assert iv.max_order == 1
     assert all(len(coalition) == 1 for coalition in iv.interaction_lookup)
     assert iv.n_players == n
+
+    SHAPLEY_VALUES_INDEX = "SV"
+    assert iv.index == SHAPLEY_VALUES_INDEX
