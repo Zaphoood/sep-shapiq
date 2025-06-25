@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from shapiq import Explainer
@@ -20,16 +20,16 @@ class KNNExplainerBase(Explainer):
     model: KNeighborsClassifier
     """The KNN model provided in the constructor."""
 
-    X_train: np.ndarray
+    X_train: npt.NDArray[np.floating]
     """Training data features extracted from the model."""
 
-    y_train_indices: np.ndarray
+    y_train_indices: npt.NDArray[np.integer]
     """Training data labels as indices into the classes array."""
 
-    y_train_classes: np.ndarray
+    y_train_classes: npt.NDArray[np.object_]
     """Classes that appear in the model's training data."""
 
-    y_train: np.ndarray
+    y_train: npt.NDArray[np.object_]
     """Training data labels extracted from the model. This array simply resolves the indirection of looking up class indices from ``y_train_indices`` in ``y_train_classes``."""
 
     k: int
@@ -52,24 +52,24 @@ class KNNExplainerBase(Explainer):
         check_is_fitted(model)
 
         self.model = model
-        self.k = self.model.n_neighbors
+        self.k = self.model.n_neighbors  # type: ignore[attr-defined]
 
         self.X_train = model._fit_X  # type: ignore[attr-defined] # noqa: SLF001
 
-        self.y_train_indices = model._y  # type: ignore[attr-defined] # noqa: SLF001
-        self.y_train_classes = model.classes_
+        self.y_train_indices = cast("npt.NDArray[np.integer]", model._y)  # type: ignore[attr-defined] # noqa: SLF001
+        self.y_train_classes = cast("npt.NDArray[np.object_]", model.classes_)
 
         # TODO(Zaphoood): Consider disallowing y_train being a matrix
         if self.y_train_indices.ndim == 1:
             self.y_train = self.y_train_classes[self.y_train_indices]
         else:
             n_outputs = self.y_train_indices.shape[1]
-            self.y_train = np.empty((self.X_train.shape[0], n_outputs))
+            self.y_train = np.empty((self.X_train.shape[0], n_outputs), dtype=np.object_)
 
-            for col, (y_current_train_classes, y_current_train_indices) in enumerate(
+            for col, (current_y_train_classes, current_y_train_indices) in enumerate(
                 zip(self.y_train_classes, self.y_train_indices.T, strict=False)
             ):
-                self.y_train[:, col] = y_current_train_classes[y_current_train_indices]
+                self.y_train[:, col] = current_y_train_classes[current_y_train_indices]
 
 
 def interaction_lookup_from_knn_shapley_values(
