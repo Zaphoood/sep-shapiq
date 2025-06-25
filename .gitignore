@@ -267,4 +267,5 @@ docs/source/api
 # remove editorconfig
 .editorconfig
 
-.venv/
+# Visual Studio Code config files
+.vscode
