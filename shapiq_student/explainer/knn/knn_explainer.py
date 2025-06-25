@@ -27,10 +27,13 @@ class KNNClassifierExplainer(KNNExplainerBase):
         """Initialize the KNN Shapley Calculator.
 
         Parameters:
-        - data (None): Not needed, only to fit the shap-iq structure.
-        - model: KNN Classifier to be explained. Is used to call __knn_super to extract
-          the training data from the model
-        - class_index (int): The index of y_test to be explained. Defaults to 1.
+        - data (None): Not used, only to fit the shap-iq structure.
+        - model: KNN Classifier to be explained. Accepts a fitted instance of
+            scikit-learn's KNeighborsClassifier.
+        - class_index (int): The class-index of the classifier to be explained. Defaults to 1.
+            The class index should be set. To explain more than one class, additional instances of KNNClassifierExplainer are needed.
+
+        The KNNClassifierExplainer should not be calles directly but by using the shapiq.explainer.Explainer.
         """
         super().__init__(model)
         self.data = data
@@ -41,10 +44,11 @@ class KNNClassifierExplainer(KNNExplainerBase):
 
         Parameters:
         - X_test (np.ndarray): Test features, shape (N_test, d).
-        - class_index (int): The class index to be explained. Defaults to 1.
 
         Returns:
         - np.ndarray: Shapley values for training data, shape (N,).
+
+        Not to be used directly. Use shapiq's explain() instead. To calculate the shapley values for more than one data point use shapiq's explain_X().
         """
         self.X_test = X_test
 
