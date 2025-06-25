@@ -53,6 +53,9 @@ def test_raises_on_unfitted_model():
         KNNExplainerBase(knn_model)
 
 
+SHAPLEY_VALUES_INDEX = "SV"
+
+
 def test_interaction_lookup_from_knn_shapley_values():
     """Tests that the values passed to interaction_lookup_from_knn_shapley_values are correct and parameters are adequately set."""
     sv = np.array(
@@ -81,5 +84,19 @@ def test_interaction_lookup_from_knn_shapley_values():
     assert all(len(coalition) == 1 for coalition in iv.interaction_lookup)
     assert iv.n_players == n
 
-    SHAPLEY_VALUES_INDEX = "SV"
+    assert iv.index == SHAPLEY_VALUES_INDEX
+
+
+def test_interaction_lookup_from_knn_shapley_values_emtpy():
+    """Tests interaction_lookup_from_knn_shapley_values can handle empty arrays."""
+    sv = np.array([])
+
+    iv = interaction_lookup_from_knn_shapley_values(sv)
+
+    assert iv.values.shape[0] == 0
+
+    assert iv.min_order == 1
+    assert iv.max_order == 1
+    assert iv.n_players == 0
+
     assert iv.index == SHAPLEY_VALUES_INDEX
