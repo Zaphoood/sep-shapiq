@@ -1,4 +1,4 @@
-"""Implementation of KNNExplainerBase class."""
+"""Implementation of ``KNNExplainerBase`` class and associated utility functions."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ class KNNExplainerBase(Explainer):
     """Base class for KNN explainers.
 
     Attributes:
-        model: The KNN model provided in the constructor.
+        model (sklearn.neighbors.KNeighborsClassifier): The KNN model provided in the constructor.
         X_train (np.ndarray): Training data features extracted from the model.
         y_train (np.ndarray): Training data labels extracted from the model.
         k (int): The parameter ``k`` of the model.
@@ -64,10 +64,10 @@ class KNNExplainerBase(Explainer):
 def interaction_lookup_from_knn_shapley_values(
     shapley_values: npt.NDArray[np.floating],
 ) -> InteractionValues:
-    """Convert an array of Shapley Values to a `shapiq.interaction_values.InteractionValues` object.
+    """Convert an array of Shapley Values to a ``shapiq.interaction_values.InteractionValues`` object.
 
     Args:
-        shapley_values: A ``np.ndarray`` containing the Shapley Value of the ``i``th training point at index ``i``.
+        shapley_values: A ``np.ndarray`` containing the Shapley Value of the ith training point at index i.
 
     Returns:
         An ``InteractionValues`` object containing the provided Shapley Values with an appropriate ``interaction_lookup`` dict and with ``min_order == max_order == 1`` set.
