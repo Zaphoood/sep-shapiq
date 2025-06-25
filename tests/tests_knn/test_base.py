@@ -83,8 +83,8 @@ def test_interaction_lookup_from_knn_shapley_values():
     assert iv.max_order == 1
     assert all(len(coalition) == 1 for coalition in iv.interaction_lookup)
     assert iv.n_players == n
-
     assert iv.index == SHAPLEY_VALUES_INDEX
+    assert iv.baseline_value == 0
 
 
 def test_interaction_lookup_from_knn_shapley_values_emtpy():
@@ -98,5 +98,6 @@ def test_interaction_lookup_from_knn_shapley_values_emtpy():
     assert iv.min_order == 1
     assert iv.max_order == 1
     assert iv.n_players == 0
-
     assert iv.index == SHAPLEY_VALUES_INDEX
+    assert iv.interaction_lookup == {}
+    assert iv.baseline_value == 0
