@@ -23,6 +23,12 @@ class KNNExplainerBase(Explainer):
     X_train: np.ndarray
     """Training data features extracted from the model."""
 
+    y_train_indices: np.ndarray
+    """Training data labels as indices into the classes array."""
+
+    y_train_classes: np.ndarray
+    """Classes that appear in the model's training data."""
+
     y_train: np.ndarray
     """Training data labels extracted from the model. This array simply resolves the indirection of looking up class indices from ``y_train_indices`` in ``y_train_classes``."""
 
