@@ -15,14 +15,19 @@ if TYPE_CHECKING:
 
 
 class KNNExplainerBase(Explainer):
-    """Base class for KNN explainers.
+    """Base class for KNN explainers."""
 
-    Attributes:
-        model (sklearn.neighbors.KNeighborsClassifier): The KNN model provided in the constructor.
-        X_train (np.ndarray): Training data features extracted from the model.
-        y_train (np.ndarray): Training data labels extracted from the model.
-        k (int): The parameter ``k`` of the model.
-    """
+    model: KNeighborsClassifier
+    """The KNN model provided in the constructor."""
+
+    X_train: np.ndarray
+    """Training data features extracted from the model."""
+
+    y_train: np.ndarray
+    """Training data labels extracted from the model. This array simply resolves the indirection of looking up class indices from ``y_train_indices`` in ``y_train_classes``."""
+
+    k: int
+    """The parameter ``k`` of the model."""
 
     def __init__(
         self,
