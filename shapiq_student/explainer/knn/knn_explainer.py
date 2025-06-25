@@ -11,6 +11,8 @@ from shapiq_student.explainer.knn import KNNExplainerBase
 if TYPE_CHECKING:
     import sklearn.neighbors
 
+# TODO(Max): implement y_test structure as given on thursday.  Either implement multi-dimensional array handling or add information in the doc-strings, that only one-dimensional arrays are accepted.
+
 
 class KNNClassifierExplainer(KNNExplainerBase):
     """KNN Classifier Explainer.
