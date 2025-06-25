@@ -6,16 +6,18 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from shapiq import Explainer
+from shapiq.interaction_values import InteractionValues
 from sklearn.utils.validation import check_is_fitted
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
     from sklearn.neighbors import KNeighborsClassifier
 
 
 class KNNExplainerBase(Explainer):
     """Base class for all KNN explainers.
 
-    In the constructor, training data and paramater k are extracted from the model.
+    In the constructor, training data and parameter k are extracted from the model.
     """
 
     def __init__(
@@ -51,3 +53,28 @@ class KNNExplainerBase(Explainer):
                 zip(self.y_train_classes, self.y_train_indices.T, strict=False)
             ):
                 self.y_train[:, col] = y_current_train_classes[y_current_train_indices]
+
+
+def interaction_lookup_from_knn_shapley_values(
+    shapley_values: npt.NDArray[np.floating],
+) -> InteractionValues:
+    """Convert an array of Shapley Values to a `shapiq.interaction_values.InteractionValues` object.
+
+    Args:
+        shapley_values: A np.ndarray containing the Shapley Value of the ith training point at index i
+
+    Returns:
+        An InteractionValues object containing the provided Shapley Values with an appropriate `interaction_lookup` dict and with `min_order==max_order==1` set.
+    """
+    n_players = shapley_values.shape[0]
+    interaction_lookup: dict[tuple[int, ...], int] = {(i,): i for i in range(n_players)}
+
+    return InteractionValues(
+        shapley_values,
+        "SV",
+        min_order=1,
+        max_order=1,
+        n_players=n_players,
+        baseline_value=0,
+        interaction_lookup=interaction_lookup,
+    )
