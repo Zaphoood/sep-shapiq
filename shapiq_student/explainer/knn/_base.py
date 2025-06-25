@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class KNNExplainerBase(Explainer):
     """Base class for all KNN explainers.
 
-    In the constructor, training data and paramater k are extracted from the model.
+    In the constructor, training data and parameter k are extracted from the model.
     """
 
     def __init__(
