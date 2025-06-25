@@ -15,19 +15,25 @@ if TYPE_CHECKING:
 
 
 class KNNExplainerBase(Explainer):
-    """Base class for all KNN explainers.
+    """Base class for KNN explainers.
 
-    In the constructor, training data and parameter k are extracted from the model.
+    Attributes:
+        model: The KNN model provided in the constructor.
+        X_train (np.ndarray): Training data features extracted from the model.
+        y_train (np.ndarray): Training data labels extracted from the model.
+        k (int): The parameter ``k`` of the model.
     """
 
     def __init__(
         self,
         model: KNeighborsClassifier,
     ) -> None:
-        """Initialize the KNNExplainerBase class.
+        """Initializes the KNNExplainerBase class.
+
+        This methods extracts the training data as well as the parameter ``k`` from the provided KNN model and stores it as class attributes.
 
         Args:
-            model: The KNN model to explain. Must be an instance of sklearn.neighbors.KNeighborsClassifier.
+            model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
 
         Raises:
             sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
@@ -61,10 +67,10 @@ def interaction_lookup_from_knn_shapley_values(
     """Convert an array of Shapley Values to a `shapiq.interaction_values.InteractionValues` object.
 
     Args:
-        shapley_values: A np.ndarray containing the Shapley Value of the ith training point at index i
+        shapley_values: A ``np.ndarray`` containing the Shapley Value of the ``i``th training point at index ``i``.
 
     Returns:
-        An InteractionValues object containing the provided Shapley Values with an appropriate `interaction_lookup` dict and with `min_order==max_order==1` set.
+        An ``InteractionValues`` object containing the provided Shapley Values with an appropriate ``interaction_lookup`` dict and with ``min_order == max_order == 1`` set.
     """
     n_players = shapley_values.shape[0]
     interaction_lookup: dict[tuple[int, ...], int] = {(i,): i for i in range(n_players)}
