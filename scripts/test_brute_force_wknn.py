@@ -42,7 +42,7 @@ def test_random(n: int = 5, k: int = 3):
     model = KNeighborsClassifier(n_neighbors=k, weights="distance")
     model.fit(X_train, y_train)
 
-    explain_print(model, x_val)
+    explain_print(model, x_val, class_index=0)
 
 
 def generate_binary_split_training_data(
@@ -66,18 +66,21 @@ def test_handpicked():
     model = KNeighborsClassifier(n_neighbors=k, weights="distance")
     model.fit(X_train, y_train)
 
-    explain_print(model, x_val)
+    explain_print(model, x_val, class_index=0)
+    explain_print(model, x_val, class_index=1)
 
 
 def explain_print(
     model: KNeighborsClassifier,
     x_val: npt.NDArray[np.floating],
+    class_index: int,
 ) -> None:
-    brute_explainer = BruteForceWKNNExplainer(model)
+    brute_explainer = BruteForceWKNNExplainer(model, class_index)
 
-    # brute_shapley_values = brute_explainer.explain(x_val)
-    # sv = _get_ordered_values(brute_shapley_values)
-    # print(np.round(sv, 10))
+    brute_shapley_values = brute_explainer.explain(x_val)
+    sv = _get_ordered_values(brute_shapley_values)
+    print(f"{class_index=}")
+    print(np.round(sv, 10))
 
 
 def main():
