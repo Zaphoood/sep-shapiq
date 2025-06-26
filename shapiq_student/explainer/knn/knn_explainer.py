@@ -22,9 +22,8 @@ class KNNClassifierExplainer(KNNExplainerBase):
 
     def __init__(
         self,
-        data: None,
         model: sklearn.neighbors.KNeighborsClassifier,
-        class_index: int = 1,
+        class_index: int | None = None,
     ) -> None:
         """Initialize the KNN Shapley Calculator.
 
@@ -37,9 +36,7 @@ class KNNClassifierExplainer(KNNExplainerBase):
 
         The KNNClassifierExplainer should not be calles directly but by using the shapiq.explainer.Explainer.
         """
-        super().__init__(model)
-        self.data = data
-        self.class_index = class_index
+        super().__init__(model, class_index)
 
     def explain_function(self, X_test: np.ndarray) -> np.ndarray:
         """Compute shapley values for training data.
