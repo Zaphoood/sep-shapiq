@@ -53,6 +53,8 @@ class KNNExplainerBase(Explainer):
 
         Raises:
             sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
+
+            shapiq_student.explainer.knn.exceptions.MultiOutputKNNError: The constructor was called with a model that uses multi-output classification.
         """
         check_is_fitted(model)
 
