@@ -77,13 +77,13 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
         n_players = self.X_train.shape[0]
         y_pred = self.model.predict(x.reshape(1, -1))[0]
 
-        sortperm, _, weights = self._get_training_data_dists_and_weights(x)
+        sortperm, weights = self._get_training_data_weights_sorted(x)
 
         utility = np.zeros((2**n_players,))
 
         indices = cast("npt.NDArray[np.integer]", np.arange(n_players))
-        for mask_iterator in product([False, True], repeat=self.X_train.shape[0]):
-            mask = np.array(list(mask_iterator))
+        for mask_generator in product([False, True], repeat=self.X_train.shape[0]):
+            mask = np.array(list(mask_generator))
             k_nearest_indices = indices[mask][: self.k]
 
             # Maximum score of any class
@@ -112,9 +112,9 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
 
         return game.exact_values("SII", order=1)
 
-    def _get_training_data_dists_and_weights(
+    def _get_training_data_weights_sorted(
         self, x_val: npt.NDArray[np.floating]
-    ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+    ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
         """Calculate distances and weights of all training data points (called X hereinafter) with respect to to a given validation data point x_val.
 
         Args:
@@ -129,4 +129,4 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
         distances, sortperm = self.model.kneighbors(
             x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0]
         )
-        return sortperm[0], distances[0], sklearn_get_weights(distances, self.model.weights)[0]
+        return sortperm[0], sklearn_get_weights(distances, self.model.weights)[0]
