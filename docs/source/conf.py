@@ -45,6 +45,7 @@ autosummary_generate = True
 autodoc_default_options = {
     "members": True,  # Generate documentation for module members
 }
+autodoc_member_order = "bysource"
 autoclass_content = "class"  # Use the class' docstring, not the docstring of its __init__ method
 
 # -- Options for HTML output -------------------------------------------------
