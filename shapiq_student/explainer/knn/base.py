@@ -17,7 +17,10 @@ if TYPE_CHECKING:
 class KNNExplainerBase(Explainer):
     """Base class for KNN explainers."""
 
-    model: KNeighborsClassifier
+    # The model attribute of the Explainer is defined in a non-optimal way,
+    # using a type variable `Model`, which has no meaning. This is why we need
+    # to supress a type error here.
+    model: KNeighborsClassifier  # type: ignore[assignment]
     """The KNN model provided in the constructor."""
 
     X_train: npt.NDArray[np.floating]
@@ -38,6 +41,7 @@ class KNNExplainerBase(Explainer):
     def __init__(
         self,
         model: KNeighborsClassifier,
+        class_index: int | None = None,
     ) -> None:
         """Initializes the KNNExplainerBase class.
 
@@ -45,11 +49,14 @@ class KNNExplainerBase(Explainer):
 
         Args:
             model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
+            class_index: The class index of the model to explain. For more information, see the API of the `base class <https://shapiq.readthedocs.io/en/latest/api/shapiq.explainer.base.html#shapiq.explainer.base.Explainer>`_.
 
         Raises:
             sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
         """
         check_is_fitted(model)
+
+        super().__init__(model, data=None, class_index=class_index, index="SV", max_order=1)
 
         self.model = model
         self.k = self.model.n_neighbors  # type: ignore[attr-defined]
