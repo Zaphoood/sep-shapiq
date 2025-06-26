@@ -75,7 +75,8 @@ def explain_print(
 ) -> None:
     brute_explainer = BruteForceWKNNExplainer(model)
     brute_shapley_values = brute_explainer.explain(x_val)
-    print(_get_ordered_values(brute_shapley_values))
+    sv = _get_ordered_values(brute_shapley_values)
+    print(np.round(sv, 10))
 
 
 def main():
