@@ -11,6 +11,7 @@ from shapiq_student.explainer.knn import (
     KNNExplainerBase,
     interaction_lookup_from_knn_shapley_values,
 )
+from shapiq_student.explainer.knn.exceptions import MultiOutputKNNClassifierError
 
 
 def test_extract_training_data_from_model():
@@ -50,6 +51,32 @@ def test_raises_on_unfitted_model():
     knn_model = KNeighborsClassifier()
 
     with pytest.raises(NotFittedError):
+        KNNExplainerBase(knn_model, class_index=0)
+
+
+def test_raises_on_multi_output_model():
+    """Tests that KNNExplainerBase raises an exception if its constructor is called with a model that has multiple output columns."""
+    X_train = np.array([[1, 2, 3], [4, 5, 6]])
+    y_train = np.array([[0, 1], [2, 3]])
+    k = 11
+
+    knn_model = KNeighborsClassifier(n_neighbors=k)
+    knn_model.fit(X_train, y_train)
+
+    with pytest.raises(MultiOutputKNNClassifierError):
+        KNNExplainerBase(knn_model, class_index=0)
+
+
+def test_raises_on_multi_output_model():
+    """Tests that KNNExplainerBase raises an exception if its constructor is called with a model that has multiple output columns."""
+    X_train = np.array([[1, 2, 3], [4, 5, 6]])
+    y_train = np.array([[0, 1], [2, 3]])
+    k = 11
+
+    knn_model = KNeighborsClassifier(n_neighbors=k)
+    knn_model.fit(X_train, y_train)
+
+    with pytest.raises(MultiOutputKNNClassifierError):
         KNNExplainerBase(knn_model, class_index=0)
 
 
