@@ -7,12 +7,15 @@ continuous features only.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.random import Generator, default_rng
 
 from .approach import Approach
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 # We disallow columns with <= 2 unique values, since they are likely either:
 # - Binary features
@@ -97,8 +100,8 @@ class GaussianApproach(Approach):
             self.internal["parameters"]["mean_per_feature"] = np.mean(x_train, axis=0)
 
     def _ensure_positive_definite(
-        self, cov_mat: np.ndarray, min_eigen_value: float = 1e-06
-    ) -> np.ndarray:
+        self, cov_mat: NDArray[np.float64], min_eigen_value: float = 1e-06
+    ) -> NDArray[np.float64]:
         """Ensure covariance matrix is positive definite by correcting eigenvalues if necessary.
 
         Parameters
@@ -166,7 +169,7 @@ class GaussianApproach(Approach):
         self.calculate_mean_per_feature()
         self.calculate_covariance_matrix()
 
-    def gaussian_imputation(self) -> np.ndarray:
+    def gaussian_imputation(self) -> NDArray[np.float64]:
         """Perform Gaussian imputation for SHAP value calculations.
 
         This method generates samples from a multivariate normal distribution
