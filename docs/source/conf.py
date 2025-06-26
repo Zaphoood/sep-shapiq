@@ -44,6 +44,7 @@ exclude_patterns = []
 autosummary_generate = True
 autodoc_default_options = {
     "members": True,  # Generate documentation for module members
+    "special-members": "__init__",
 }
 autodoc_member_order = "bysource"
 autoclass_content = "class"  # Use the class' docstring, not the docstring of its __init__ method
