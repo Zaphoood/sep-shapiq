@@ -17,7 +17,10 @@ if TYPE_CHECKING:
 class KNNExplainerBase(Explainer):
     """Base class for KNN explainers."""
 
-    model: KNeighborsClassifier
+    # The model attribute of the Explainer is defined in a non-optimal way,
+    # using a type variable `Model`, which has no meaning. This means we need
+    # to supress a type error here.
+    model: KNeighborsClassifier  # type: ignore[assignment]
     """The KNN model provided in the constructor."""
 
     X_train: npt.NDArray[np.floating]
