@@ -82,11 +82,8 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
         utility = np.zeros((2**n_players,))
 
         indices = cast("npt.NDArray[np.integer]", np.arange(n_players))
-        for mask_raw in product([False, True], repeat=self.X_train.shape[0]):
-            # Reverse to make masks 'little endian' (with respect to weight
-            # ordering) -- this doesn't have any effect but makes debugging
-            # easier
-            mask = np.array(list(reversed(mask_raw)))
+        for mask_iterator in product([False, True], repeat=self.X_train.shape[0]):
+            mask = np.array(list(mask_iterator))
             k_nearest_indices = indices[mask][: self.k]
 
             # Maximum score of any class
