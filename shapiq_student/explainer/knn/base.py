@@ -47,7 +47,9 @@ class KNNExplainerBase(Explainer):
 
         Args:
             model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
-            class_index: The class index of the model to explain. Note that, as opposed to the parent class ``shapiq.explainer.Explainer``, the value must not be ``None`` here.
+                The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit()`` must be a 1D vector.
+
+            class_index: The class index of the model to explain. Note that, as opposed to the parent class ``shapiq.explainer.Explainer``, the parameter is not optional here.
 
         Raises:
             sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
