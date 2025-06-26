@@ -15,7 +15,7 @@ from numpy.random import Generator, default_rng
 from .approach import Approach
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
+    import numpy.typing as npt
 
 # We disallow columns with <= 2 unique values, since they are likely either:
 # - Binary features
@@ -100,8 +100,8 @@ class GaussianApproach(Approach):
             self.internal["parameters"]["mean_per_feature"] = np.mean(x_train, axis=0)
 
     def _ensure_positive_definite(
-        self, cov_mat: NDArray[np.float64], min_eigen_value: float = 1e-06
-    ) -> NDArray[np.float64]:
+        self, cov_mat: npt.NDArray[np.floating], min_eigen_value: float = 1e-06
+    ) -> npt.NDArray[np.floating]:
         """Ensure covariance matrix is positive definite by correcting eigenvalues if necessary.
 
         Parameters
@@ -121,8 +121,10 @@ class GaussianApproach(Approach):
         # If any eigenvalue is too small (close to zero or negative)
         if np.any(eigen_values <= min_eigen_value):
             # Add regularization to make it positive definite
-            min_eig = np.min(eigen_values)
-            cov_mat = cov_mat + np.eye(cov_mat.shape[0]) * (min_eigen_value - min_eig)
+            min_actual_eigen_value = np.min(eigen_values)
+            cov_mat = cov_mat + np.eye(cov_mat.shape[0]) * (
+                min_eigen_value - min_actual_eigen_value
+            )
 
         return cov_mat
 
@@ -148,7 +150,6 @@ class GaussianApproach(Approach):
             raise ValueError(msg)
         if "cov_mat" not in self.internal["parameters"]:
             cov_mat = np.cov(x_train.T)
-            # Ensure positive definiteness
             cov_mat = self._ensure_positive_definite(cov_mat)
             self.internal["parameters"]["cov_mat"] = cov_mat
 
@@ -169,7 +170,7 @@ class GaussianApproach(Approach):
         self.calculate_mean_per_feature()
         self.calculate_covariance_matrix()
 
-    def gaussian_imputation(self) -> NDArray[np.float64]:
+    def gaussian_imputation(self) -> npt.NDArray[np.floating]:
         """Perform Gaussian imputation for SHAP value calculations.
 
         This method generates samples from a multivariate normal distribution
@@ -178,7 +179,8 @@ class GaussianApproach(Approach):
         Returns:
         -------
         np.ndarray
-            Resulting SHAP values for each feature.
+            A 3D array of shape (n_MC_samples, n_explain * n_coalitions, n_features) containing all imputed samples.
+            This is an intermediate result; SHAP values are typically computed from this tensor.
         """
         n_features = self.internal["parameters"]["n_features"]
         n_MC_samples = self.internal["parameters"]["n_MC_samples"]
