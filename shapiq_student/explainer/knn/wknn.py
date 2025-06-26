@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from typing_extensions import override
 
 from .base import KNNExplainerBase
@@ -20,7 +20,7 @@ from sklearn.neighbors._base import _get_weights as sklearn_get_weights
 
 
 class ArrayGame(Game):
-    """Game defined by an array containg the utility of each coalition."""
+    """Game defined by an array containing the utility of each coalition."""
 
     def __init__(self, n_players: int, utility: npt.NDArray[np.floating]) -> None:
         """Initializes the ArrayGame.
@@ -40,10 +40,10 @@ class ArrayGame(Game):
         super().__init__(n_players=n_players, normalization_value=self.utility[0])
 
     @override
-    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.bool]:
+    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         bases = np.repeat(2 ** np.arange(self.n_players)[None, :], coalitions.shape[0], axis=0)
         bases *= coalitions
-        indices = np.sum(bases, axis=1)
+        indices = cast("npt.NDArray[np.integer]", np.sum(bases, axis=1))
 
         return self.utility[indices]
 
@@ -81,7 +81,7 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
 
         utility = np.zeros((2**n_players,))
 
-        indices = np.arange(n_players)
+        indices = cast("npt.NDArray[np.integer]", np.arange(n_players))
         for mask_raw in product([False, True], repeat=self.X_train.shape[0]):
             # Reverse to make masks 'little endian' (with respect to weight
             # ordering) -- this doesn't have any effect but makes debugging
@@ -99,7 +99,7 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
                     self.y_train[sortperm[k_nearest_indices]] == class_
                 ]
 
-                score = np.sum(weights[nearest_with_class])
+                score = np.sum(weights[nearest_with_class], dtype=float)
                 score_max = max(score_max, score)
                 if class_ == y_pred:
                     score_y_pred = score
@@ -117,7 +117,7 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
 
     def _get_training_data_dists_and_weights(
         self, x_val: npt.NDArray[np.floating]
-    ) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+    ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating], npt.NDArray[np.floating]]:
         """Calculate distances and weights of all training data points (called X hereinafter) with respect to to a given validation data point x_val.
 
         Args:
