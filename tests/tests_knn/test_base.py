@@ -22,7 +22,7 @@ def test_extract_training_data_from_model():
     knn_model = KNeighborsClassifier(n_neighbors=k)
     knn_model.fit(X_train, y_train)
 
-    knn_explainer = KNNExplainerBase(knn_model)
+    knn_explainer = KNNExplainerBase(knn_model, class_index=0)
 
     assert np.allclose(knn_explainer.X_train, X_train)
     assert np.allclose(knn_explainer.y_train, y_train)
@@ -38,7 +38,7 @@ def test_extract_training_data_from_model_multi_column_label():
     knn_model = KNeighborsClassifier(n_neighbors=k)
     knn_model.fit(X_train, y_train)
 
-    knn_explainer = KNNExplainerBase(knn_model)
+    knn_explainer = KNNExplainerBase(knn_model, class_index=0)
 
     assert np.allclose(knn_explainer.X_train, X_train)
     assert np.allclose(knn_explainer.y_train, y_train)
@@ -50,7 +50,7 @@ def test_raises_on_unfitted_model():
     knn_model = KNeighborsClassifier()
 
     with pytest.raises(NotFittedError):
-        KNNExplainerBase(knn_model)
+        KNNExplainerBase(knn_model, class_index=0)
 
 
 SHAPLEY_VALUES_INDEX = "SV"
