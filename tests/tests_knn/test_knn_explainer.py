@@ -25,7 +25,7 @@ def test_output_length():
     probierModel = KNeighborsClassifier(n_neighbors=20)
     probierModel.fit(X_train, y_train)
 
-    knn_expl = KNNClassifierExplainer(data=None, model=probierModel, class_index=y_test[5])
+    knn_expl = KNNClassifierExplainer(model=probierModel, class_index=y_test[5])
 
     testoutput = knn_expl.explain_function(X_test=X_test[5])
 
@@ -49,7 +49,7 @@ def test_output_range():
     outarray = np.zeros(len(y_test))
 
     for i in range(len(y_test)):
-        knn_expl = KNNClassifierExplainer(data=None, model=probierModel, class_index=y_test[i])
+        knn_expl = KNNClassifierExplainer(model=probierModel, class_index=y_test[i])
         outarray[i] = np.sum(knn_expl.explain_function(X_test=X_test[i]))
 
     def between_all_and(arr, a, b):
@@ -75,7 +75,7 @@ def test_sum_output():
     for j in range(5):
         testoutput = [0, 0, 0]
         for i in range(3):
-            knn_expl = KNNClassifierExplainer(data=None, model=probierModel, class_index=i)
+            knn_expl = KNNClassifierExplainer(model=probierModel, class_index=i)
             testoutput[i] = knn_expl.explain_function(X_test=X_test[j])
 
         assert np.allclose(np.sum(testoutput), 1)
