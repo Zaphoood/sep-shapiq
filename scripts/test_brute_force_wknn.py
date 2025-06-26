@@ -74,9 +74,10 @@ def explain_print(
     x_val: npt.NDArray[np.floating],
 ) -> None:
     brute_explainer = BruteForceWKNNExplainer(model)
-    brute_shapley_values = brute_explainer.explain(x_val)
-    sv = _get_ordered_values(brute_shapley_values)
-    print(np.round(sv, 10))
+
+    # brute_shapley_values = brute_explainer.explain(x_val)
+    # sv = _get_ordered_values(brute_shapley_values)
+    # print(np.round(sv, 10))
 
 
 def main():

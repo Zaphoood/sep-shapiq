@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 from typing_extensions import override
 
-from .base import KNNExplainerBase
+from .base import KNNExplainerBase, interaction_values_from_knn_shapley_values
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -58,57 +58,79 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
     def __init__(
         self,
         model: KNeighborsClassifier,
+        class_index: int,
     ) -> None:
         """Initializes the BruteForceWKNNExplainer.
 
         Args:
             model: The KNN model to explain.
+            class_index: The class index of the model to explain.
         """
-        super().__init__(model)
+        super().__init__(model, class_index)
 
-        if self.model.weights != "distance":
-            msg = f"KNeighboursClassifier must use weights='distance', but has weights='{self.model.weights}'"
+        model_weights = self.model.weights  # type: ignore[attr-defined]
+        if model_weights != "distance":
+            msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        n_players = self.X_train.shape[0]
-        y_pred = self.model.predict(x.reshape(1, -1))[0]
-
         sortperm, weights = self._get_training_data_weights_sorted(x)
+        n_players = self.X_train.shape[0]
+        sv = np.zeros((n_players,))
+        n_classes = len(self.y_train_classes)
 
-        utility = np.zeros((2**n_players,))
+        if n_classes == 1:
+            return interaction_values_from_knn_shapley_values(
+                np.zeros((n_players,), dtype=np.floating)
+            )
 
-        indices = cast("npt.NDArray[np.integer]", np.arange(n_players))
-        for mask_generator in product([False, True], repeat=self.X_train.shape[0]):
-            mask = np.array(list(mask_generator))
-            k_nearest_indices = indices[mask][: self.k]
+        for other_class in self.y_train_classes:
+            if other_class == self.class_index:
+                continue
+            sv_current = self._explain_binary(self.class_index, other_class, sortperm, weights)
+            sv += sv_current
 
-            # Maximum score of any class
-            score_max = float("-inf")
-            # Score of the class that was originally predicted
-            score_y_pred: float | None = None
+        sv /= n_classes - 1
 
-            for class_ in self.classes:
-                nearest_with_class = k_nearest_indices[
-                    self.y_train[sortperm[k_nearest_indices]] == class_
-                ]
+        return interaction_values_from_knn_shapley_values(sv)
 
-                score = np.sum(weights[nearest_with_class], dtype=float)
-                score_max = max(score_max, score)
-                if class_ == y_pred:
-                    score_y_pred = score
+    def _explain_binary(
+        self,
+        y_val: int,
+        y_other: int,
+        sortperm: npt.NDArray[np.integer],
+        weights: npt.NDArray[np.floating],
+    ) -> npt.NDArray[np.floating]:
+        n_players = self.X_train.shape[0]
+        utilities = np.zeros((2**n_players,))
 
-            if score_y_pred is None:
-                msg = "Unreachable. y_pred not in self.classes"
-                raise RuntimeError(msg)
+        y_train_sorted = self.y_train[sortperm]
+        for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
+            coalition = np.array(list(coalition_generator))
 
-            idx = np.sum(2 ** (sortperm[mask]))
-            utility[idx] = int(score_y_pred == score_max)
+            # Utility function according to equation (15) in Wang et al. (2024)
+            y_val_mask = y_train_sorted == y_val
+            y_other_mask = y_train_sorted == y_other
+            # Mask of k nearest training points with class y_val or y_other
+            k_nearest_with_relevant_class = _first_n_true(
+                coalition & (y_val_mask | y_other_mask), self.k
+            )
+            y_val_nearest = y_val_mask & k_nearest_with_relevant_class
+            y_other_nearest = y_other_mask & k_nearest_with_relevant_class
+            utility = int(np.sum(weights[y_val_nearest]) >= np.sum(weights[y_other_nearest]))
 
-        game = ArrayGame(n_players=n_players, utility=utility)
+            idx = np.sum(2 ** (sortperm[coalition]))
+            utilities[idx] = utility
 
-        return game.exact_values("SII", order=1)
+        game = ArrayGame(n_players=n_players, utility=utilities)
+        iv = game.exact_values("SII", order=1)
+
+        sv = np.zeros((n_players,), dtype=np.floating)
+        for i in range(n_players):
+            sv[i] = iv.values[iv.interaction_lookup[(i,)]]
+
+        return sv
 
     def _get_training_data_weights_sorted(
         self, x_val: npt.NDArray[np.floating]
@@ -128,3 +150,26 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
             x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0]
         )
         return sortperm[0], sklearn_get_weights(distances, self.model.weights)[0]
+
+
+def _first_n_true(mask: npt.NDArray[np.bool], n: int) -> npt.NDArray[np.bool]:
+    """Set all but the first n True entries of the given boolean mask to False.
+
+    This will just return a reference to the input array if ``np.sum(mask) <= n``
+
+    Args:
+        mask: The mask in question.
+        n: The maximum number of true entries.
+    """
+    if n == 0:
+        return np.zeros_like(mask)
+
+    n_true = 0
+    for i, val in enumerate(mask):
+        n_true += val
+        if n_true == n:
+            out = np.zeros_like(mask)
+            out[: i + 1] = mask[: i + 1]
+            return out
+
+    return mask
