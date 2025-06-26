@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-import numpy as np
 from shapiq import Explainer
 from shapiq.interaction_values import InteractionValues
 from sklearn.utils.validation import check_is_fitted
 
+from shapiq_student.explainer.knn.exceptions import MultiOutputKNNClassifierError
+
 if TYPE_CHECKING:
+    import numpy as np
     import numpy.typing as npt
     from sklearn.neighbors import KNeighborsClassifier
 
@@ -62,17 +64,10 @@ class KNNExplainerBase(Explainer):
         self.y_train_indices = cast("npt.NDArray[np.integer]", model._y)  # type: ignore[attr-defined] # noqa: SLF001
         self.y_train_classes = cast("npt.NDArray[np.object_]", model.classes_)
 
-        # TODO(Zaphoood): Consider disallowing y_train being a matrix
-        if self.y_train_indices.ndim == 1:
-            self.y_train = self.y_train_classes[self.y_train_indices]
-        else:
-            n_outputs = self.y_train_indices.shape[1]
-            self.y_train = np.empty((self.X_train.shape[0], n_outputs), dtype=np.object_)
+        if self.y_train_indices.ndim != 1:
+            raise MultiOutputKNNClassifierError
 
-            for col, (current_y_train_classes, current_y_train_indices) in enumerate(
-                zip(self.y_train_classes, self.y_train_indices.T, strict=False)
-            ):
-                self.y_train[:, col] = current_y_train_classes[current_y_train_indices]
+        self.y_train = self.y_train_classes[self.y_train_indices]
 
         self.class_index = class_index
 
