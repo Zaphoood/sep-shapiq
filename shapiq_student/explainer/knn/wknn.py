@@ -72,8 +72,6 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        # TODO(Zaphoood): I think this is broken, the values don't seem right
-
         n_players = self.X_train.shape[0]
         y_pred = self.model.predict(x.reshape(1, -1))[0]
 
