@@ -38,18 +38,14 @@ class KNNExplainerBase(Explainer):
     k: int
     """The parameter ``k`` of the model."""
 
-    def __init__(
-        self,
-        model: KNeighborsClassifier,
-        class_index: int | None = None,
-    ) -> None:
+    def __init__(self, model: KNeighborsClassifier, class_index: int) -> None:
         """Initializes the KNNExplainerBase class.
 
         This methods extracts the training data as well as the parameter ``k`` from the provided KNN model and stores it as class attributes.
 
         Args:
             model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
-            class_index: The class index of the model to explain. For more information, see the API of the `base class <https://shapiq.readthedocs.io/en/latest/api/shapiq.explainer.base.html#shapiq.explainer.base.Explainer>`_.
+            class_index: The class index of the model to explain. Note that, as opposed to the parent class ``shapiq.explainer.Explainer``, the value must not be ``None`` here.
 
         Raises:
             sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
@@ -77,6 +73,8 @@ class KNNExplainerBase(Explainer):
                 zip(self.y_train_classes, self.y_train_indices.T, strict=False)
             ):
                 self.y_train[:, col] = current_y_train_classes[current_y_train_indices]
+
+        self.class_index = class_index
 
 
 def interaction_lookup_from_knn_shapley_values(
