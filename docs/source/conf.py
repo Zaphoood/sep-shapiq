@@ -44,10 +44,10 @@ exclude_patterns = []
 autosummary_generate = True
 autodoc_default_options = {
     "members": True,  # Generate documentation for module members
-    "special-members": "__init__",
+    "special-members": "__init__",  # Also generate docs for __init__ methods
 }
 autodoc_member_order = "bysource"
-autoclass_content = "class"  # Use the class' docstring, not the docstring of its __init__ method
+autoclass_content = "class"  # Use the class docstring, not the docstring of its __init__ method
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
