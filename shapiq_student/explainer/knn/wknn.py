@@ -102,17 +102,22 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
         sortperm: npt.NDArray[np.integer],
         weights: npt.NDArray[np.floating],
     ) -> npt.NDArray[np.floating]:
+        """Computes the Shapley Values for a single binary-class classification game.
+
+        Class ``y_val`` is the class to explain and ``y_other`` the other class in the binary classification setting. All other weights are ignored.
+        """
         n_players = self.X_train.shape[0]
         utilities = np.zeros((2**n_players,))
 
         y_train_sorted = self.y_train[sortperm]
+        y_val_mask = y_train_sorted == y_val
+        y_other_mask = y_train_sorted == y_other
         for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
             coalition = np.array(list(coalition_generator))
 
             # Utility function according to equation (15) in Wang et al. (2024)
-            y_val_mask = y_train_sorted == y_val
-            y_other_mask = y_train_sorted == y_other
-            # Mask of k nearest training points with class y_val or y_other
+
+            # Mask of k nearest training points of current coalition with class y_val or y_other
             k_nearest_with_relevant_class = _first_n_true(
                 coalition & (y_val_mask | y_other_mask), self.k
             )
