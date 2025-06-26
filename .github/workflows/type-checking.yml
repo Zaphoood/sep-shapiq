@@ -29,5 +29,5 @@ jobs:
         run: |
           uv sync --only-group types
 
-      - name: Run code-quality checks
+      - name: Run type checker
         run: uv run mypy -p shapiq_student
