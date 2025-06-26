@@ -8,7 +8,7 @@ from shapiq import Explainer
 from shapiq.interaction_values import InteractionValues
 from sklearn.utils.validation import check_is_fitted
 
-from shapiq_student.explainer.knn.exceptions import MultiOutputKNNClassifierError
+from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
 
 if TYPE_CHECKING:
     import numpy as np
@@ -67,7 +67,7 @@ class KNNExplainerBase(Explainer):
         self.y_train_classes = cast("npt.NDArray[np.object_]", model.classes_)
 
         if self.y_train_indices.ndim != 1:
-            raise MultiOutputKNNClassifierError
+            raise MultiOutputKNNError
 
         self.y_train = self.y_train_classes[self.y_train_indices]
 

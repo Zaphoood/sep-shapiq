@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-class MultiOutputKNNClassifierError(Exception):
+class MultiOutputKNNError(Exception):
     """Exception that is raised when a user tries to initialize a KNN Explainer with a model that has multiple output columns."""
 
     def __init__(self) -> None:
