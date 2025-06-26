@@ -234,7 +234,8 @@ class WKNNExplainer(WKNNExplainerBase):
     # TODO(Zaphoood): remove 'noqa's below after simplifying function
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        n_train_points = len(self.y_train)
+        # Number of training points
+        n = len(self.y_train)
         n_classes = len(self.y_train_classes)
 
         # TODO(Zaphoood): Honor self.class_index and handle multi-class prediction
@@ -259,14 +260,20 @@ class WKNNExplainer(WKNNExplainerBase):
         weights[(self.y_train != y_pred)[sortperm]] *= -1
 
         weights_discrete, weights_space = self._discretize_weights(weights)
+        weights_space_size = weights_space.shape[0]
 
         weight_idx = {}
         for j, val in enumerate(weights_space):
             weight_idx[np.round(val, self.n_digits)] = j
 
-        sv = np.zeros(n_train_points)
-        for i in range(n_train_points):
-            pass
+        sv = np.zeros(n)
+        for i in range(n):
+            fi = np.zeros((n, self.k - 1, weights_space_size))
+            for m in range(n):
+                if m == i:
+                    continue
+                ind_m = weight_idx[weights_discrete[m]]
+                fi[m, 1, ind_m] = 1
 
         raise NotImplementedError(weights_discrete, sv)
 
