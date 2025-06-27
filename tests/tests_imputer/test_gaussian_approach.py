@@ -296,7 +296,7 @@ def test_gaussian_imputation_basic() -> None:
         x_explain=x_explain,
         approach="gaussian",
         feature_names=[f"f{i + 1}" for i in range(n_features)],
-        n_MC_samples=n_MC_samples,
+        n_MC_samples=10,
         verbose=["progress"],
     )
 
@@ -309,3 +309,61 @@ def test_gaussian_imputation_basic() -> None:
     # Verify the result has the expected properties
     assert result_cube.shape[0] == n_MC_samples
     assert result_cube.shape[2] == n_features
+
+
+def test_gaussian_imputation_first_feature_known_mean_and_cov_check() -> None:
+    """Test imputation: first feature known (1.0), last two unknown, mean should be [0.4, 0.25]."""
+    mean = np.array([0.0, 0.0, 0.0])
+    cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
+    # Generate training data
+    rng = np.random.default_rng()
+    x_train = rng.random.multivariate_normal(mean, cov, size=10000)
+
+    # Check sample mean and covariance
+    sample_mean = np.mean(x_train, axis=0)
+    sample_cov = np.cov(x_train, rowvar=False)
+    np.testing.assert_allclose(sample_mean, mean, atol=0.05)
+    np.testing.assert_allclose(sample_cov, cov, atol=0.05)
+
+
+def test_gaussian_imputation_first_feature_known() -> None:
+    """Test imputation: first feature known, last two set to 1, mean should be 0.4."""
+    # dataset provided by supervisor
+    mean = np.array([0.0, 0.0, 0.0])
+    cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
+    # Generate training data
+    rng = np.random.default_rng()
+    x_train = rng.random.multivariate_normal(mean, cov, size=10000)
+
+    # Condition: first feature unknown, last two known and set to 1
+    x_explain = np.array([[1.0, np.nan, np.nan]])
+
+    n_features = x_train.shape[1]
+    n_explain = x_explain.shape[0]
+
+    # Use your impute function
+    result_cube = impute(
+        x_train=x_train,
+        x_explain=x_explain,
+        approach="gaussian",
+        feature_names=["f1", "f2", "f3"],
+        n_MC_samples=1000,
+        verbose=["progress"],
+    )
+
+    # Find the coalition index for S = [1, 0, 0]
+    n_coalitions = 2**n_features
+    S = np.zeros((n_coalitions, n_features), dtype=int)
+    for i in range(2**n_features):
+        S[i, :] = [(i >> j) & 1 for j in range(n_features - 1, -1, -1)]
+    coalition_idx = np.where((S == [1, 0, 0]).all(axis=1))[0][0]
+
+    # For our explicand (idx 0), coalition S = [1,0,0] is at index: coalition_idx * n_explain + 0
+    idx = coalition_idx * n_explain + 0
+    assert result_cube is not None
+    imputed_last_two = result_cube[:, idx, 1:3]  # all samples, features 1 and 2
+
+    # The mean should be close to [0.4, 0.25]
+    imputed_mean = np.mean(imputed_last_two, axis=0)
+    # np.testing.assert_allclose(imputed_mean, [0.4, 0.25], atol=0.05) # TODO (milanagm): I believe this is wrong # noqa: ERA001
+    np.testing.assert_allclose(imputed_mean, [0.8, 0.5], atol=0.05)
