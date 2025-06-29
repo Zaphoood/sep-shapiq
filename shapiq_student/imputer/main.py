@@ -38,8 +38,8 @@ class FeatureNamesLengthError(ValueError):
         super().__init__(message)
 
 
-class InternalState(TypedDict):
-    """This class stores the internal variable and parameter values when explain() is called."""
+class InternalState(TypedDict, total=False):
+    """This class stores the internal variable and parameter values when impute() is called."""
 
     parameters: dict[str, Any]
     data: dict[str, NDArray[np.float64]]
@@ -54,14 +54,14 @@ class InternalState(TypedDict):
     ]  # TODO (milanagm): if we decide to take out the feature_spec variable, also delete this line
 
 
-def explain(  # TODO (milanagm): we need to add tests - how should that look like?
+def impute(  # TODO (milanagm): we need to add tests - how should that look like?
     x_train: pd.DataFrame | NDArray[np.float64],
     x_explain: pd.DataFrame | NDArray[np.float64],
     approach: str = "gaussian",
     feature_names: list[str] | None = None,
-    n_MC_samples: int = 1000,
+    n_MC_samples: int = 1000,  # TODO (milanagm): check how this variable is set and compare to approach_gasussian.R
     verbose: list[str] | None = None,
-) -> InternalState:
+) -> NDArray[np.float64] | None:
     """Main function to explain predictions using either Gaussian or Copula Imputation approach.
 
     This function handles both pandas DataFrame and numpy array inputs. For DataFrames, it automatically
@@ -85,12 +85,10 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
 
     Returns:
     -------
-    InternalState
-        Internal structure containing the explanation results, including:
-        - parameters: Dictionary of parameters used
-        - data: Dictionary containing x_train and x_explain as numpy arrays
-        - iter_list: List for iteration tracking
-        - timing_list: Dictionary for timing information
+    InternalState | NDArray[np.float64]
+        If the approach is 'gaussian', returns the result cube.
+        If the approach is 'Copula', returns None.
+        If an unknown approach is specified, raises a ValueError.
 
     Raises:
     ------
@@ -139,18 +137,19 @@ def explain(  # TODO (milanagm): we need to add tests - how should that look lik
         "data": {"x_train": x_train_arr, "x_explain": x_explain_arr},
         "iter_list": [{}],  # TODO (milanagm): do we need this and if so, for what?
         "timing_list": {},  # TODO (milanagm): do we need this and if so, for what?
+        "objects": {},  # TODO (milanagm): if we decide to take out the feature_spec variable, also delete this line
     }
 
     # Select approach based on input
     if approach == "gaussian":
-        GaussianApproach(internal)
-    elif approach == "Copula":
-        CopulaApproach(internal)
-    else:
-        error_msg = (
-            f"Unknown approach: {approach}. "
-            "Please use either 'gaussian' or 'Copula' as approach parameter."
-        )
-        raise ValueError(error_msg)
-
-    return internal
+        gaussian_instance = GaussianApproach(internal)  # type: ignore[arg-type]
+        result_cube = gaussian_instance.gaussian_imputation()
+        return result_cube
+    if approach == "Copula":
+        CopulaApproach(internal)  # type: ignore[arg-type]
+        return None  # TODO(milanagm): tbd
+    error_msg = (
+        f"Unknown approach: {approach}. "
+        "Please use either 'gaussian' or 'Copula' as approach parameter."
+    )
+    raise ValueError(error_msg)

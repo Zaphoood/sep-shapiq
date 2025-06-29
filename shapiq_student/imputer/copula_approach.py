@@ -65,8 +65,6 @@ class CopulaApproach(Approach):
         # Note: This will raise NotImplementedError until implemented
         self._generate_copula_samples(x_explain=x_explain, bins=bins, index_features=index_features)
 
-        return {}  # TODO (milanagm): Implement actual return value when _generate_copula_samples is implemented
-
     def _create_bins(
         self, x_train: NDArray[np.float64], n_bins: int
     ) -> dict[int, NDArray[np.float64]]:
