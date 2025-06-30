@@ -257,19 +257,11 @@ class WKNNExplainer(WKNNExplainerBase):
 
         for i in range(n):
             y_i = cast("int", self.y_train_indices[sortperm[i]])
-
             f_i = self._compute_f_i(i, n, weights_discrete)
             r_i = self._compute_r_i(i, n, f_i, y_i, y_val, weights_discrete)
             g_i = self._compute_g_i(i, n, f_i, y_i, y_val, weights_discrete)
 
-            # Compute the Shapley Value for z_i
-            weight_sign = self._weight_sign(weights_discrete[i])
-            first_summand = sum(g_i[l] / comb(n - 1, l) for l in range(self.k)) / n  # noqa: E741
-            second_summand = sum(
-                r_i[m - 1] / (m * comb(m - 1, self.k)) for m in range(max(i + 2, self.k + 1), n + 1)
-            )
-
-            sv[sortperm[i]] = weight_sign * (first_summand + second_summand)
+            sv[sortperm[i]] = self._compute_single_shapley_value(i, n, r_i, g_i, weights_discrete)
 
         return interaction_values_from_array(sv)
 
@@ -349,6 +341,22 @@ class WKNNExplainer(WKNNExplainerBase):
                         g_i[l] += f_i[m, l - 1, s]
 
         return g_i
+
+    def _compute_single_shapley_value(
+        self,
+        i: int,
+        n: int,
+        r_i: npt.NDArray[np.floating],
+        g_i: npt.NDArray[np.floating],
+        weights_discrete: npt.NDArray[np.integer],
+    ) -> float:
+        weight_sign = self._weight_sign(weights_discrete[i])
+        first_summand = sum(g_i[l] / comb(n - 1, l) for l in range(self.k)) / n  # noqa: E741
+        second_summand = sum(
+            r_i[m - 1] / (m * comb(m - 1, self.k)) for m in range(max(i + 2, self.k + 1), n + 1)
+        )
+
+        return weight_sign * (first_summand + second_summand)
 
     @override
     def _explain_binary(
