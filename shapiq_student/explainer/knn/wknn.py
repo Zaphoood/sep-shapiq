@@ -213,13 +213,13 @@ class WKNNExplainer(WKNNExplainerBase):
         self,
         model: KNeighborsClassifier,
         class_index: int,
-        n_digits: int = 1,
+        n_bits: int = 3,
     ) -> None:
         """Initializes the BruteForceWKNNExplainer.
 
         Args:
             model: The KNN model to explain.
-            n_digits: The number of decimal digits to use for discretizing weights.
+            n_bits: The number of bits to use for the discretized weight space.
             class_index: The class index of the model to explain.
         """
         super().__init__(model, class_index)
@@ -228,8 +228,8 @@ class WKNNExplainer(WKNNExplainerBase):
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{self.model.weights}'"
             raise ValueError(msg)
 
-        self.n_digits = n_digits
-        self._discretization_interval = 10 ** (-self.n_digits)
+        self.n_bits = n_bits
+        self.weights_space_size = self.k * 2**n_bits
 
     # TODO(Zaphoood): remove 'noqa's below after simplifying function
     @override
@@ -252,6 +252,33 @@ class WKNNExplainer(WKNNExplainerBase):
         y_pred = self.model.predict(x.reshape(1, -1))[0]
 
         sortperm, weights = self._get_training_data_dists_and_weights(x)
+
+        weights_signed_normalized = self._prepare_weights(weights, sortperm, y_pred)
+        weights_discrete = self._discretize_weights(weights_signed_normalized)
+
+        sv = np.zeros(n)
+        for i in range(n):
+            fi = np.zeros((n, self.k - 1, self.weights_space_size))
+            for m, w_m in enumerate(weights_discrete):
+                if m == i:
+                    continue
+                fi[m, 1, w_m] = 1
+
+        raise NotImplementedError(weights_discrete, sv)
+
+    def _prepare_weights(
+        self, weights: npt.NDArray[np.floating], sortperm: npt.NDArray[np.integer], y_pred: int
+    ) -> npt.NDArray[np.floating]:
+        """Normalize weights to interval [0, 1] and flip sign where y label disagrees with validation label.
+
+        Args:
+            weights: The original weights.
+            sortperm: Sorting permutation of training data points according to weights.
+            y_pred: The class predicted for the validation data point.
+
+        Returns:
+            An `np.ndarray` containing the prepared weights.
+        """
         # Normalize weights to [0, 1]
         if np.max(weights) - np.min(weights) > 0:
             weights = (weights - np.min(weights)) / (np.max(weights) - np.min(weights))
@@ -259,42 +286,19 @@ class WKNNExplainer(WKNNExplainerBase):
         # Change sign of weights where corresponding class disagrees with validation point prediction class
         weights[(self.y_train != y_pred)[sortperm]] *= -1
 
-        weights_discrete, weights_space = self._discretize_weights(weights)
-        weights_space_size = weights_space.shape[0]
+        return weights
 
-        weight_idx = {}
-        for j, val in enumerate(weights_space):
-            weight_idx[np.round(val, self.n_digits)] = j
-
-        sv = np.zeros(n)
-        for i in range(n):
-            fi = np.zeros((n, self.k - 1, weights_space_size))
-            for m in range(n):
-                if m == i:
-                    continue
-                ind_m = weight_idx[weights_discrete[m]]
-                fi[m, 1, ind_m] = 1
-
-        raise NotImplementedError(weights_discrete, sv)
-
-    def _discretize_weights(
-        self, weights: npt.NDArray[np.floating]
-    ) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
-        """Discretize weights and generate the weights space, i. e. the range of all possible sums of weights.
+    def _discretize_weights(self, weights: npt.NDArray[np.floating]) -> npt.NDArray[np.integer]:
+        """Discretize weights according to the number of bits specified in the constructor.
 
         Args:
-            weights: The (non-discrete) weights.
+            weights: An `np.ndarray` containing weights to discretize.
 
         Returns:
-            A tuple `(weights_discrete, weights_space)`, both `np.ndarray`s.
+            An `np.ndarray` of integers, which are indices into the discretized weight space ``W_(K)``.
+
+        Examples:
+            With `n_bits=3`, the input `[0.0, 0.1, 0.3, 0.8, 1.0]` will result in `[0, 1, 2, 6, 8]`.
+
         """
-        weights_discrete = np.round(weights, self.n_digits)
-
-        weight_max_disc = np.round(np.sum(weights_discrete[weights_discrete > 0]), self.n_digits)
-        weight_min_disc = np.round(np.sum(weights_discrete[weights_discrete < 0]), self.n_digits)
-        weights_space_size = (
-            int(np.round((weight_max_disc - weight_min_disc) / self._discretization_interval)) + 1
-        )
-        weights_space = np.linspace(weight_min_disc, weight_max_disc, weights_space_size)
-
-        return weights_discrete, weights_space
+        return np.round(weights * 2**self.n_bits).astype(int)
