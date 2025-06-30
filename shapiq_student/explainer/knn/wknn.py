@@ -240,6 +240,10 @@ class WKNNExplainer(WKNNExplainerBase):
         """
         super().__init__(model, class_index)
 
+        if self.k <= 1:
+            msg = f"Only values of k > 1 are supported, but {self.k=}"
+            raise ValueError(msg)
+
         if self.model.weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{self.model.weights}'"
             raise ValueError(msg)
@@ -247,29 +251,19 @@ class WKNNExplainer(WKNNExplainerBase):
         self.n_bits = n_bits
         self.weights_space_size = self.k * 2**n_bits
 
-    # TODO(Zaphoood): remove 'noqa's below after simplifying function
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
         # Number of training points
         n = len(self.y_train)
         n_classes = len(self.y_train_classes)
 
-        # TODO(Zaphoood): Honor self.class_index and handle multi-class prediction
-
+        # TODO(Zaphoood): Handle multi-class prediction
         if n_classes != 2:  # noqa: PLR2004
-            msg = f"Only binary classification is supported, but {n_classes=}"
+            msg = f"Multi-class prediction is not yet implemented (got {n_classes=})"
             raise NotImplementedError(msg)
-
-        # TODO(Zaphoood): Move this check to the constructor
-        if self.k <= 1:
-            msg = f"Only values of k > 1 are supported, but {self.k=}"
-            raise NotImplementedError(msg)
-
-        y_pred = self.model.predict(x.reshape(1, -1))[0]
 
         sortperm, weights = self._get_training_data_dists_and_weights(x)
-
-        weights_signed_normalized = self._prepare_weights(weights, sortperm, y_pred)
+        weights_signed_normalized = self._prepare_weights(weights, sortperm, self.class_index)
         weights_discrete = self._discretize_weights(weights_signed_normalized)
 
         sv = np.zeros(n)
