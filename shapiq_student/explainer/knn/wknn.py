@@ -261,6 +261,17 @@ class WKNNExplainer(WKNNExplainerBase):
 
         raise NotImplementedError(weights_discrete, sv)
 
+    @override
+    def _explain_binary(
+        self,
+        y_val: int,
+        y_other: int,
+        sortperm: npt.NDArray[np.integer],
+        weights: npt.NDArray[np.floating],
+    ) -> npt.NDArray[np.floating]:
+        msg = f"{self.__class__.__name__} does not implement _explain_binary() yet"
+        raise NotImplementedError(msg)
+
     def _get_training_data_sorted_weights(
         self, x_val: npt.NDArray[np.floating]
     ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
