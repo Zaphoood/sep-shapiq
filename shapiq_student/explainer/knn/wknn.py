@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, overload
 from typing_extensions import override
 
 from .base import KNNExplainerBase, interaction_values_from_array
@@ -229,7 +229,9 @@ class WKNNExplainer(WKNNExplainerBase):
             raise ValueError(msg)
 
         self.n_bits = n_bits
-        self.weights_space_size = self.k * 2**n_bits
+        self.weights_space_size = 2 * self.k * 2**n_bits + 1
+        # Index at which weight 0.0 is mapped to in the discrete weight space
+        self.weights_space_zero = self.k * 2**n_bits
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
@@ -247,8 +249,7 @@ class WKNNExplainer(WKNNExplainerBase):
             raise NotImplementedError(msg)
 
         sortperm, weights = self._get_training_data_sorted_weights(x_val)
-        weights_signed_normalized = self._prepare_weights(weights, sortperm, self.class_index)
-        weights_discrete = self._discretize_weights(weights_signed_normalized)
+        weights_discrete = self._prepare_weights(weights, sortperm)
 
         sv = np.zeros(n)
 
@@ -293,8 +294,8 @@ class WKNNExplainer(WKNNExplainerBase):
         return sortperm[0], weights[0]
 
     def _prepare_weights(
-        self, weights: npt.NDArray[np.floating], sortperm: npt.NDArray[np.integer], y_pred: int
-    ) -> npt.NDArray[np.floating]:
+        self, weights: npt.NDArray[np.floating], sortperm: npt.NDArray[np.integer]
+    ) -> npt.NDArray[np.integer]:
         """Normalize weights to interval [0, 1] and flip sign where y label disagrees with validation label.
 
         Args:
@@ -306,25 +307,25 @@ class WKNNExplainer(WKNNExplainerBase):
             An `np.ndarray` containing the prepared weights.
         """
         # Normalize weights to [0, 1]
-        if np.max(weights) - np.min(weights) > 0:
-            weights = (weights - np.min(weights)) / (np.max(weights) - np.min(weights))
+        weights = (weights - np.min(weights)) / (np.max(weights) - np.min(weights))
+
+        weights_discrete = np.round(weights * 2**self.n_bits).astype(int)
 
         # Change sign of weights where corresponding class disagrees with validation point prediction class
-        weights[(self.y_train != y_pred)[sortperm]] *= -1
+        weights_discrete[(self.y_train != self.class_index)[sortperm]] *= -1
 
-        return weights
+        # Shift by half of weights space size to turn weights into positive indices
+        weights_discrete += self.k * 2**self.n_bits
 
-    def _discretize_weights(self, weights: npt.NDArray[np.floating]) -> npt.NDArray[np.integer]:
-        """Discretize weights according to the number of bits specified in the constructor.
+        return weights_discrete
 
-        Args:
-            weights: An `np.ndarray` containing weights to discretize.
+    @overload
+    def _flip_weight_sign(self, weight: int) -> int: ...
 
-        Returns:
-            An `np.ndarray` of integers, which are indices into the discretized weight space ``W_(K)``.
+    @overload
+    def _flip_weight_sign(self, weight: npt.NDArray[np.integer]) -> npt.NDArray[np.integer]: ...
 
-        Examples:
-            With `n_bits=3`, the input `[0.0, 0.1, 0.3, 0.8, 1.0]` will result in `[0, 1, 2, 6, 8]`.
-
-        """
-        return np.round(weights * 2**self.n_bits).astype(int)
+    def _flip_weight_sign(
+        self, weight: int | npt.NDArray[np.integer]
+    ) -> int | npt.NDArray[np.integer]:
+        return 2 * self.weights_space_zero - weight

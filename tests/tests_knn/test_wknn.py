@@ -60,6 +60,45 @@ def test_wknn_hardcoded_example():
             assert np.allclose(sv_actual, test_case.sv_expected)
 
 
+def test_wknn_prepare_weights():
+    """Tests the pre-processing of weights involved in the WKNN algorithm, and the weight sign flipping method."""
+    # X_train is filled with dummy variables, since its contents don't matter because we use hand-crafted weights for testing
+    X_train = np.array([[0], [1], [2], [3], [4]])
+    y_train = np.array([0, 1, 1, 0, 1])
+    class_index = 1
+    k = 3
+    weights = np.array([1.0, 0.0, 1.0, 0.25, 0.25])
+    n_bits = 2
+
+    model = KNeighborsClassifier(n_neighbors=k, weights="distance")
+    model.fit(X_train, y_train)
+
+    explainer = WKNNExplainer(model, class_index=class_index, n_bits=n_bits)
+    identity_perm = np.arange(X_train.shape[0])
+    weights_prepared = explainer._prepare_weights(weights, sortperm=identity_perm)
+
+    assert explainer.weights_space_size == 2 * k * 2**n_bits + 1
+    assert weights_prepared.dtype in (np.int64, np.int32)
+
+    zero_idx = k * 2**n_bits
+    assert weights_prepared[0] == zero_idx - 2**n_bits
+    assert weights_prepared[1] == zero_idx
+    assert weights_prepared[2] == zero_idx + 2**n_bits
+
+    assert weights_prepared[3] == zero_idx - 1
+
+    assert np.all(
+        explainer._flip_weight_sign(explainer._flip_weight_sign(weights_prepared))
+        == weights_prepared
+    )
+
+    assert explainer._flip_weight_sign(weights_prepared[0]) == weights_prepared[2]
+    assert explainer._flip_weight_sign(weights_prepared[2]) == weights_prepared[0]
+
+    assert explainer._flip_weight_sign(weights_prepared[3]) == weights_prepared[4]
+    assert explainer._flip_weight_sign(weights_prepared[4]) == weights_prepared[3]
+
+
 def _get_ordered_values(shapley_values: InteractionValues) -> npt.NDArray[np.floating]:
     """Return shapley values ordered by player index.
 

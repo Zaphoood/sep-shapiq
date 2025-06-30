@@ -118,6 +118,7 @@ exclude = [
     "ARG",  # some functions are not used
     "INP",  # inports can be different
     "N",  # type hints are excludes in tests
+    "SLF001",  # need to access private functions for tests
 ]
 "docs/source/*.py" = [
     "A001",  # some conf.py variables shadow builtins which is okay here
