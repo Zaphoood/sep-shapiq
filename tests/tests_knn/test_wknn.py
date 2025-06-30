@@ -39,7 +39,7 @@ def test_wknn_hardcoded_example():
         model.fit(test_case.X_train, test_case.y_train)
 
         explainer = WKNNExplainer(
-            model, class_index=test_case.class_index, n_digits=test_case.n_digits
+            model, class_index=test_case.class_index, n_bits=test_case.n_digits
         )
         iv_actual = explainer.explain(test_case.x_val)
         sv_actual = _get_ordered_values(iv_actual)

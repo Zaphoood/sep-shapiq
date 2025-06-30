@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, cast
 from typing_extensions import override
 
@@ -48,7 +49,7 @@ class ArrayGame(Game):
         return self.utility[indices]
 
 
-class WKNNExplainerBase(KNNExplainerBase):
+class WKNNExplainerBase(ABC, KNNExplainerBase):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
 
     def _get_training_data_dists_and_weights(
@@ -71,8 +72,62 @@ class WKNNExplainerBase(KNNExplainerBase):
         weights = 1 / distances
         return sortperm[0], weights[0]
 
+    @override
+    def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
+        sortperm, weights = self._get_training_data_weights_sorted(x)
+        n_players = self.X_train.shape[0]
+        sv = np.zeros((n_players,))
+        n_classes = len(self.y_train_classes)
 
-class BruteForceWKNNExplainer(KNNExplainerBase):
+        if n_classes == 1:
+            return interaction_values_from_array(np.zeros((n_players,), dtype=np.floating))
+
+        for other_class in self.y_train_classes:
+            if other_class == self.class_index:
+                continue
+            sv_current = self._explain_binary(self.class_index, other_class, sortperm, weights)
+            sv += sv_current
+
+        sv /= n_classes - 1
+
+        return interaction_values_from_array(sv)
+
+    @abstractmethod
+    def _explain_binary(
+        self,
+        y_val: int,
+        y_other: int,
+        sortperm: npt.NDArray[np.integer],
+        weights: npt.NDArray[np.floating],
+    ) -> npt.NDArray[np.floating]:
+        """Computes the Shapley Values for a single binary-class classification game.
+
+        Class ``y_val`` is the class to explain and ``y_other`` the other class in the binary classification setting. All other weights shall be ignored.
+        """
+        msg = "Method _explain_binary() must be implemented by each subclass."
+        raise NotImplementedError(msg)
+
+    def _get_training_data_weights_sorted(
+        self, x_val: npt.NDArray[np.floating]
+    ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
+        """Calculate distances and weights of all training data points (called X hereinafter) with respect to to a given validation data point x_val.
+
+        Args:
+            x_val: The validation data point.
+
+        Returns:
+            A tuple `(sortperm, dists, weights)`, where all are `numpy.ndarray`s with dimensions `(n_training_samples,)` and
+                - `sortperm` is a permutation that sorts X by distance to x_val
+                - `dists` contains the distance of each point in X to x_val
+                - `weights` contains the corresponding weights for each point in X
+        """
+        distances, sortperm = self.model.kneighbors(
+            x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0]
+        )
+        return sortperm[0], sklearn_get_weights(distances, self.model.weights)[0]
+
+
+class BruteForceWKNNExplainer(WKNNExplainerBase):
     """A brute force implementation of WKNN according to `Wang et. al (2024)` [Wng24]_.
 
     References:
@@ -96,26 +151,6 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
         if model_weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
-
-    @override
-    def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        sortperm, weights = self._get_training_data_weights_sorted(x)
-        n_players = self.X_train.shape[0]
-        sv = np.zeros((n_players,))
-        n_classes = len(self.y_train_classes)
-
-        if n_classes == 1:
-            return interaction_values_from_array(np.zeros((n_players,), dtype=np.floating))
-
-        for other_class in self.y_train_classes:
-            if other_class == self.class_index:
-                continue
-            sv_current = self._explain_binary(self.class_index, other_class, sortperm, weights)
-            sv += sv_current
-
-        sv /= n_classes - 1
-
-        return interaction_values_from_array(sv)
 
     def _explain_binary(
         self,
@@ -158,25 +193,6 @@ class BruteForceWKNNExplainer(KNNExplainerBase):
             sv[i] = iv.values[iv.interaction_lookup[(i,)]]
 
         return sv
-
-    def _get_training_data_weights_sorted(
-        self, x_val: npt.NDArray[np.floating]
-    ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
-        """Calculate distances and weights of all training data points (called X hereinafter) with respect to to a given validation data point x_val.
-
-        Args:
-            x_val: The validation data point.
-
-        Returns:
-            A tuple `(sortperm, dists, weights)`, where all are `numpy.ndarray`s with dimensions `(n_training_samples,)` and
-                - `sortperm` is a permutation that sorts X by distance to x_val
-                - `dists` contains the distance of each point in X to x_val
-                - `weights` contains the corresponding weights for each point in X
-        """
-        distances, sortperm = self.model.kneighbors(
-            x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0]
-        )
-        return sortperm[0], sklearn_get_weights(distances, self.model.weights)[0]
 
 
 def _first_n_true(mask: npt.NDArray[np.bool], n: int) -> npt.NDArray[np.bool]:
