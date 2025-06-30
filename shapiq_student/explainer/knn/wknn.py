@@ -247,7 +247,7 @@ class WKNNExplainer(WKNNExplainerBase):
         y_val = self.class_index
 
         # Number of training points
-        n = len(self.y_train)
+        n = len(self.y_train_indices)
         n_classes = len(self.y_train_classes)
 
         # TODO(Zaphoood): Handle multi-class prediction
@@ -413,7 +413,7 @@ class WKNNExplainer(WKNNExplainerBase):
         weights_discrete = np.round(weights * 2**self.n_bits).astype(int)
 
         # Change sign of weights where corresponding class disagrees with validation point prediction class
-        weights_discrete[(self.y_train != self.class_index)[sortperm]] *= -1
+        weights_discrete[(self.y_train_indices != self.class_index)[sortperm]] *= -1
 
         # Shift by half of weights space size to turn weights into positive indices
         weights_discrete += self.k * 2**self.n_bits
