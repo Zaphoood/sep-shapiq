@@ -9,7 +9,7 @@ import numpy as np
 import numpy.typing as npt
 from sklearn.neighbors import KNeighborsClassifier
 
-from shapiq_student.explainer.knn.wknn import WKNNExplainer
+from shapiq_student.explainer.knn.wknn import BruteForceWKNNExplainer, WKNNExplainer
 
 if TYPE_CHECKING:
     from shapiq.interaction_values import InteractionValues
@@ -21,9 +21,7 @@ class WKNNTestCase:
 
     X_train: npt.NDArray[np.floating]
     y_train: npt.NDArray[np.floating]
-    class_index: int
     x_val: npt.NDArray[np.floating]
-    sv_expected: None | npt.NDArray[np.floating]
     k: int
     n_bits: int
 
@@ -34,9 +32,7 @@ def test_wknn_hardcoded_example():
         WKNNTestCase(
             X_train=np.array([[-8, 0], [-1.5, 0], [-0.5, 0], [0.5, 0], [1.5, 0]]),
             y_train=np.array([0, 0, 0, 1, 1]),
-            class_index=0,
             x_val=np.array([[0.2, 0]]),
-            sv_expected=None,
             k=3,
             n_bits=5,
         )
@@ -46,18 +42,27 @@ def test_wknn_hardcoded_example():
         model = KNeighborsClassifier(n_neighbors=test_case.k, weights="distance")
         model.fit(test_case.X_train, test_case.y_train)
 
-        explainer = WKNNExplainer(model, class_index=test_case.class_index, n_bits=test_case.n_bits)
-        iv_actual = explainer.explain(test_case.x_val)
-        sv_actual = _get_ordered_values(iv_actual)
+        for class_index in range(len(set(test_case.y_train))):
+            explainer_wang = WKNNExplainer(model, class_index=class_index, n_bits=test_case.n_bits)
+            iv_wang = explainer_wang.explain(test_case.x_val)
+            sv_wang = _interaction_values_to_array(iv_wang)
 
-        # TODO(Zaphoood): Remove this option once there is real test data
-        if test_case.sv_expected is None:
-            print(  # noqa: T201
-                "No expected SV defined for test case; will skip value comparison and perform only sanity checks."
+            explainer_brute = BruteForceWKNNExplainer(
+                model,
+                class_index=class_index,
             )
-            assert sv_actual.shape[0] == test_case.X_train.shape[0]
-        else:
-            assert np.allclose(sv_actual, test_case.sv_expected)
+            iv_brute = explainer_brute.explain(test_case.x_val)
+            sv_brute = _interaction_values_to_array(iv_brute)
+
+            n = test_case.X_train.shape[0]
+            # Test that SV values agree qualitatively with brute-force calculation, meaning that weak inequalities are equivalent
+            for i in range(n):
+                for j in range(i, n):
+                    assert (sv_wang[i] >= sv_wang[j]) == (sv_brute[i] >= sv_brute[j])
+
+            print(f"{class_index=}")
+            print(f"wang\t{np.round(sv_wang, 3)}\t{np.round(np.sum(sv_wang), 10)}")
+            print(f"brute\t{np.round(sv_brute, 3)}\t{np.round(np.sum(sv_brute), 10)}")
 
 
 def test_wknn_prepare_weights():
@@ -99,14 +104,14 @@ def test_wknn_prepare_weights():
     assert explainer._flip_weight_sign(weights_prepared[4]) == weights_prepared[3]
 
 
-def _get_ordered_values(shapley_values: InteractionValues) -> npt.NDArray[np.floating]:
-    """Return shapley values ordered by player index.
+def _interaction_values_to_array(shapley_values: InteractionValues) -> npt.NDArray[np.floating]:
+    """Extracts Shapley Values from an ``InteractionValues`` object and returns them in an array, ordered by player index.
 
     Args:
-        shapley_values: An InteractionValues object with max_order==1
+        shapley_values: An InteractionValues object with ``max_order==1``
 
     Returns:
-        An np.ndarray of shape (n_players,) containing at index i the Shapley value of player i.
+        An ``np.ndarray`` of shape (n_players,) containing at index i the Shapley value of player i.
     """
     if shapley_values.max_order != 1:
         msg = f"Max order must be 1 but was {shapley_values.max_order}"

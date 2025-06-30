@@ -112,13 +112,14 @@ exclude = [
     "FA",  # init does not require from __future__ import annotations import when using type hints
     "F401",  # allow unused imports
 ]
-"tests*/*.py" = [
+"tests*/**/*.py" = [
     "S101", # we need asserts in tests
     "ANN",  # type annotations
     "ARG",  # some functions are not used
     "INP",  # inports can be different
     "N",  # type hints are excludes in tests
     "SLF001",  # need to access private functions for tests
+    "T201",  # print statements are okay in tests
 ]
 "docs/source/*.py" = [
     "A001",  # some conf.py variables shadow builtins which is okay here
