@@ -260,24 +260,7 @@ class WKNNExplainer(WKNNExplainerBase):
 
             f_i = self._compute_f_i(i, n, weights_discrete)
             r_i = self._compute_r_i(i, n, f_i, y_i, y_val, weights_discrete)
-
-            # Compute G_i,l
-            g_i = np.zeros((self.k,))
-            g_i[0] = 1 if self._is_weight_negative(weights_discrete[i]) else 0
-            for l in range(1, self.k):  # noqa: E741
-                if y_i == y_val:
-                    weight_range_begin = self._flip_weight_sign(weights_discrete[i])
-                    weight_range_end = self.weights_space_zero
-                else:
-                    weight_range_begin = self.weights_space_zero
-                    weight_range_end = self._flip_weight_sign(weights_discrete[i])
-
-                if weight_range_begin < weight_range_end:
-                    for m in range(n):
-                        if m == i:
-                            continue
-                        for s in range(weight_range_begin, weight_range_end):
-                            g_i[l] += f_i[m, l - 1, s]
+            g_i = self._compute_g_i(i, n, f_i, y_i, y_val, weights_discrete)
 
             # Compute the Shapley Value for z_i
             weight_sign = self._weight_sign(weights_discrete[i])
@@ -338,6 +321,34 @@ class WKNNExplainer(WKNNExplainerBase):
                         r_i[m] += f_i[t, self.k - 2, s]
 
         return r_i
+
+    def _compute_g_i(
+        self,
+        i: int,
+        n: int,
+        f_i: npt.NDArray[np.floating],
+        y_i: int,
+        y_val: int,
+        weights_discrete: npt.NDArray[np.integer],
+    ) -> npt.NDArray[np.floating]:
+        g_i = np.zeros((self.k,))
+        g_i[0] = 1 if self._is_weight_negative(weights_discrete[i]) else 0
+        for l in range(1, self.k):  # noqa: E741
+            if y_i == y_val:
+                weight_range_begin = self._flip_weight_sign(weights_discrete[i])
+                weight_range_end = self.weights_space_zero
+            else:
+                weight_range_begin = self.weights_space_zero
+                weight_range_end = self._flip_weight_sign(weights_discrete[i])
+
+            if weight_range_begin < weight_range_end:
+                for m in range(n):
+                    if m == i:
+                        continue
+                    for s in range(weight_range_begin, weight_range_end):
+                        g_i[l] += f_i[m, l - 1, s]
+
+        return g_i
 
     @override
     def _explain_binary(
