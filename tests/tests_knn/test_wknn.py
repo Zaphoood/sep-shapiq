@@ -35,7 +35,27 @@ def test_wknn_hardcoded_example():
             x_val=np.array([[0.2, 0]]),
             k=3,
             n_bits=5,
-        )
+        ),
+        WKNNTestCase(
+            X_train=np.array(
+                [
+                    [0.5, -0.14],
+                    [0.65, 1.52],
+                    [-0.23, -0.23],
+                    [1.58, 0.77],
+                    [-0.47, 0.54],
+                    [-0.46, -0.47],
+                    [0.24, -1.91],
+                    [-1.72, -0.56],
+                    [-1.01, 0.31],
+                    [-0.91, -1.41],
+                ]
+            ),
+            y_train=np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 0]),
+            x_val=np.array([0, 0]),
+            k=3,
+            n_bits=3,
+        ),
     ]
 
     for test_case in test_cases:
