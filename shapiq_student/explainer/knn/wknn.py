@@ -256,24 +256,10 @@ class WKNNExplainer(WKNNExplainerBase):
         sv = np.zeros(n)
 
         for i in range(n):
-            y_i = self.y_train_indices[sortperm[i]]
+            y_i = cast("int", self.y_train_indices[sortperm[i]])
 
             f_i = self._compute_f_i(i, n, weights_discrete)
-
-            # Compute R_i
-            r_i = np.zeros((n,))
-            for m in range(max(i + 1, self.k), n):
-                if y_i == y_val:
-                    weight_range_begin = self._flip_weight_sign(weights_discrete[i])
-                    weight_range_end = self._flip_weight_sign(weights_discrete[m])
-                else:
-                    weight_range_begin = self._flip_weight_sign(weights_discrete[m])
-                    weight_range_end = self._flip_weight_sign(weights_discrete[i])
-
-                if weight_range_begin < weight_range_end:
-                    for t in range(m - 1):
-                        for s in range(weight_range_begin, weight_range_end):
-                            r_i[m] += f_i[t, self.k - 2, s]
+            r_i = self._compute_r_i(i, n, f_i, y_i, y_val, weights_discrete)
 
             # Compute G_i,l
             g_i = np.zeros((self.k,))
@@ -327,6 +313,31 @@ class WKNNExplainer(WKNNExplainerBase):
                         f_i[m, l, s] += f_i[t, l - 1, s - weight_m]
 
         return f_i
+
+    def _compute_r_i(
+        self,
+        i: int,
+        n: int,
+        f_i: npt.NDArray[np.floating],
+        y_i: int,
+        y_val: int,
+        weights_discrete: npt.NDArray[np.integer],
+    ) -> npt.NDArray[np.floating]:
+        r_i = np.zeros((n,))
+        for m in range(max(i + 1, self.k), n):
+            if y_i == y_val:
+                weight_range_begin = self._flip_weight_sign(weights_discrete[i])
+                weight_range_end = self._flip_weight_sign(weights_discrete[m])
+            else:
+                weight_range_begin = self._flip_weight_sign(weights_discrete[m])
+                weight_range_end = self._flip_weight_sign(weights_discrete[i])
+
+            if weight_range_begin < weight_range_end:
+                for t in range(m - 1):
+                    for s in range(weight_range_begin, weight_range_end):
+                        r_i[m] += f_i[t, self.k - 2, s]
+
+        return r_i
 
     @override
     def _explain_binary(
