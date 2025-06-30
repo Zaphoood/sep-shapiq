@@ -39,6 +39,7 @@ def test_wknn_hardcoded_example():
     ]
 
     for test_case in test_cases:
+        n = test_case.X_train.shape[0]
         model = KNeighborsClassifier(n_neighbors=test_case.k, weights="distance")
         model.fit(test_case.X_train, test_case.y_train)
 
@@ -54,15 +55,14 @@ def test_wknn_hardcoded_example():
             iv_brute = explainer_brute.explain(test_case.x_val)
             sv_brute = _interaction_values_to_array(iv_brute)
 
-            n = test_case.X_train.shape[0]
+            print(f"{class_index=}")
+            print(f"wang\t{np.round(sv_wang, 3)}\t{np.round(np.sum(sv_wang), 10)}")
+            print(f"brute\t{np.round(sv_brute, 3)}\t{np.round(np.sum(sv_brute), 10)}")
+
             # Test that SV values agree qualitatively with brute-force calculation, meaning that weak inequalities are equivalent
             for i in range(n):
                 for j in range(i, n):
                     assert (sv_wang[i] >= sv_wang[j]) == (sv_brute[i] >= sv_brute[j])
-
-            print(f"{class_index=}")
-            print(f"wang\t{np.round(sv_wang, 3)}\t{np.round(np.sum(sv_wang), 10)}")
-            print(f"brute\t{np.round(sv_brute, 3)}\t{np.round(np.sum(sv_brute), 10)}")
 
 
 def test_wknn_prepare_weights():
