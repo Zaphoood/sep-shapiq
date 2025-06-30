@@ -55,18 +55,21 @@ class WKNNExplainerBase(ABC, KNNExplainerBase):
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        sortperm, weights = self._get_training_data_weights_sorted(x)
         n_players = self.X_train.shape[0]
-        sv = np.zeros((n_players,))
-        n_classes = len(self.y_train_classes)
 
+        n_classes = len(self.y_train_classes)
         if n_classes == 1:
             return interaction_values_from_array(np.zeros((n_players,), dtype=np.float64))
 
-        for other_class in self.y_train_classes:
-            if other_class == self.class_index:
+        sortperm, weights = self._get_training_data_weights_sorted(x)
+
+        sv = np.zeros((n_players,))
+        for other_class_index in range(n_classes):
+            if other_class_index == self.class_index:
                 continue
-            sv_current = self._explain_binary(self.class_index, other_class, sortperm, weights)
+            sv_current = self._explain_binary(
+                self.class_index, other_class_index, sortperm, weights
+            )
             sv += sv_current
 
         sv /= n_classes - 1
@@ -83,7 +86,13 @@ class WKNNExplainerBase(ABC, KNNExplainerBase):
     ) -> npt.NDArray[np.floating]:
         """Computes the Shapley Values for a single binary-class classification game.
 
-        Class ``y_val`` is the class to explain and ``y_other`` the other class in the binary classification setting. All other weights shall be ignored.
+        Only training data points which have class index ``y_val`` or ``y_other`` shall be considered and all others ignored.
+
+        Args:
+            y_val: The index of the class to explain.
+            y_other: The index of the other class to consider for the binary sub-game.
+            sortperm: Sorting permutation of the training data points with respect to weights.
+            weights: Array of weights assigned to each training data point.
         """
         msg = "Method _explain_binary() must be implemented by each subclass."
         raise NotImplementedError(msg)
@@ -140,14 +149,10 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
         sortperm: npt.NDArray[np.integer],
         weights: npt.NDArray[np.floating],
     ) -> npt.NDArray[np.floating]:
-        """Computes the Shapley Values for a single binary-class classification game.
-
-        Class ``y_val`` is the class to explain and ``y_other`` the other class in the binary classification setting. All other weights are ignored.
-        """
         n_players = self.X_train.shape[0]
         utilities = np.zeros((2**n_players,))
 
-        y_train_sorted = self.y_train[sortperm]
+        y_train_sorted = self.y_train_indices[sortperm]
         y_val_mask = y_train_sorted == y_val
         y_other_mask = y_train_sorted == y_other
         for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
