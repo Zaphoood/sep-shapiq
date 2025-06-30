@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 from itertools import product
 
 import numpy as np
+from scipy.special import comb
 from shapiq.games import Game
 from sklearn.neighbors._base import _get_weights as sklearn_get_weights
 
@@ -60,7 +61,7 @@ class WKNNExplainerBase(ABC, KNNExplainerBase):
         n_classes = len(self.y_train_classes)
 
         if n_classes == 1:
-            return interaction_values_from_array(np.zeros((n_players,), dtype=np.floating))
+            return interaction_values_from_array(np.zeros((n_players,), dtype=np.float64))
 
         for other_class in self.y_train_classes:
             if other_class == self.class_index:
@@ -168,7 +169,7 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
         game = ArrayGame(n_players=n_players, utility=utilities)
         iv = game.exact_values("SII", order=1)
 
-        sv = np.zeros((n_players,), dtype=np.floating)
+        sv = np.zeros((n_players,), dtype=np.float64)
         for i in range(n_players):
             sv[i] = iv.values[iv.interaction_lookup[(i,)]]
 
@@ -235,9 +236,10 @@ class WKNNExplainer(WKNNExplainerBase):
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        # TODO(Zaphoood): Consider removing alias
-        # Convenience alias
+        # TODO(Zaphoood): Consider removing aliases
+        # Convenience aliases
         x_val = x
+        y_val = self.class_index
 
         # Number of training points
         n = len(self.y_train)
@@ -254,13 +256,68 @@ class WKNNExplainer(WKNNExplainerBase):
         sv = np.zeros(n)
 
         for i in range(n):
-            fi = np.zeros((n, self.k - 1, self.weights_space_size))
-            for m, w_m in enumerate(weights_discrete):
+            y_i = self.y_train_indices[sortperm[i]]
+
+            # Initialize F_i
+            f_i = np.zeros((n, self.k - 1, self.weights_space_size))
+            for m, weight_m in enumerate(weights_discrete):
                 if m == i:
                     continue
-                fi[m, 1, w_m] = 1
+                f_i[m, 0, weight_m] = 1
 
-        raise NotImplementedError(weights_discrete, sv)
+            # Compute F_i
+            for l in range(1, self.k - 1):  # noqa: E741
+                for m in range(l, n):
+                    if m == i:
+                        continue
+                    weight_m = weights_discrete[m]
+                    for s in range(self.weights_space_size):
+                        for t in range(m - 1):
+                            f_i[m, l, s] += f_i[t, l - 1, s - weight_m]
+
+            # Compute R_i
+            r_i = np.zeros((n,))
+            for m in range(max(i + 1, self.k), n):
+                if y_i == y_val:
+                    weight_range_begin = self._flip_weight_sign(weights_discrete[i])
+                    weight_range_end = self._flip_weight_sign(weights_discrete[m])
+                else:
+                    weight_range_begin = self._flip_weight_sign(weights_discrete[m])
+                    weight_range_end = self._flip_weight_sign(weights_discrete[i])
+
+                if weight_range_begin < weight_range_end:
+                    for t in range(m - 1):
+                        for s in range(weight_range_begin, weight_range_end):
+                            r_i[m] += f_i[t, self.k - 2, s]
+
+            # Compute G_i,l
+            g_i = np.zeros((self.k,))
+            g_i[0] = 1 if self._is_weight_negative(weights_discrete[i]) else 0
+            for l in range(1, self.k):  # noqa: E741
+                if y_i == y_val:
+                    weight_range_begin = self._flip_weight_sign(weights_discrete[i])
+                    weight_range_end = self.weights_space_zero
+                else:
+                    weight_range_begin = self.weights_space_zero
+                    weight_range_end = self._flip_weight_sign(weights_discrete[i])
+
+                if weight_range_begin < weight_range_end:
+                    for m in range(n):
+                        if m == i:
+                            continue
+                        for s in range(weight_range_begin, weight_range_end):
+                            g_i[l] += f_i[m, l - 1, s]
+
+            # Compute the Shapley Value for z_i
+            weight_sign = self._weight_sign(weights_discrete[i])
+            first_summand = sum(g_i[l] / comb(n - 1, l) for l in range(self.k)) / n  # noqa: E741
+            second_summand = sum(
+                r_i[m - 1] / (m * comb(m - 1, self.k)) for m in range(max(i + 2, self.k + 1), n + 1)
+            )
+
+            sv[sortperm[i]] = weight_sign * (first_summand + second_summand)
+
+        return interaction_values_from_array(sv)
 
     @override
     def _explain_binary(
@@ -320,12 +377,41 @@ class WKNNExplainer(WKNNExplainerBase):
         return weights_discrete
 
     @overload
-    def _flip_weight_sign(self, weight: int) -> int: ...
+    def _flip_weight_sign(self, weight_discrete: int) -> int: ...
 
     @overload
-    def _flip_weight_sign(self, weight: npt.NDArray[np.integer]) -> npt.NDArray[np.integer]: ...
+    def _flip_weight_sign(
+        self, weight_discrete: npt.NDArray[np.integer]
+    ) -> npt.NDArray[np.integer]: ...
 
     def _flip_weight_sign(
-        self, weight: int | npt.NDArray[np.integer]
+        self, weight_discrete: int | npt.NDArray[np.integer]
     ) -> int | npt.NDArray[np.integer]:
-        return 2 * self.weights_space_zero - weight
+        """Given a discretized weight index, returns the discretized index of the corresponding weight with the sign flipped."""
+        return 2 * self.weights_space_zero - weight_discrete
+
+    @overload
+    def _is_weight_negative(self, weight_discrete: int) -> int: ...
+
+    @overload
+    def _is_weight_negative(
+        self, weight_discrete: npt.NDArray[np.integer]
+    ) -> npt.NDArray[np.integer]: ...
+
+    def _is_weight_negative(
+        self, weight_discrete: int | npt.NDArray[np.integer]
+    ) -> int | npt.NDArray[np.integer]:
+        """Checks whether the weight corresponding to a discretized weight index is negative."""
+        return weight_discrete < self.weights_space_zero
+
+    def _weight_sign(self, weight_discrete: int) -> int:
+        """Implements the sign function for discretized weights.
+
+        Given some discretized weight index ``weight_discrete`` with corresponding weight ``w``, returns 1 if ``w > 0``, -1 if ``w < 0``, and 0 if ``w == 0```
+        """
+        if weight_discrete > self.weights_space_zero:
+            return 1
+        if weight_discrete < self.weights_space_zero:
+            return -1
+
+        return 0
