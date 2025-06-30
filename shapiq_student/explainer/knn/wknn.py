@@ -258,22 +258,7 @@ class WKNNExplainer(WKNNExplainerBase):
         for i in range(n):
             y_i = self.y_train_indices[sortperm[i]]
 
-            # Initialize F_i
-            f_i = np.zeros((n, self.k - 1, self.weights_space_size))
-            for m, weight_m in enumerate(weights_discrete):
-                if m == i:
-                    continue
-                f_i[m, 0, weight_m] = 1
-
-            # Compute F_i
-            for l in range(1, self.k - 1):  # noqa: E741
-                for m in range(l, n):
-                    if m == i:
-                        continue
-                    weight_m = weights_discrete[m]
-                    for s in range(self.weights_space_size):
-                        for t in range(m - 1):
-                            f_i[m, l, s] += f_i[t, l - 1, s - weight_m]
+            f_i = self._compute_f_i(i, n, weights_discrete)
 
             # Compute R_i
             r_i = np.zeros((n,))
@@ -318,6 +303,30 @@ class WKNNExplainer(WKNNExplainerBase):
             sv[sortperm[i]] = weight_sign * (first_summand + second_summand)
 
         return interaction_values_from_array(sv)
+
+    def _compute_f_i(
+        self,
+        i: int,
+        n: int,
+        weights_discrete: npt.NDArray[np.integer],
+    ) -> npt.NDArray[np.floating]:
+        f_i = np.zeros((n, self.k - 1, self.weights_space_size))
+
+        for m, weight_m in enumerate(weights_discrete):
+            if m == i:
+                continue
+            f_i[m, 0, weight_m] = 1
+
+        for l in range(1, self.k - 1):  # noqa: E741
+            for m in range(l, n):
+                if m == i:
+                    continue
+                weight_m = weights_discrete[m]
+                for s in range(self.weights_space_size):
+                    for t in range(m - 1):
+                        f_i[m, l, s] += f_i[t, l - 1, s - weight_m]
+
+        return f_i
 
     @override
     def _explain_binary(
