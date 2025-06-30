@@ -52,26 +52,6 @@ class ArrayGame(Game):
 class WKNNExplainerBase(ABC, KNNExplainerBase):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
 
-    def _get_training_data_dists_and_weights(
-        self, x_val: npt.NDArray[np.floating]
-    ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
-        """Calculate weights and sorting permutation training data points (called X_train hereinafter) with respect to to a given validation data point x_val.
-
-        Args:
-            x_val: The validation data point.
-
-        Returns:
-            A tuple `(sortperm, dists, weights)`, where all are `numpy.ndarray`s with dimensions `(n_training_samples,)` and
-                - `sortperm` is a permutation that sorts X_train by distance to x_val
-                - `weights` contains the corresponding weights for each point in X_train
-        """
-        distances, sortperm = cast(
-            "tuple[npt.NDArray[np.floating], npt.NDArray[np.integer]]",
-            self.model.kneighbors(x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0]),
-        )
-        weights = 1 / distances
-        return sortperm[0], weights[0]
-
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
         sortperm, weights = self._get_training_data_weights_sorted(x)
@@ -253,6 +233,10 @@ class WKNNExplainer(WKNNExplainerBase):
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
+        # TODO(Zaphoood): Consider removing alias
+        # Convenience alias
+        x_val = x
+
         # Number of training points
         n = len(self.y_train)
         n_classes = len(self.y_train_classes)
@@ -262,11 +246,12 @@ class WKNNExplainer(WKNNExplainerBase):
             msg = f"Multi-class prediction is not yet implemented (got {n_classes=})"
             raise NotImplementedError(msg)
 
-        sortperm, weights = self._get_training_data_dists_and_weights(x)
+        sortperm, weights = self._get_training_data_sorted_weights(x_val)
         weights_signed_normalized = self._prepare_weights(weights, sortperm, self.class_index)
         weights_discrete = self._discretize_weights(weights_signed_normalized)
 
         sv = np.zeros(n)
+
         for i in range(n):
             fi = np.zeros((n, self.k - 1, self.weights_space_size))
             for m, w_m in enumerate(weights_discrete):
@@ -275,6 +260,26 @@ class WKNNExplainer(WKNNExplainerBase):
                 fi[m, 1, w_m] = 1
 
         raise NotImplementedError(weights_discrete, sv)
+
+    def _get_training_data_sorted_weights(
+        self, x_val: npt.NDArray[np.floating]
+    ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
+        """Calculate weights and sorting permutation training data points (called X_train hereinafter) with respect to to a given validation data point x_val.
+
+        Args:
+            x_val: The validation data point.
+
+        Returns:
+            A tuple `(sortperm, dists, weights)`, where all are `numpy.ndarray`s with dimensions `(n_training_samples,)` and
+                - `sortperm` is a permutation that sorts X_train by distance to x_val
+                - `weights` contains the corresponding weights for each point in X_train
+        """
+        distances, sortperm = cast(
+            "tuple[npt.NDArray[np.floating], npt.NDArray[np.integer]]",
+            self.model.kneighbors(x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0]),
+        )
+        weights = 1 / distances
+        return sortperm[0], weights[0]
 
     def _prepare_weights(
         self, weights: npt.NDArray[np.floating], sortperm: npt.NDArray[np.integer], y_pred: int
