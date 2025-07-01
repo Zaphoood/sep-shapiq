@@ -61,8 +61,8 @@ class GaussianImputer(GaussianImputerBase):
             verbose=verbose,
         )
 
-    def impute(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
-        """Impute missing values for given coalitions using Gaussian MC sampling.
+    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+        """Impute missing values for given coalitions using Gaussian MC sampling, and call prediction function on imputed values.
 
         Args:
             coalitions: Binary array indicating which features are present (1) or missing (0)
@@ -122,9 +122,5 @@ class GaussianImputer(GaussianImputerBase):
 
                 result_cube[i, S_ind, :, :] = aux_mat
 
-        return result_cube
-
-    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
-        """TODO: Add docstring."""
-        # TODO(Zaphoood): implemenet value function
+        # TODO(Zaphoood): Call predict on this 4-dimensional cube somehow
         raise NotImplementedError
