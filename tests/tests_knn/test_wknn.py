@@ -20,7 +20,7 @@ class WKNNTestCase:
     """Defines a test case for a WKNN classifier."""
 
     X_train: npt.NDArray[np.floating]
-    y_train: npt.NDArray[np.floating]
+    y_train: npt.NDArray[np.object_ | np.integer]
     x_val: npt.NDArray[np.floating]
     k: int
     n_bits: int
@@ -59,31 +59,67 @@ def test_wknn_hardcoded_example():
     ]
 
     for test_case in test_cases:
-        n = test_case.X_train.shape[0]
-        model = KNeighborsClassifier(n_neighbors=test_case.k, weights="distance")
-        model.fit(test_case.X_train, test_case.y_train)
+        _check_wknn_test_case(test_case)
 
-        for class_index in range(len(set(test_case.y_train))):
-            explainer_wang = WKNNExplainer(model, class_index=class_index, n_bits=test_case.n_bits)
-            iv_wang = explainer_wang.explain(test_case.x_val)
-            sv_wang = _interaction_values_to_array(iv_wang)
 
-            explainer_brute = BruteForceWKNNExplainer(
-                model,
-                class_index=class_index,
-            )
-            iv_brute = explainer_brute.explain(test_case.x_val)
-            sv_brute = _interaction_values_to_array(iv_brute)
+def _check_wknn_test_case(test_case: WKNNTestCase) -> None:
+    n = test_case.X_train.shape[0]
+    model = KNeighborsClassifier(n_neighbors=test_case.k, weights="distance")
+    model.fit(test_case.X_train, test_case.y_train)
 
-            print(f"{class_index=}")
-            print(f"wang\t{np.round(sv_wang, 3)}\t{np.round(np.sum(sv_wang), 10)}")
-            print(f"brute\t{np.round(sv_brute, 3)}\t{np.round(np.sum(sv_brute), 10)}")
+    for class_index in range(len(set(test_case.y_train))):
+        explainer_wang = WKNNExplainer(model, class_index=class_index, n_bits=test_case.n_bits)
+        iv_wang = explainer_wang.explain(test_case.x_val)
+        sv_wang = _interaction_values_to_array(iv_wang)
 
-            # Test that SV values agree qualitatively with brute-force calculation, meaning that weak inequalities are equivalent
-            for i in range(n):
-                for j in range(i, n):
-                    # According to Appendix E, we have v_i >= v_j implies v_i^disc >= v_j^disc
-                    assert not (sv_brute[i] >= sv_brute[j]) or (sv_wang[i] >= sv_wang[j])
+        explainer_brute = BruteForceWKNNExplainer(
+            model,
+            class_index=class_index,
+        )
+        iv_brute = explainer_brute.explain(test_case.x_val)
+        sv_brute = _interaction_values_to_array(iv_brute)
+
+        print(explainer_brute.y_train_indices)
+        print(f"wang\t{np.round(sv_wang, 3)}\t{np.round(np.sum(sv_wang), 10)}")
+        print(f"brute\t{np.round(sv_brute, 3)}\t{np.round(np.sum(sv_brute), 10)}")
+
+        # Test that SV values agree qualitatively with brute-force calculation, meaning that weak inequalities are equivalent
+        for i in range(n):
+            for j in range(i, n):
+                # According to Appendix E, we have v_i >= v_j implies v_i^disc >= v_j^disc
+                assert not (sv_brute[i] >= sv_brute[j]) or (sv_wang[i] >= sv_wang[j])
+
+
+def test_wknn_random() -> None:
+    """Tests that the results of WKNNExplainer agree with those of BruteForceWKNNExplainer using randomly generated test cases."""
+    n_test_cases = 3
+    min_training_points = 5
+    max_training_points = 10
+
+    rng = np.random.default_rng(seed=42)
+
+    for _ in range(n_test_cases):
+        n = int(rng.integers(min_training_points, max_training_points))
+        X_train, y_train = _generate_binary_split_training_data(rng, n)
+        x_val = rng.normal(size=(1, 2))[0]
+
+        _check_wknn_test_case(WKNNTestCase(X_train, y_train, x_val, k=3, n_bits=3))
+
+
+def _generate_binary_split_training_data(
+    rng: np.random.Generator,
+    n: int,
+    split_vec: npt.NDArray[np.floating] | None = None,
+) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.int64]]:
+    if split_vec is None:
+        split_vec = np.array([1, 1])
+
+    X = rng.normal(size=(n, 2))
+    split_vec = np.array([1, 1])
+    y = np.zeros((n,), dtype=np.int64)
+    y[X.dot(split_vec) > 0] = 1
+
+    return X, y
 
 
 def test_wknn_prepare_weights():
