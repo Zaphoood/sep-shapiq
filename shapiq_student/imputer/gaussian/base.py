@@ -8,7 +8,6 @@ calculations. It inherits from shapiq's Imputer base class and provides a common
 
 from __future__ import annotations
 
-from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -111,15 +110,3 @@ class GaussianImputerBase(Imputer):  # type: ignore[misc]
             )
 
         return cov_mat
-
-    @abstractmethod
-    def impute(self, coalitions: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
-        """Impute missing values for given coalitions.
-
-        Args:
-            coalitions: Binary array indicating which features are present (1) or missing (0)
-                for each coalition. Shape: (n_coalitions, n_features).
-
-        Returns:
-            Imputed data points for each coalition. Shape: (n_coalitions, n_features).
-        """

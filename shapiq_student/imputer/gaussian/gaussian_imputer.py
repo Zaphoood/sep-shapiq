@@ -13,6 +13,7 @@ import numpy as np
 from numpy.random import default_rng
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
     from shapiq.utils import Model
 
 from ._base import GaussianImputerBase
@@ -150,3 +151,8 @@ class GaussianImputer(GaussianImputerBase):
                 result_cube[i, S_ind, :, :] = aux_mat
 
         return result_cube
+
+    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+        """TODO: Add docstring."""
+        # TODO(Zaphoood): implemenet value function
+        raise NotImplementedError
