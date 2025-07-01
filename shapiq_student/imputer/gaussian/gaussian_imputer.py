@@ -71,6 +71,10 @@ class GaussianImputer(GaussianImputerBase):
         Returns:
             Imputed data points for each explanation point and coalition. Shape: (n_explain, n_coalitions, n_mc_samples, n_features).
         """
+        if self.x is None:
+            msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
+            raise RuntimeError(msg)
+
         x_mat = np.atleast_2d(self.x)
         n_explain = x_mat.shape[0]
         n_coalitions, n_features = coalitions.shape
