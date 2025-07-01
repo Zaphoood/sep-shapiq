@@ -14,7 +14,6 @@ from numpy.random import default_rng
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from shapiq.utils import Model
 
 from .base import GaussianImputerBase
 
@@ -29,7 +28,7 @@ class GaussianImputer(GaussianImputerBase):
 
     def __init__(
         self,
-        model: Model,
+        model: object,
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
