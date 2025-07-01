@@ -11,6 +11,7 @@ from shapiq_student.explainer.knn import (
     KNNExplainerBase,
     interaction_lookup_from_knn_shapley_values,
 )
+from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
 
 
 def test_extract_training_data_from_model():
@@ -29,8 +30,16 @@ def test_extract_training_data_from_model():
     assert knn_explainer.k == k
 
 
-def test_extract_training_data_from_model_multi_column_label():
-    """Tests that KNNExplainerBase succesfully extracts training data for a model that was trained with multiple label columns."""
+def test_raises_on_unfitted_model():
+    """Tests that KNNExplainerBase raises an exception if its constructor is called with an unfitted model."""
+    knn_model = KNeighborsClassifier()
+
+    with pytest.raises(NotFittedError):
+        KNNExplainerBase(knn_model, class_index=0)
+
+
+def test_raises_on_multi_output_model():
+    """Tests that KNNExplainerBase raises an exception if its constructor is called with a model that has multiple output columns."""
     X_train = np.array([[1, 2, 3], [4, 5, 6]])
     y_train = np.array([[0, 1], [2, 3]])
     k = 11
@@ -38,18 +47,7 @@ def test_extract_training_data_from_model_multi_column_label():
     knn_model = KNeighborsClassifier(n_neighbors=k)
     knn_model.fit(X_train, y_train)
 
-    knn_explainer = KNNExplainerBase(knn_model, class_index=0)
-
-    assert np.allclose(knn_explainer.X_train, X_train)
-    assert np.allclose(knn_explainer.y_train, y_train)
-    assert knn_explainer.k == k
-
-
-def test_raises_on_unfitted_model():
-    """Tests that KNNExplainerBase raises an exception if its constructor is called with an unfitted model."""
-    knn_model = KNeighborsClassifier()
-
-    with pytest.raises(NotFittedError):
+    with pytest.raises(MultiOutputKNNError):
         KNNExplainerBase(knn_model, class_index=0)
 
 
