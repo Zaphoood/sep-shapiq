@@ -28,11 +28,11 @@ class GaussianImputerBase(Imputer):  # type: ignore[misc]
     Gaussian-based imputation approaches must implement.
     """
 
-    def __init__(  # TODO (milanagm): wird das nun init von imputer base von shapiq überschreiben?
+    def __init__(
         self,
         model: Model,
         data: np.ndarray[Any, Any],
-        x: np.ndarray[Any, Any] | None = None,  # TODO (milanagm): was ist das? brauche ichs?
+        x: np.ndarray[Any, Any] | None = None,
         *,
         n_mc_samples: int = 1000,
         categorical_features: list[int] | None = None,
@@ -56,10 +56,8 @@ class GaussianImputerBase(Imputer):  # type: ignore[misc]
                 evaluation. Note that this can slow down the imputation process. Defaults to
                 ``False``.
         """
-        # Check for empty data
         if data is None or np.size(data) == 0 or (hasattr(data, "shape") and data.shape[0] == 0):
             raise EmptyDataError
-        # Initialize the parent Imputer class
         super().__init__(
             model=model,
             data=data,
