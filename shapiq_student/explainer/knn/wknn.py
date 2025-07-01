@@ -290,7 +290,9 @@ class WKNNExplainer(WKNNExplainerBase):
                 weight_m = weights_discrete[m]
                 for s in range(self.weights_space_size):
                     for t in range(m - 1):
-                        f_i[m, l, s] += f_i[t, l - 1, s - weight_m]
+                        s_minus_weight_m = self._discrete_weight_sub(s, weight_m)
+                        if 0 <= s_minus_weight_m < self.weights_space_size:
+                            f_i[m, l, s] += f_i[t, l - 1, s_minus_weight_m]
 
         return f_i
 
@@ -443,6 +445,10 @@ class WKNNExplainer(WKNNExplainerBase):
     ) -> float | npt.NDArray[np.floating]:
         """Turns discrete weight index into the corresponding floating point weight."""
         return (weight_discrete - self.weights_space_zero) / (2**self.n_bits)
+
+    def _discrete_weight_sub(self, a_discrete: int, b_discrete: int) -> int:
+        """Computes ``a - b`` for two discrete weight indices."""
+        return self.weights_space_zero + a_discrete - b_discrete
 
     @overload
     def _flip_weight_sign(self, weight_discrete: int) -> int: ...
