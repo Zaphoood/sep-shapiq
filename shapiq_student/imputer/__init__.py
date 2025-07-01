@@ -3,30 +3,20 @@
 This module provides different approaches for handling missing values and generating
 samples for SHAP value calculations. It includes two main approaches:
 
-- GaussianApproach: Uses Gaussian distribution for generating samples
-- CopulaApproach: Uses Copula's binning strategy for generating samples
-
-The main entry point is the `explain()` function, which provides a unified interface
-for both approaches.
+- GaussianImputer: Uses Gaussian distribution for generating samples
+- GaussianCopulaImputer: Uses Copula's binning strategy for generating samples
 
 Classes
 -------
-Approach : ABC
-    Abstract base class defining the interface for imputation approaches
-GaussianApproach : Approach
+GaussianImputerBase : Imputer
+    Abstract base class for Gaussian-based imputation approaches
+GaussianImputer : GaussianImputerBase
     Implementation using Gaussian distribution for sampling
-CopulaApproach : Approach
+GaussianCopulaImputer : GaussianImputerBase
     Implementation using Copula's binning strategy
-
-Functions
----------
-explain : function
-    Main function to explain predictions using either Gaussian or Copula approach
 """
 
-from .approach import Approach
-from .copula_approach import CopulaApproach
-from .gaussian_approach import GaussianApproach
-from .main import explain
+from .gaussian_copula_imputer import GaussianCopulaImputer
+from .gaussian_imputer import GaussianImputer
 
-__all__ = ["Approach", "GaussianApproach", "CopulaApproach", "explain"]
+__all__ = ["GaussianImputer", "GaussianCopulaImputer"]

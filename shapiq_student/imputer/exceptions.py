@@ -3,39 +3,33 @@
 from __future__ import annotations
 
 
-class FeatureNamesLengthError(ValueError):
-    """Exception raised when feature names length doesn't match number of features."""
+class EmptyDataError(ValueError):
+    """Exception raised when the training data is empty."""
 
-    def __init__(self, feature_names_length: int, n_features: int) -> None:
-        """Initialize the error with the mismatched lengths.
+    def __init__(self) -> None:
+        """Initialize the EmptyDataError exception.
 
-        Parameters
-        ----------
-        feature_names_length : int
-            Length of the provided feature names list
-        n_features : int
-            Number of features in the data
+        This exception is raised when the training data provided to an imputer is empty.
         """
-        self.feature_names_length = feature_names_length
-        self.n_features = n_features
-        message = f"feature_names length {feature_names_length} != number of features {n_features}"
-        super().__init__(message)
+        super().__init__("Training data is empty.")
 
 
 class CategoricalFeatureError(ValueError):
     """Exception raised when categorical features are detected."""
 
-    def __init__(self, feature_names: list[str]) -> None:
-        """Initialize the error with the categorical feature names.
+    def __init__(self, feature_indices: list[int]) -> None:
+        """Initialize the error with the categorical feature indices.
 
         Parameters
         ----------
-        feature_names : list[str]
-            List of feature names that are categorical
+        feature_indices : list[int]
+            List of indices of features that are categorical
         """
-        self.feature_names = feature_names
+        # Convert indices to f1, f2, ...
+        feature_names = [f"f{i + 1}" for i in feature_indices]
         message = (
             f"The following are categorical features: {', '.join(feature_names)}. "
             "Gaussian approach does not support categorical features."
         )
         super().__init__(message)
+        self.feature_indices = feature_indices
