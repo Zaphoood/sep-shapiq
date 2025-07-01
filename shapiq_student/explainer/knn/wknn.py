@@ -217,7 +217,7 @@ class WKNNExplainer(WKNNExplainerBase):
         class_index: int,
         n_bits: int = 3,
     ) -> None:
-        """Initializes the BruteForceWKNNExplainer.
+        """Initializes the WKNNExplainer.
 
         Args:
             model: The KNN model to explain.
