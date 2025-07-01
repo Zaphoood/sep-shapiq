@@ -82,7 +82,8 @@ def test_wknn_hardcoded_example():
             # Test that SV values agree qualitatively with brute-force calculation, meaning that weak inequalities are equivalent
             for i in range(n):
                 for j in range(i, n):
-                    assert (sv_wang[i] >= sv_wang[j]) == (sv_brute[i] >= sv_brute[j])
+                    # According to Appendix E, we have v_i >= v_j implies v_i^disc >= v_j^disc
+                    assert not (sv_brute[i] >= sv_brute[j]) or (sv_wang[i] >= sv_wang[j])
 
 
 def test_wknn_prepare_weights():
