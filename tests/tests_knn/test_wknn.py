@@ -34,7 +34,7 @@ def test_wknn_hardcoded_example():
             y_train=np.array(["foo", "foo", "foo", "bar", "bar"]),
             x_val=np.array([[0.2, 0]]),
             k=3,
-            n_bits=5,
+            n_bits=4,
         ),
         WKNNTestCase(
             X_train=np.array(
@@ -76,10 +76,10 @@ def _check_wknn_test_case(test_case: WKNNTestCase) -> None:
             model,
             class_index=class_index,
         )
-        iv_brute = explainer_brute.explain(test_case.x_val)
+        iv_brute = explainer_brute.explain_function(test_case.x_val)
         sv_brute = _interaction_values_to_array(iv_brute)
 
-        print(explainer_brute.y_train_indices)
+        print(f"{class_index=}")
         print(f"wang\t{np.round(sv_wang, 3)}\t{np.round(np.sum(sv_wang), 10)}")
         print(f"brute\t{np.round(sv_brute, 3)}\t{np.round(np.sum(sv_brute), 10)}")
 
@@ -102,8 +102,10 @@ def test_wknn_random() -> None:
         n = int(rng.integers(min_training_points, max_training_points))
         X_train, y_train = _generate_binary_split_training_data(rng, n)
         x_val = rng.normal(size=(1, 2))[0]
+        n_bits = 5
+        k = 3
 
-        _check_wknn_test_case(WKNNTestCase(X_train, y_train, x_val, k=3, n_bits=3))
+        _check_wknn_test_case(WKNNTestCase(X_train, y_train, x_val, k=k, n_bits=n_bits))
 
 
 def _generate_binary_split_training_data(

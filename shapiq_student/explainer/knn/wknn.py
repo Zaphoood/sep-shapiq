@@ -18,7 +18,6 @@ from itertools import product
 import numpy as np
 from scipy.special import comb
 from shapiq.games import Game
-from sklearn.neighbors._base import _get_weights as sklearn_get_weights
 
 
 class ArrayGame(Game):
@@ -61,7 +60,7 @@ class WKNNExplainerBase(ABC, KNNExplainerBase):
         if n_classes == 1:
             return interaction_values_from_array(np.zeros((n_players,), dtype=np.float64))
 
-        sortperm, weights = self._get_training_data_weights_sorted(x)
+        sortperm, weights = self._get_normalized_weights(x)
 
         sv = np.zeros((n_players,))
         for other_class_index in range(n_classes):
@@ -97,24 +96,28 @@ class WKNNExplainerBase(ABC, KNNExplainerBase):
         msg = "Method _explain_binary() must be implemented by each subclass."
         raise NotImplementedError(msg)
 
-    def _get_training_data_weights_sorted(
+    def _get_normalized_weights(
         self, x_val: npt.NDArray[np.floating]
     ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
-        """Calculate distances and weights of all training data points (called X hereinafter) with respect to to a given validation data point x_val.
+        """Calculate normalized weights of training data points with respect to a validation data point.
 
         Args:
             x_val: The validation data point.
 
         Returns:
-            A tuple `(sortperm, dists, weights)`, where all are `numpy.ndarray`s with dimensions `(n_training_samples,)` and
-                - `sortperm` is a permutation that sorts X by distance to x_val
-                - `dists` contains the distance of each point in X to x_val
-                - `weights` contains the corresponding weights for each point in X
+            A tuple ``(sortperm, weights)``, where both are of type ``numpy.ndarray`` with dimensions ``(n_training_samples,)`` and
+                - ``sortperm`` is a permutation that sorts the training data points by decreasing weight
+                - ``weights`` contains the weights for each training data point, normalized to the interval [0, 1]
         """
         distances, sortperm = self.model.kneighbors(
-            x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0]
+            x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0], return_distance=True
         )
-        return sortperm[0], sklearn_get_weights(distances, self.model.weights)[0]
+        distances = distances[0]
+        sortperm = sortperm[0]
+
+        weights = (distances[-1] - distances) / (distances[-1] - distances[0])
+
+        return sortperm, weights
 
 
 class BruteForceWKNNExplainer(WKNNExplainerBase):
@@ -255,8 +258,10 @@ class WKNNExplainer(WKNNExplainerBase):
             msg = f"Multi-class prediction is not yet implemented (got {n_classes=})"
             raise NotImplementedError(msg)
 
-        sortperm, weights = self._get_training_data_sorted_weights(x_val)
-        weights_discrete = self._prepare_weights(weights, sortperm)
+        sortperm, weights = self._get_normalized_weights(x_val)
+        # Change sign of weights where class disagrees with class of validation point
+        weights[(self.y_train_indices != self.class_index)[sortperm]] *= -1
+        weights_discrete = self._discretize_weight(weights)
 
         sv = np.zeros(n)
 
@@ -375,47 +380,6 @@ class WKNNExplainer(WKNNExplainerBase):
     ) -> npt.NDArray[np.floating]:
         msg = f"{self.__class__.__name__} does not implement _explain_binary() yet"
         raise NotImplementedError(msg)
-
-    def _get_training_data_sorted_weights(
-        self, x_val: npt.NDArray[np.floating]
-    ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
-        """Calculate weights and sorting permutation training data points (called X_train hereinafter) with respect to to a given validation data point x_val.
-
-        Args:
-            x_val: The validation data point.
-
-        Returns:
-            A tuple `(sortperm, dists, weights)`, where all are `numpy.ndarray`s with dimensions `(n_training_samples,)` and
-                - `sortperm` is a permutation that sorts X_train by distance to x_val
-                - `weights` contains the corresponding weights for each point in X_train
-        """
-        distances, sortperm = cast(
-            "tuple[npt.NDArray[np.floating], npt.NDArray[np.integer]]",
-            self.model.kneighbors(x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0]),
-        )
-        weights = 1 / distances
-        return sortperm[0], weights[0]
-
-    def _prepare_weights(
-        self, weights: npt.NDArray[np.floating], sortperm: npt.NDArray[np.integer]
-    ) -> npt.NDArray[np.integer]:
-        """Normalize weights to interval [0, 1], flip sign where y label disagrees with validation label, and discretize weights.
-
-        Args:
-            weights: The original weights.
-            sortperm: Sorting permutation of training data points according to weights.
-            y_pred: The class predicted for the validation data point.
-
-        Returns:
-            An `np.ndarray` containing the prepared weights.
-        """
-        # Normalize weights to [0, 1]
-        weights = (weights - np.min(weights)) / (np.max(weights) - np.min(weights))
-
-        # Change sign of weights where corresponding class disagrees with validation point prediction class
-        weights[(self.y_train_indices != self.class_index)[sortperm]] *= -1
-
-        return self._discretize_weight(weights)
 
     @overload
     def _discretize_weight(self, weight: float) -> int: ...
