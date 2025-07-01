@@ -35,7 +35,6 @@ class GaussianImputerBase(Imputer):
         x: npt.NDArray[np.floating] | None = None,
         *,
         n_mc_samples: int = 1000,
-        categorical_features: list[int] | None = None,
         random_state: int | None = None,
         verbose: bool = False,
     ) -> None:
@@ -49,8 +48,6 @@ class GaussianImputerBase(Imputer):
             x: The explanation point to use the imputer on either as a 2-dimensional array with
                 shape ``(1, n_features)`` or as a vector with shape ``(n_features,)``.
             n_mc_samples: Number of Monte Carlo samples for imputation, by default 1000.
-            categorical_features: A list of indices of the categorical features in the background
-                data.
             random_state: The random state to use for sampling. Defaults to ``None``.
             verbose: A flag to enable verbose imputation, which will print a progress bar for model
                 evaluation. Note that this can slow down the imputation process. Defaults to
@@ -63,7 +60,7 @@ class GaussianImputerBase(Imputer):
             data=data,
             x=x,
             sample_size=n_mc_samples,  # TODO (milanagm): Use n_mc_samples as sample_size - is that correct?
-            categorical_features=categorical_features,
+            categorical_features=[],
             random_state=random_state,
             verbose=verbose,
         )
