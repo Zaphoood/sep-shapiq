@@ -10,6 +10,7 @@ on:
 
 jobs:
   install-and-import:
+    name: Install and Import
 
     runs-on: ubuntu-latest
 
