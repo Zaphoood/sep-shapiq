@@ -10,7 +10,6 @@ on:
 
 jobs:
   install-and-import:
-    name: Install and Import
 
     runs-on: ubuntu-latest
 
@@ -21,7 +20,7 @@ jobs:
       - name: Install uv and Python
         uses: astral-sh/setup-uv@v6
         with:
-          python-version: '3.11'
+          python-version: "3.11"
           activate-environment: true
 
       - name: Install package using uv

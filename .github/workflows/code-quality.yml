@@ -5,29 +5,29 @@ name: code-quality
 on:
   pull_request:
     branches:
-      - '*'
+      - "*"
   push:
     branches:
       - main
 
 jobs:
   build:
-    name: Code Quality
 
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Install uv and Python
-        uses: astral-sh/setup-uv@v6
-        with:
-          python-version: '3.11'
-          activate-environment: true
+    - name: Install uv and Python
+      uses: astral-sh/setup-uv@v6
+      with:
+        python-version: "3.11"
+        activate-environment: true
 
-      - name: Install pre-commit
-        run: |
-          uv sync --only-group lint
+    - name: Install pre-commit
+      run: |
+        uv sync --only-group lint
+        uv run pre-commit install
 
-      - name: Run code-quality checks
-        run: uv run pre-commit run --all-files
+    - name: Run code-quality checks
+      run: uv run pre-commit run --all-files
