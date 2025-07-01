@@ -8,19 +8,20 @@ calculations. It inherits from shapiq's Imputer base class and provides a common
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from .exceptions import EmptyDataError
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
     from shapiq.utils import Model
 
 from shapiq.games.imputer.base import Imputer
 
 
-class GaussianImputerBase(Imputer):  # type: ignore[misc]
+class GaussianImputerBase(Imputer):
     """Abstract base class for Gaussian-based imputation approaches.
 
     This class inherits from shapiq's Imputer base class and defines the interface that all specific
@@ -30,8 +31,8 @@ class GaussianImputerBase(Imputer):  # type: ignore[misc]
     def __init__(
         self,
         model: Model,
-        data: np.ndarray[Any, Any],
-        x: np.ndarray[Any, Any] | None = None,
+        data: npt.NDArray[np.floating],
+        x: npt.NDArray[np.floating] | None = None,
         *,
         n_mc_samples: int = 1000,
         categorical_features: list[int] | None = None,
@@ -68,18 +69,18 @@ class GaussianImputerBase(Imputer):  # type: ignore[misc]
         )
 
         self.n_mc_samples = n_mc_samples
-        self._mean_per_feature: np.ndarray[Any, Any] | None = None
-        self._cov_mat: np.ndarray[Any, Any] | None = None
+        self._mean_per_feature: npt.NDArray[np.floating] | None = None
+        self._cov_mat: npt.NDArray[np.floating] | None = None
 
     @property
-    def mean_per_feature(self) -> np.ndarray[Any, Any]:
+    def mean_per_feature(self) -> npt.NDArray[np.floating]:
         """Returns the mean values per feature, computing them if not already computed."""
         if self._mean_per_feature is None:
             self._mean_per_feature = np.mean(self.data, axis=0)
         return self._mean_per_feature
 
     @property
-    def cov_mat(self) -> np.ndarray[Any, Any]:
+    def cov_mat(self) -> npt.NDArray[np.floating]:
         """Returns the covariance matrix, computing it if not already computed."""
         if self._cov_mat is None:
             self._cov_mat = self._ensure_positive_definite(np.cov(self.data.T))
@@ -87,9 +88,9 @@ class GaussianImputerBase(Imputer):  # type: ignore[misc]
 
     def _ensure_positive_definite(
         self,
-        cov_mat: np.ndarray[Any, Any],
+        cov_mat: npt.NDArray[np.floating],
         min_eigen_value: float = 1e-06,
-    ) -> np.ndarray[Any, Any]:
+    ) -> npt.NDArray[np.floating]:
         """Ensure covariance matrix is positive definite by correcting eigenvalues if necessary.
 
         Args:

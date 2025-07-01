@@ -7,7 +7,7 @@ continuous features only.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.random import default_rng
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     from shapiq.utils import Model
 
-from ._base import GaussianImputerBase
+from .base import GaussianImputerBase
 from .exceptions import CategoricalFeatureError
 
 # We disallow columns with <= 2 unique values, since they are likely either:
@@ -38,8 +38,8 @@ class GaussianImputer(GaussianImputerBase):
     def __init__(
         self,
         model: Model,
-        data: np.ndarray[Any, Any],
-        x: np.ndarray[Any, Any] | None = None,
+        data: npt.NDArray[np.floating],
+        x: npt.NDArray[np.floating] | None = None,
         *,
         n_mc_samples: int = 1000,
         categorical_features: list[int] | None = None,
@@ -93,7 +93,7 @@ class GaussianImputer(GaussianImputerBase):
         if categorical_indices:
             raise CategoricalFeatureError(categorical_indices)
 
-    def impute(self, coalitions: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
+    def impute(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Impute missing values for given coalitions using Gaussian MC sampling.
 
         Args:
