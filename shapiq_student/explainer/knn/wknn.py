@@ -397,7 +397,7 @@ class WKNNExplainer(WKNNExplainerBase):
     def _prepare_weights(
         self, weights: npt.NDArray[np.floating], sortperm: npt.NDArray[np.integer]
     ) -> npt.NDArray[np.integer]:
-        """Normalize weights to interval [0, 1] and flip sign where y label disagrees with validation label.
+        """Normalize weights to interval [0, 1], flip sign where y label disagrees with validation label, and discretize weights.
 
         Args:
             weights: The original weights.
@@ -410,15 +410,39 @@ class WKNNExplainer(WKNNExplainerBase):
         # Normalize weights to [0, 1]
         weights = (weights - np.min(weights)) / (np.max(weights) - np.min(weights))
 
-        weights_discrete = np.round(weights * 2**self.n_bits).astype(int)
-
         # Change sign of weights where corresponding class disagrees with validation point prediction class
-        weights_discrete[(self.y_train_indices != self.class_index)[sortperm]] *= -1
+        weights[(self.y_train_indices != self.class_index)[sortperm]] *= -1
 
-        # Shift by half of weights space size to turn weights into positive indices
-        weights_discrete += self.k * 2**self.n_bits
+        return self._discretize_weight(weights)
 
-        return weights_discrete
+    @overload
+    def _discretize_weight(self, weight: float) -> int: ...
+
+    @overload
+    def _discretize_weight(self, weight: npt.NDArray[np.floating]) -> npt.NDArray[np.integer]: ...
+
+    def _discretize_weight(
+        self, weight: float | npt.NDArray[np.floating]
+    ) -> int | npt.NDArray[np.integer]:
+        """Turns floating-point weight into an integer index in the discretized weights space.
+
+        Weight ``-k`` will be mapped to index ``0`` and weight ``k`` to index ``2 * k * 2**n_bits``.
+        """
+        return self.weights_space_zero + np.round(weight * 2**self.n_bits).astype(int)
+
+    @overload
+    def _undiscretize_weight(self, weight_discrete: int) -> float: ...
+
+    @overload
+    def _undiscretize_weight(
+        self, weight_discrete: npt.NDArray[np.integer]
+    ) -> npt.NDArray[np.floating]: ...
+
+    def _undiscretize_weight(
+        self, weight_discrete: int | npt.NDArray[np.integer]
+    ) -> float | npt.NDArray[np.floating]:
+        """Turns discrete weight index into the corresponding floating point weight."""
+        return (weight_discrete - self.weights_space_zero) / (2**self.n_bits)
 
     @overload
     def _flip_weight_sign(self, weight_discrete: int) -> int: ...
