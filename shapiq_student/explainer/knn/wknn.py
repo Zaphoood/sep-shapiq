@@ -152,6 +152,10 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
         sortperm: npt.NDArray[np.integer],
         weights: npt.NDArray[np.floating],
     ) -> npt.NDArray[np.floating]:
+        inv_sortperm = np.zeros_like(sortperm)
+        inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
+        print("brute weights", np.round(weights[inv_sortperm], 3))
+
         n_players = self.X_train.shape[0]
         utilities = np.zeros((2**n_players,))
 
@@ -262,6 +266,10 @@ class WKNNExplainer(WKNNExplainerBase):
         # Change sign of weights where class disagrees with class of validation point
         weights[(self.y_train_indices != self.class_index)[sortperm]] *= -1
         weights_discrete = self._discretize_weight(weights)
+
+        inv_sortperm = np.zeros_like(sortperm)
+        inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
+        print("wang weights", weights_discrete[inv_sortperm])
 
         sv = np.zeros(n)
 
