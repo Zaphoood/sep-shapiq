@@ -8,8 +8,8 @@ from typing import Any
 import numpy as np
 import pytest
 
-from shapiq_student.imputer.exceptions import CategoricalFeatureError, EmptyDataError
-from shapiq_student.imputer.gaussian_imputer import GaussianImputer
+from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError, EmptyDataError
+from shapiq_student.imputer.gaussian.gaussian_imputer import GaussianImputer
 
 
 def dummy_model(x: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:

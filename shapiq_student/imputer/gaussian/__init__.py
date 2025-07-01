@@ -12,11 +12,8 @@ GaussianImputerBase : Imputer
     Abstract base class for Gaussian-based imputation approaches
 GaussianImputer : GaussianImputerBase
     Implementation using Gaussian distribution for sampling
-GaussianCopulaImputer : GaussianImputerBase
-    Implementation using Copula's binning strategy
 """
 
-from .gaussian_copula_imputer import GaussianCopulaImputer
 from .gaussian_imputer import GaussianImputer
 
-__all__ = ["GaussianImputer", "GaussianCopulaImputer"]
+__all__ = ["GaussianImputer"]
