@@ -152,10 +152,16 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
         sortperm: npt.NDArray[np.integer],
         weights: npt.NDArray[np.floating],
     ) -> npt.NDArray[np.floating]:
-        inv_sortperm = np.zeros_like(sortperm)
-        inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
-        print("brute weights", np.round(weights[inv_sortperm], 3))
+        """Computes the Shapley Values for a single binary-class classification game.
 
+        Only training data points which have class index ``y_val`` or ``y_other`` are considered and all others ignored.
+
+        Args:
+            y_val: The index of the class to explain.
+            y_other: The index of the other class to consider for the binary sub-game.
+            sortperm: Sorting permutation of the training data points with respect to weights.
+            weights: Array of weights assigned to each training data point.
+        """
         n_players = self.X_train.shape[0]
         utilities = np.zeros((2**n_players,))
 
@@ -263,10 +269,6 @@ class WKNNExplainer(WKNNExplainerBase):
             raise NotImplementedError(msg)
 
         sortperm, weights_discrete = self._get_discrete_weights(x_val)
-
-        inv_sortperm = np.zeros_like(sortperm)
-        inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
-        print("wang weights", weights_discrete[inv_sortperm])
 
         sv = np.zeros(n)
 
