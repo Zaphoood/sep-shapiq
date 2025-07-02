@@ -9,8 +9,8 @@ from typing_extensions import override
 import numpy as np
 from shapiq import Game, InteractionValues
 
-from shapiq_student.explainer.knn import KNNExplainerBase
 from shapiq_student.explainer.knn.base import interaction_values_from_array
+from shapiq_student.explainer.knn.knn import KNNExplainerBase
 
 if TYPE_CHECKING:
     import numpy.typing as npt

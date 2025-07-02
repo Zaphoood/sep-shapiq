@@ -2,36 +2,49 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
+import numpy.typing as npt
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import MinMaxScaler
 
-from shapiq_student.explainer.knn import KNNClassifierExplainer
-from shapiq_student.explainer.knn.base import interaction_values_to_array
-from shapiq_student.explainer.knn.knn import BruteForceKNNClassifierExplainer
+from shapiq_student.explainer.knn import (
+    BruteForceKNNClassifierExplainer,
+    KNNClassifierExplainer,
+    interaction_values_to_array,
+)
 
 
-def test_minimal_example():
-    """Tests the KNN Explainer with a minimal, hard-coded example by comparing to the brute force implementation."""
-    X_train = np.array([[-3, 0], [-1, 0], [1, 0], [2, 0]])
-    y_train = np.array([0, 1, 1, 1])
-    x_val = np.array([0, 0])
+def test_agrees_with_brute_force():
+    """Test that the result of KNNExplainer agrees with that of the brute force implementation.
 
+    The test is performed using part of the scikit-learn iris dataset.
+    """
+    iris = load_iris()
+    X = cast("npt.NDArray[np.floating]", iris.data)
+    y = cast("npt.NDArray[np.floating]", iris.target)
+
+    train_max_size = 10
+    X_train, X_test, y_train, _ = train_test_split(X, y, test_size=0.9, random_state=41)
+    X_train = X_train[:train_max_size]
+    y_train = y_train[:train_max_size]
+
+    x_val = X_test[0]
+
+    n_classes = len(set(y))
     k = 3
     model = KNeighborsClassifier(n_neighbors=k)
     model.fit(X_train, y_train)
 
-    for class_index in [0, 1]:
+    for class_index in range(n_classes):
         brute_explainer = BruteForceKNNClassifierExplainer(model, class_index=class_index)
         iv_brute = interaction_values_to_array(brute_explainer.explain(x_val))
 
         jia_explainer = KNNClassifierExplainer(model, class_index=class_index)
         iv_jia = interaction_values_to_array(jia_explainer.explain_function(x_val))
-
-        print(f"brute: {iv_brute}")  # noqa: T201
-        print(f"jia: {iv_jia}")  # noqa: T201
 
         assert np.allclose(iv_brute, iv_jia)
 
