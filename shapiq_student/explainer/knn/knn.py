@@ -154,7 +154,7 @@ class KNNClassifierExplainer(KNNExplainerBase):
                 (bool(y_train_is_class_index[i]) - bool(y_train_is_class_index[i + 1])) / self.k
             ) * (min(self.k, (i + 1)) / (i + 1))
 
-        inv_sortperm = sorted(zip(sortperm, sv, strict=False))
-        _, sv_backsorted = np.array(list(zip(*inv_sortperm, strict=False)))
+        inv_sortperm = np.zeros_like(sortperm)
+        inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
 
-        return interaction_values_from_array(sv_backsorted)
+        return interaction_values_from_array(sv[inv_sortperm])
