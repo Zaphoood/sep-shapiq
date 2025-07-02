@@ -59,28 +59,26 @@ class KNNClassifierExplainer(KNNExplainerBase):
         )
         sorted_indices = sorted_indices_get[0]
 
-        for i in range(N):
-            idx = sorted_indices[i]
-            if self.y_train_indices[idx] == self.class_index:
-                s[i] = 1 / N
+        if sorted_indices[-1] == self.class_index:
+            s[-1] = 1 / N
 
-        for j in reversed(range(N - 1)):
-            idxj = sorted_indices[j]
-            idxj_plusplus = sorted_indices[j + 1]
-            if (self.y_train_indices[idxj] == self.class_index) and (
-                self.y_train_indices[idxj_plusplus] == self.class_index
+        for i in reversed(range(N - 1)):
+            idxi = sorted_indices[i]
+            idxi_plus = sorted_indices[i + 1]
+            if (self.y_train_indices[idxi] == self.class_index) and (
+                self.y_train_indices[idxi_plus] == self.class_index
             ):
-                s[j] = s[j + 1]
-            elif (self.y_train_indices[idxj] == self.class_index) and (
-                self.y_train_indices[idxj_plusplus] != self.class_index
+                s[i] = s[i + 1]
+            elif (self.y_train_indices[idxi] == self.class_index) and (
+                self.y_train_indices[idxi_plus] != self.class_index
             ):
-                s[j] = s[j + 1] + (1 / self.k) * ((min(self.k, (j + 1))) / (j + 1))
-            elif (self.y_train_indices[idxj] != self.class_index) and (
-                self.y_train_indices[idxj_plusplus] == self.class_index
+                s[i] = s[i + 1] + (1 / self.k) * ((min(self.k, (i + 1))) / (i + 1))
+            elif (self.y_train_indices[idxi] != self.class_index) and (
+                self.y_train_indices[idxi_plus] == self.class_index
             ):
-                s[j] = s[j + 1] - (1 / self.k) * ((min(self.k, (j + 1))) / (j + 1))
+                s[i] = s[i + 1] - (1 / self.k) * ((min(self.k, (i + 1))) / (i + 1))
             else:
-                s[j] = s[j + 1]
+                s[i] = s[i + 1]
 
         backsort = sorted(zip(sorted_indices, s, strict=False))
         indices, backsorted_s = np.array(list(zip(*backsort, strict=False)))
