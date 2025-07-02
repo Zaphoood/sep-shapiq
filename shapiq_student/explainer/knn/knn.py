@@ -112,7 +112,7 @@ class KNNClassifierExplainer(KNNExplainerBase):
     def __init__(
         self,
         model: sklearn.neighbors.KNeighborsClassifier,
-        class_index: int | None = None,
+        class_index: int,
     ) -> None:
         """Initialize the KNN Shapley Calculator.
 
