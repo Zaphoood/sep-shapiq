@@ -37,7 +37,6 @@ dev = [
     "twine>=6.1.0",
     "notebook>=7.3.3",
     "ipywidgets",
-    "mypy>=1.16.1",
     {include-group = "test"},
     {include-group = "lint"},
     {include-group = "types"},
