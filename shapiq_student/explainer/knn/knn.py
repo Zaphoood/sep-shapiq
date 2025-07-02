@@ -144,10 +144,10 @@ class KNNClassifierExplainer(KNNExplainerBase):
         sortperm = self.model.kneighbors(x.reshape(1, -1), n_neighbors=n, return_distance=False)
         sortperm = sortperm[0]
 
-        sv[-1] = int(sortperm[-1] == self.class_index) / n
-
         y_train_sorted = self.y_train_indices[sortperm]
         y_train_is_class_index = y_train_sorted == self.class_index
+
+        sv[-1] = bool(y_train_is_class_index[-1]) / n
 
         for i in range(n - 2, -1, -1):
             sv[i] = sv[i + 1] + (
