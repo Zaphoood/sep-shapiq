@@ -127,17 +127,8 @@ class KNNClassifierExplainer(KNNExplainerBase):
         """
         super().__init__(model, class_index)
 
+    @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        """Compute shapley values for training data.
-
-        Parameters:
-        - X_test (np.ndarray): Test features, shape (N_test, d).
-
-        Returns:
-        - np.ndarray: Shapley values for training data, shape (N,).
-
-        Not to be used directly. Use shapiq's explain() instead. To calculate the shapley values for more than one data point use shapiq's explain_X().
-        """
         n = len(self.X_train)
         sv = np.zeros(n)
 
