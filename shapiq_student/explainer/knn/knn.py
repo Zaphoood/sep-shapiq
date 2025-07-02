@@ -10,7 +10,7 @@ import numpy as np
 from shapiq import Game, InteractionValues
 
 from shapiq_student.explainer.knn import KNNExplainerBase
-from shapiq_student.explainer.knn.base import interaction_lookup_from_knn_shapley_values
+from shapiq_student.explainer.knn.base import interaction_values_from_array
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -168,4 +168,4 @@ class KNNClassifierExplainer(KNNExplainerBase):
         inv_sortperm = sorted(zip(sortperm, sv, strict=False))
         _, sv_backsorted = np.array(list(zip(*inv_sortperm, strict=False)))
 
-        return interaction_lookup_from_knn_shapley_values(sv_backsorted)
+        return interaction_values_from_array(sv_backsorted)
