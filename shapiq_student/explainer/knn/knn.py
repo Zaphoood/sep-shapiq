@@ -138,32 +138,21 @@ class KNNClassifierExplainer(KNNExplainerBase):
 
         Not to be used directly. Use shapiq's explain() instead. To calculate the shapley values for more than one data point use shapiq's explain_X().
         """
-        N = len(self.X_train)
-        sv = np.zeros(N)
+        n = len(self.X_train)
+        sv = np.zeros(n)
 
-        sortperm = self.model.kneighbors(x.reshape(1, -1), n_neighbors=N, return_distance=False)
+        sortperm = self.model.kneighbors(x.reshape(1, -1), n_neighbors=n, return_distance=False)
         sortperm = sortperm[0]
 
-        if sortperm[-1] == self.class_index:
-            sv[-1] = 1 / N
+        sv[-1] = int(sortperm[-1] == self.class_index) / n
 
-        for i in reversed(range(N - 1)):
-            idxi = sortperm[i]
-            idxi_plus = sortperm[i + 1]
-            if (self.y_train_indices[idxi] == self.class_index) and (
-                self.y_train_indices[idxi_plus] == self.class_index
-            ):
-                sv[i] = sv[i + 1]
-            elif (self.y_train_indices[idxi] == self.class_index) and (
-                self.y_train_indices[idxi_plus] != self.class_index
-            ):
-                sv[i] = sv[i + 1] + (1 / self.k) * ((min(self.k, (i + 1))) / (i + 1))
-            elif (self.y_train_indices[idxi] != self.class_index) and (
-                self.y_train_indices[idxi_plus] == self.class_index
-            ):
-                sv[i] = sv[i + 1] - (1 / self.k) * ((min(self.k, (i + 1))) / (i + 1))
-            else:
-                sv[i] = sv[i + 1]
+        y_train_sorted = self.y_train_indices[sortperm]
+        y_train_is_class_index = y_train_sorted == self.class_index
+
+        for i in range(n - 2, -1, -1):
+            sv[i] = sv[i + 1] + (
+                (bool(y_train_is_class_index[i]) - bool(y_train_is_class_index[i + 1])) / self.k
+            ) * (min(self.k, (i + 1)) / (i + 1))
 
         inv_sortperm = sorted(zip(sortperm, sv, strict=False))
         _, sv_backsorted = np.array(list(zip(*inv_sortperm, strict=False)))
