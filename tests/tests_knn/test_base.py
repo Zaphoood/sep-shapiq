@@ -9,7 +9,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from shapiq_student.explainer.knn import (
     KNNExplainerBase,
-    interaction_lookup_from_knn_shapley_values,
+    interaction_values_from_array,
 )
 from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
 
@@ -72,7 +72,7 @@ def test_interaction_lookup_from_knn_shapley_values():
     )
     n = sv.shape[0]
 
-    iv = interaction_lookup_from_knn_shapley_values(sv)
+    iv = interaction_values_from_array(sv)
 
     sv_reconstructed = [iv.values[iv.interaction_lookup[(i,)]] for i in range(n)]
     assert np.allclose(sv, sv_reconstructed)
@@ -89,7 +89,7 @@ def test_interaction_lookup_from_knn_shapley_values_emtpy():
     """Tests interaction_lookup_from_knn_shapley_values can handle empty arrays."""
     sv = np.array([])
 
-    iv = interaction_lookup_from_knn_shapley_values(sv)
+    iv = interaction_values_from_array(sv)
 
     assert iv.values.shape[0] == 0
 
