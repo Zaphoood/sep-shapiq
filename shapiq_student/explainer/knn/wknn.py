@@ -262,10 +262,7 @@ class WKNNExplainer(WKNNExplainerBase):
             msg = f"Multi-class prediction is not yet implemented (got {n_classes=})"
             raise NotImplementedError(msg)
 
-        sortperm, weights = self._get_normalized_weights(x_val)
-        # Change sign of weights where class disagrees with class of validation point
-        weights[(self.y_train_indices != self.class_index)[sortperm]] *= -1
-        weights_discrete = self._discretize_weight(weights)
+        sortperm, weights_discrete = self._get_discrete_weights(x_val)
 
         inv_sortperm = np.zeros_like(sortperm)
         inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
@@ -282,6 +279,16 @@ class WKNNExplainer(WKNNExplainerBase):
             sv[sortperm[i]] = self._compute_single_shapley_value(i, n, r_i, g_i, weights_discrete)
 
         return interaction_values_from_array(sv)
+
+    def _get_discrete_weights(
+        self, x_val: npt.NDArray[np.floating]
+    ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.integer]]:
+        sortperm, weights = self._get_normalized_weights(x_val)
+        # Change sign of weights where class disagrees with class of validation point
+        weights[(self.y_train_indices != self.class_index)[sortperm]] *= -1
+        weights_discrete = self._discretize_weight(weights)
+
+        return sortperm, weights_discrete
 
     def _compute_f_i(
         self,
