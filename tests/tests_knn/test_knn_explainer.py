@@ -9,6 +9,31 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import MinMaxScaler
 
 from shapiq_student.explainer.knn import KNNClassifierExplainer
+from shapiq_student.explainer.knn.base import interaction_values_to_array
+from shapiq_student.explainer.knn.knn import BruteForceKNNClassifierExplainer
+
+
+def test_minimal_example():
+    """Tests the KNN Explainer with a minimal, hard-coded example by comparing to the brute force implementation."""
+    X_train = np.array([[-3, 0], [-1, 0], [1, 0], [2, 0]])
+    y_train = np.array([0, 1, 1, 1])
+    x_val = np.array([0, 0])
+
+    k = 3
+    model = KNeighborsClassifier(n_neighbors=k)
+    model.fit(X_train, y_train)
+
+    for class_index in [0, 1]:
+        brute_explainer = BruteForceKNNClassifierExplainer(model, class_index=class_index)
+        iv_brute = interaction_values_to_array(brute_explainer.explain(x_val))
+
+        jia_explainer = KNNClassifierExplainer(model, class_index=class_index)
+        iv_jia = interaction_values_to_array(jia_explainer.explain_function(x_val))
+
+        print(f"brute: {iv_brute}")  # noqa: T201
+        print(f"jia: {iv_jia}")  # noqa: T201
+
+        assert np.allclose(iv_brute, iv_jia)
 
 
 def test_output_length():
@@ -30,52 +55,3 @@ def test_output_length():
     testoutput = knn_expl.explain_function(x=X_test[5])
 
     assert (len(testoutput)) == (len(y_train))
-
-
-def test_output_range():
-    """Tests wether the calculated shapley values are in range ](1/n);1] with n = number of class indices."""
-    dataf = load_iris()
-    X = dataf.data
-    y = dataf.target
-
-    scaler = MinMaxScaler(feature_range=(-1, 1))
-    X = scaler.fit_transform(X)
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    probierModel = KNeighborsClassifier(n_neighbors=20)
-    probierModel.fit(X_train, y_train)
-
-    outarray = np.zeros(len(y_test))
-
-    for i in range(len(y_test)):
-        knn_expl = KNNClassifierExplainer(model=probierModel, class_index=y_test[i])
-        outarray[i] = np.sum(knn_expl.explain_function(x=X_test[i]))
-
-    def between_all_and(arr, a, b):
-        return np.all((arr > a) & (arr < b))
-
-    assert between_all_and(outarray, 0.33333, 1.00001)
-
-
-def test_sum_output():
-    """Tests wether the returned shapley values sum up to 1 when calculated for all indices."""
-    dataf = load_iris()
-    X = dataf.data
-    y = dataf.target
-
-    scaler = MinMaxScaler(feature_range=(-1, 1))
-    X = scaler.fit_transform(X)
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    probierModel = KNeighborsClassifier(n_neighbors=20)
-    probierModel.fit(X_train, y_train)
-
-    for j in range(5):
-        testoutput = [0, 0, 0]
-        for i in range(3):
-            knn_expl = KNNClassifierExplainer(model=probierModel, class_index=i)
-            testoutput[i] = knn_expl.explain_function(x=X_test[j])
-
-        assert np.allclose(np.sum(testoutput), 1)
