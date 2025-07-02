@@ -126,14 +126,15 @@ class KNNClassifierExplainer(KNNExplainerBase):
         sortperm = self.model.kneighbors(x.reshape(1, -1), n_neighbors=n, return_distance=False)
         sortperm = sortperm[0]
 
-        y_train_sorted = self.y_train_indices[sortperm]
-        y_train_is_class_index = y_train_sorted == self.class_index
+        y_train_indices_sorted = self.y_train_indices[sortperm]
+        # Compute indicator function of whether a training point's class agrees with the class to explain
+        y_train_is_class_index = (y_train_indices_sorted == self.class_index).astype(int)
 
-        sv[-1] = bool(y_train_is_class_index[-1]) / n
+        sv[-1] = y_train_is_class_index[-1] / n
 
         for i in range(n - 2, -1, -1):
             sv[i] = sv[i + 1] + (
-                (bool(y_train_is_class_index[i]) - bool(y_train_is_class_index[i + 1])) / self.k
+                (y_train_is_class_index[i] - y_train_is_class_index[i + 1]) / self.k
             ) * (min(self.k, (i + 1)) / (i + 1))
 
         inv_sortperm = np.zeros_like(sortperm)
