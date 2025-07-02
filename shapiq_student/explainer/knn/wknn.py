@@ -284,7 +284,7 @@ class WKNNExplainer(WKNNExplainerBase):
         self, x_val: npt.NDArray[np.floating]
     ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.integer]]:
         sortperm, weights = self._get_normalized_weights(x_val)
-        # Change sign of weights where class disagrees with class of validation point
+        # Change sign of weights where class disagrees with class that is to be explained
         weights[(self.y_train_indices != self.class_index)[sortperm]] *= -1
         weights_discrete = self._discretize_weight(weights)
 
