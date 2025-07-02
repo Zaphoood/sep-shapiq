@@ -18,6 +18,15 @@ class KNNClassifierExplainer(KNNExplainerBase):
     """KNN Classifier Explainer.
 
     For calculating exact shapley values for an unweighted KNN Classifier.
+
+    Args:
+    - data (None): Not used, only to fit the shap-iq structure.
+    - model: KNN Classifier to be explained. Accepts a fitted instance of
+        scikit-learn's KNeighborsClassifier.
+    - class_index (int): The class-index of the classifier to be explained. Defaults to 1.
+        The class index should be set. To explain more than one class, additional instances of KNNClassifierExplainer are needed.
+
+    The KNNClassifierExplainer should not be calles directly but by using the shapiq.explainer.Explainer.
     """
 
     def __init__(
@@ -25,9 +34,10 @@ class KNNClassifierExplainer(KNNExplainerBase):
         model: sklearn.neighbors.KNeighborsClassifier,
         class_index: int | None = None,
     ) -> None:
-        """Initialize the KNN Shapley Calculator.
+        """KNN Classifier Explainer.
 
-        Parameters:
+        For calculating exact shapley values for an unweighted KNN Classifier.
+
         - data (None): Not used, only to fit the shap-iq structure.
         - model: KNN Classifier to be explained. Accepts a fitted instance of
             scikit-learn's KNeighborsClassifier.
@@ -47,7 +57,8 @@ class KNNClassifierExplainer(KNNExplainerBase):
         Returns:
         - np.ndarray: Shapley values for training data, shape (N,).
 
-        Not to be used directly. Use shapiq's explain() instead. To calculate the shapley values for more than one data point use shapiq's explain_X().
+        Not to be used directly. Use shapiq's explain() instead. To calculate the
+        shapley values for more than one data point use shapiq's explain_X().
         """
         self.X_test = X_test
 
