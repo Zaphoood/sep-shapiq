@@ -27,7 +27,7 @@ def test_output_length():
 
     knn_expl = KNNClassifierExplainer(model=probierModel, class_index=y_test[5])
 
-    testoutput = knn_expl.explain_function(X_test=X_test[5])
+    testoutput = knn_expl.explain_function(x=X_test[5])
 
     assert (len(testoutput)) == (len(y_train))
 
@@ -50,7 +50,7 @@ def test_output_range():
 
     for i in range(len(y_test)):
         knn_expl = KNNClassifierExplainer(model=probierModel, class_index=y_test[i])
-        outarray[i] = np.sum(knn_expl.explain_function(X_test=X_test[i]))
+        outarray[i] = np.sum(knn_expl.explain_function(x=X_test[i]))
 
     def between_all_and(arr, a, b):
         return np.all((arr > a) & (arr < b))
@@ -76,6 +76,6 @@ def test_sum_output():
         testoutput = [0, 0, 0]
         for i in range(3):
             knn_expl = KNNClassifierExplainer(model=probierModel, class_index=i)
-            testoutput[i] = knn_expl.explain_function(X_test=X_test[j])
+            testoutput[i] = knn_expl.explain_function(x=X_test[j])
 
         assert np.allclose(np.sum(testoutput), 1)
