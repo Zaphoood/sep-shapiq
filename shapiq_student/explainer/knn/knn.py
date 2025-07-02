@@ -108,22 +108,14 @@ class KNNClassifierExplainer(KNNExplainerBase):
     For calculating exact shapley values for an unweighted KNN Classifier.
     """
 
+    # TODO(Zaphoood): Explain functionality in class docstring
+
+    @override
     def __init__(
         self,
         model: sklearn.neighbors.KNeighborsClassifier,
         class_index: int,
     ) -> None:
-        """Initialize the KNN Shapley Calculator.
-
-        Parameters:
-        - data (None): Not used, only to fit the shap-iq structure.
-        - model: KNN Classifier to be explained. Accepts a fitted instance of
-            scikit-learn's KNeighborsClassifier.
-        - class_index (int): The class-index of the classifier to be explained. Defaults to 1.
-            The class index should be set. To explain more than one class, additional instances of KNNClassifierExplainer are needed.
-
-        The KNNClassifierExplainer should not be calles directly but by using the shapiq.explainer.Explainer.
-        """
         super().__init__(model, class_index)
 
     @override
