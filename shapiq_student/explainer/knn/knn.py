@@ -93,7 +93,7 @@ def _first_n_true(mask: npt.NDArray[np.bool], n: int) -> npt.NDArray[np.bool]:
 
     n_true = 0
     for i, val in enumerate(mask):
-        n_true += val
+        n_true += int(val)
         if n_true == n:
             out = np.zeros_like(mask)
             out[: i + 1] = mask[: i + 1]
