@@ -1,4 +1,7 @@
-"""Tests for the GaussianImputer class."""
+"""Tests for the GaussianImputer class.
+
+This module contains unit tests for the GaussianImputer class, including tests for categorical feature detection, mean and covariance calculations, and imputation logic.
+"""
 
 from __future__ import annotations
 
@@ -13,12 +16,19 @@ from shapiq_student.imputer.gaussian.gaussian_imputer import GaussianImputer
 
 
 def dummy_model(x: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
-    """A simple placeholder model for testing that returns the sum over the last axis."""
+    """A simple placeholder model for testing.
+
+    Args:
+        x (np.ndarray[Any, Any]): Input data.
+
+    Returns:
+        np.ndarray[Any, Any]: Sum over the last axis of the input.
+    """
     return np.asarray(np.sum(x, axis=-1), dtype=float)
 
 
 def test_check_categorical_features_valid() -> None:
-    """Should pass silently when all features are continuous with >2 uniques."""
+    """Test that no error is raised when all features are continuous with >2 unique values."""
     data = np.array(
         [
             [1.0, 2.0, 3.0],
@@ -32,7 +42,7 @@ def test_check_categorical_features_valid() -> None:
 
 
 def test_check_categorical_features_binary_integer() -> None:
-    """Should raise ValueError naming column f2 when it has only 0/1 values."""
+    """Test that CategoricalFeatureError is raised for binary integer columns (e.g., 0/1)."""
     data = np.array(
         [
             [1.0, 0, 3.0],
@@ -52,7 +62,7 @@ def test_check_categorical_features_binary_integer() -> None:
 
 
 def test_check_categorical_features_string() -> None:
-    """Should raise ValueError naming column f2 when it contains strings."""
+    """Test that CategoricalFeatureError is raised for columns containing strings."""
     data = np.array(
         [
             [1.0, "a", 3.0],
@@ -71,7 +81,7 @@ def test_check_categorical_features_string() -> None:
 
 
 def test_check_categorical_features_mixed() -> None:
-    """Should raise ValueError naming columns f2 and f3 for binary+string mix."""
+    """Test that CategoricalFeatureError is raised for columns with both binary and string values."""
     data = np.array(
         [
             [1.0, 0, "a", 3.0],
@@ -114,7 +124,7 @@ def test_calculate_mean_per_feature_valid() -> None:
 
 
 def test_calculate_mean_per_feature_empty_data() -> None:
-    """Test mean calculation with empty data."""
+    """Test that EmptyDataError is raised when calculating mean with empty data."""
     data = np.empty((0, 3))
     x = np.array([])
     with pytest.raises(EmptyDataError):
@@ -138,7 +148,7 @@ def test_calculate_covariance_matrix_valid() -> None:
 
 
 def test_calculate_covariance_matrix_empty_data() -> None:
-    """Test covariance calculation with empty data."""
+    """Test that EmptyDataError is raised when calculating covariance with empty data."""
     data = np.empty((0, 3))
     x = np.array([])
     with pytest.raises(EmptyDataError):
@@ -151,7 +161,7 @@ def test_calculate_covariance_matrix_empty_data() -> None:
 
 
 def test_gaussian_imputation_first_feature_known_mean_and_cov_check() -> None:
-    """Test imputation: first feature known (1.0), last two unknown, mean should be [0.4, 0.25]."""
+    """Test imputation: first feature known, last two unknown; check mean and covariance."""
     mean = np.array([0.0, 0.0, 0.0])
     cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
     rng = np.random.default_rng()
@@ -165,7 +175,7 @@ def test_gaussian_imputation_first_feature_known_mean_and_cov_check() -> None:
 
 
 def test_gaussian_imputation_first_feature_known() -> None:
-    """Test imputation: first feature known, last two set to 1, mean should be 0.4."""
+    """Test imputation: first feature known, last two set to 1; check imputed mean."""
     mean = np.array([0.0, 0.0, 0.0])
     cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
     rng = np.random.default_rng()

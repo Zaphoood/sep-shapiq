@@ -40,19 +40,19 @@ class GaussianImputerBase(Imputer):
         """Initializes GaussianImputerBase.
 
         Args:
-            model: The model to explain as a callable function expecting data points as input and
+            model (object): The model to explain as a callable function expecting data points as input and
                 returning the model's predictions.
-            data: The background data to use for the explainer as a 2-dimensional array with shape
-                ``(n_samples, n_features)``.
-            x: The explanation point to use the imputer on either as a 2-dimensional array with
-                shape ``(1, n_features)`` or as a vector with shape ``(n_features,)``.
-            n_mc_samples: Number of Monte Carlo samples for imputation, by default 1000.
-            categorical_features: A list of indices of the categorical features in the background
-                data.
-            random_state: The random state to use for sampling. Defaults to ``None``.
-            verbose: A flag to enable verbose imputation, which will print a progress bar for model
-                evaluation. Note that this can slow down the imputation process. Defaults to
-                ``False``.
+            data (npt.NDArray[np.floating]): The background data to use for the explainer as a 2-dimensional array with shape
+                (n_samples, n_features).
+            x (npt.NDArray[np.floating] | None, optional): The explanation point to use the imputer on either as a 2-dimensional array with
+                shape (1, n_features) or as a vector with shape (n_features,). Defaults to None.
+            n_mc_samples (int, optional): Number of Monte Carlo samples for imputation. Defaults to 1000.
+            random_state (int | None, optional): The random state to use for sampling. Defaults to None.
+            verbose (bool, optional): A flag to enable verbose imputation, which will print a progress bar for model
+                evaluation. Note that this can slow down the imputation process. Defaults to False.
+
+        Raises:
+            EmptyDataError: If the provided data is empty.
         """
         if data is None or np.size(data) == 0 or (hasattr(data, "shape") and data.shape[0] == 0):
             raise EmptyDataError
@@ -72,14 +72,22 @@ class GaussianImputerBase(Imputer):
 
     @property
     def mean_per_feature(self) -> npt.NDArray[np.floating]:
-        """Returns the mean values per feature, computing them if not already computed."""
+        """Get the mean values per feature, computing them if not already computed.
+
+        Returns:
+            npt.NDArray[np.floating]: The mean value for each feature.
+        """
         if self._mean_per_feature is None:
             self._mean_per_feature = np.mean(self.data, axis=0)
         return self._mean_per_feature
 
     @property
     def cov_mat(self) -> npt.NDArray[np.floating]:
-        """Returns the covariance matrix, computing it if not already computed."""
+        """Get the covariance matrix, computing it if not already computed.
+
+        Returns:
+            npt.NDArray[np.floating]: The covariance matrix of the data.
+        """
         if self._cov_mat is None:
             self._cov_mat = self._ensure_positive_definite(np.cov(self.data.T))
         return self._cov_mat
@@ -92,11 +100,11 @@ class GaussianImputerBase(Imputer):
         """Ensure covariance matrix is positive definite by correcting eigenvalues if necessary.
 
         Args:
-            cov_mat: Input covariance matrix.
-            min_eigen_value: Minimum allowed eigenvalue, by default 1e-06.
+            cov_mat (npt.NDArray[np.floating]): Input covariance matrix.
+            min_eigen_value (float, optional): Minimum allowed eigenvalue. Defaults to 1e-06.
 
         Returns:
-            Positive definite covariance matrix.
+            npt.NDArray[np.floating]: Positive definite covariance matrix.
         """
         eigen_values = np.linalg.eigvalsh(cov_mat)
 

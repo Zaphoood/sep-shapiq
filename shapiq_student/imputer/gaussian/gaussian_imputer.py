@@ -42,22 +42,19 @@ class GaussianImputer(GaussianImputerBase):
         random_state: int | None = None,
         verbose: bool = False,
     ) -> None:
-        """Initialize the GaussianImputer.
+        """Initializes the GaussianImputer.
 
         Args:
-            model: The model to explain as a callable function expecting data points as input and
+            model (object): The model to explain as a callable function expecting data points as input and
                 returning the model's predictions.
-            data: The background data to use for the explainer as a 2-dimensional array with shape
-                ``(n_samples, n_features)``.
-            x: The explanation point to use the imputer on either as a 2-dimensional array with
-                shape ``(1, n_features)`` or as a vector with shape ``(n_features,)``.
-            n_mc_samples: Number of Monte Carlo samples for imputation, by default 1000.
-            categorical_features: A list of indices of the categorical features in the background
-                data.
-            random_state: The random state to use for sampling. Defaults to ``None``.
-            verbose: A flag to enable verbose imputation, which will print a progress bar for model
-                evaluation. Note that this can slow down the imputation process. Defaults to
-                ``False``.
+            data (npt.NDArray[np.floating]): The background data to use for the explainer as a 2-dimensional array with shape
+                (n_samples, n_features).
+            x (npt.NDArray[np.floating] | None, optional): The explanation point to use the imputer on either as a 2-dimensional array with
+                shape (1, n_features) or as a vector with shape (n_features,). Defaults to None.
+            n_mc_samples (int, optional): Number of Monte Carlo samples for imputation. Defaults to 1000.
+            random_state (int | None, optional): The random state to use for sampling. Defaults to None.
+            verbose (bool, optional): A flag to enable verbose imputation, which will print a progress bar for model
+                evaluation. Note that this can slow down the imputation process. Defaults to False.
         """
         super().__init__(
             model=model,
@@ -73,9 +70,7 @@ class GaussianImputer(GaussianImputerBase):
         """Check if any features are categorical variables.
 
         Raises:
-        ------
-        CategoricalFeatureError
-            If any categorical features are detected.
+            CategoricalFeatureError: If any categorical features are detected.
         """
         categorical_indices: list[int] = []
         for i, col in enumerate(self.data.T):
@@ -92,11 +87,14 @@ class GaussianImputer(GaussianImputerBase):
         """Impute missing values for given coalitions using Gaussian MC sampling, and call prediction function on imputed values.
 
         Args:
-            coalitions: Binary array indicating which features are present (1) or missing (0)
+            coalitions (npt.NDArray[np.bool]): Binary array indicating which features are present (1) or missing (0)
                 for each coalition. Shape: (n_coalitions, n_features).
 
         Returns:
-            Imputed data points for each explanation point and coalition. Shape: (n_explain, n_coalitions, n_mc_samples, n_features).
+            npt.NDArray[np.floating]: Imputed data points for each explanation point and coalition. Shape: (n_explain, n_coalitions, n_mc_samples, n_features).
+
+        Raises:
+            RuntimeError: If the explanation point x is not set.
         """
         if self.x is None:
             msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
