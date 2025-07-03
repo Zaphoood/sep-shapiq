@@ -16,6 +16,14 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
 from .base import GaussianImputerBase
+from .exceptions import CategoricalFeatureError
+
+# We disallow columns with <= 2 unique values, since they are likely either:
+# - Binary features
+# - One-hot encoded features (which would have at most 2 values per encoded column)
+MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 2
+
+# TODO(Zaphoood): adjust this to new base class layout
 
 
 class GaussianImputer(GaussianImputerBase):
@@ -33,6 +41,7 @@ class GaussianImputer(GaussianImputerBase):
         x: npt.NDArray[np.floating] | None = None,
         *,
         n_mc_samples: int = 1000,
+        categorical_features: list[int] | None = None,
         random_state: int | None = None,
         verbose: bool = False,
     ) -> None:
@@ -46,6 +55,8 @@ class GaussianImputer(GaussianImputerBase):
             x: The explanation point to use the imputer on either as a 2-dimensional array with
                 shape ``(1, n_features)`` or as a vector with shape ``(n_features,)``.
             n_mc_samples: Number of Monte Carlo samples for imputation, by default 1000.
+            categorical_features: A list of indices of the categorical features in the background
+                data.
             random_state: The random state to use for sampling. Defaults to ``None``.
             verbose: A flag to enable verbose imputation, which will print a progress bar for model
                 evaluation. Note that this can slow down the imputation process. Defaults to
@@ -56,9 +67,30 @@ class GaussianImputer(GaussianImputerBase):
             data=data,
             x=x,
             n_mc_samples=n_mc_samples,
+            categorical_features=categorical_features,
             random_state=random_state,
             verbose=verbose,
         )
+        self._check_categorical_features()
+
+    def _check_categorical_features(self) -> None:
+        """Check if any features are categorical variables.
+
+        Raises:
+        ------
+        CategoricalFeatureError
+            If any categorical features are detected.
+        """
+        categorical_indices: list[int] = []
+        for i, col in enumerate(self.data.T):
+            if any(isinstance(v, str) for v in col):
+                categorical_indices.append(i)
+                continue
+            unique_count = len(np.unique(col))
+            if unique_count <= MAX_UNIQUE_VALUES_FOR_CATEGORICAL:
+                categorical_indices.append(i)
+        if categorical_indices:
+            raise CategoricalFeatureError(categorical_indices)
 
     def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Impute missing values for given coalitions using Gaussian MC sampling, and call prediction function on imputed values.
