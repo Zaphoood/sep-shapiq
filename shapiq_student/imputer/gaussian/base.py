@@ -34,7 +34,6 @@ class GaussianImputerBase(Imputer):
         x: npt.NDArray[np.floating] | None = None,
         *,
         n_mc_samples: int = 1000,
-        categorical_features: list[int] | None = None,
         random_state: int | None = None,
         verbose: bool = False,
     ) -> None:
@@ -61,8 +60,8 @@ class GaussianImputerBase(Imputer):
             model=model,
             data=data,
             x=x,
-            sample_size=n_mc_samples,  # TODO (milanagm): Use n_mc_samples as sample_size - is that correct?
-            categorical_features=categorical_features,
+            sample_size=n_mc_samples,
+            categorical_features=[],
             random_state=random_state,
             verbose=verbose,
         )

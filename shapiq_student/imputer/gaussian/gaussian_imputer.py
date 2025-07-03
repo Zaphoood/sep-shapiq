@@ -23,8 +23,6 @@ from .exceptions import CategoricalFeatureError
 # - One-hot encoded features (which would have at most 2 values per encoded column)
 MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 2
 
-# TODO(Zaphoood): adjust this to new base class layout
-
 
 class GaussianImputer(GaussianImputerBase):
     """Implementation of Gaussian-based approach for SHAP value calculations.
@@ -41,7 +39,6 @@ class GaussianImputer(GaussianImputerBase):
         x: npt.NDArray[np.floating] | None = None,
         *,
         n_mc_samples: int = 1000,
-        categorical_features: list[int] | None = None,
         random_state: int | None = None,
         verbose: bool = False,
     ) -> None:
@@ -67,7 +64,6 @@ class GaussianImputer(GaussianImputerBase):
             data=data,
             x=x,
             n_mc_samples=n_mc_samples,
-            categorical_features=categorical_features,
             random_state=random_state,
             verbose=verbose,
         )
