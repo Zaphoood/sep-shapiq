@@ -49,7 +49,8 @@ class KNNExplainer(Explainer):
     def __init__(
         self,
         model: KNeighborsClassifier,
-        data: npt.NDArray[Any] | None,
+        data: npt.NDArray[Any] | None = None,
+        labels: npt.NDArray[Any] | None = None,
         class_index: int | None = None,
     ) -> None:
         """Initializes the class.
@@ -61,6 +62,7 @@ class KNNExplainer(Explainer):
                 The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit()`` must be a 1D vector.
 
             data: Do not use this parameter; it is only present to satisfy the unit tests present in `tests_grading/`. Any value passed to this parameter will be ignored.
+            labels: Do not use this parameter; it is only present to satisfy the unit tests present in `tests_grading/`. Any value passed to this parameter will be ignored.
 
             class_index: The class index of the model to explain. Defaults to ``1``.
 
@@ -71,11 +73,14 @@ class KNNExplainer(Explainer):
         """
         check_is_fitted(model)
 
-        if data is not None:
-            logging.warning(
-                "In the constructor of %s, parameter `data` was set to a non-None value, which will be ignored.",
-                self.__class__.__name__,
-            )
+        ignored_parameter_names = ["data", "labels"]
+        for param in ignored_parameter_names:
+            if locals()[param] is not None:
+                logging.warning(
+                    "In the constructor of %s, a non-None value was passed to parameter `%s`, which will be ignored.",
+                    self.__class__.__name__,
+                    param,
+                )
 
         super().__init__(model, data=None, class_index=class_index, index="SV", max_order=1)
 
