@@ -87,12 +87,14 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
         self,
         model: KNeighborsClassifier,
         class_index: int,
+        n_bits: int | None = None,
     ) -> None:
         """Initializes the BruteForceWKNNExplainer.
 
         Args:
             model: The KNN model to explain.
             class_index: The class index of the model to explain.
+            n_bits: If not None, then weights will be discretized to this number of bits.
         """
         super().__init__(model, class_index)
 
@@ -100,6 +102,8 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
         if model_weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
+
+        self.n_bits = n_bits
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
@@ -141,6 +145,16 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
             sortperm: Sorting permutation of the training data points with respect to weights.
             weights: Array of weights assigned to each training data point.
         """
+        if self.n_bits is not None:
+            _wang_explainer = WKNNExplainer(self.model, self.class_index, n_bits=self.n_bits)
+            weights = _wang_explainer._undiscretize_weight(  # noqa: SLF001
+                _wang_explainer._discretize_weight(weights)  # noqa: SLF001
+            )
+
+        inv_sortperm = np.zeros_like(sortperm)
+        inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
+        print("brute weights", weights[inv_sortperm])  # noqa: T201
+
         n_players = self.X_train.shape[0]
         utilities = np.zeros((2**n_players,))
 
@@ -249,6 +263,10 @@ class WKNNExplainer(WKNNExplainerBase):
 
         sortperm, weights_discrete = self._get_discrete_weights(x_val)
 
+        inv_sortperm = np.zeros_like(sortperm)
+        inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
+        print("wang weights", self._undiscretize_weight(weights_discrete[inv_sortperm]))  # noqa: T201
+
         sv = np.zeros(n)
 
         for i in range(n):
@@ -264,6 +282,7 @@ class WKNNExplainer(WKNNExplainerBase):
     def _get_discrete_weights(
         self, x_val: npt.NDArray[np.floating]
     ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.integer]]:
+        """Returns weigths after normalization, discretization and sign-flipping."""
         sortperm, weights = self._get_normalized_weights(x_val)
         # Change sign of weights where class disagrees with class that is to be explained
         weights[(self.y_train_indices != self.class_index)[sortperm]] *= -1

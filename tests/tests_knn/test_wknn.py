@@ -75,6 +75,7 @@ def _check_wknn_test_case(test_case: WKNNTestCase) -> None:
         explainer_brute = BruteForceWKNNExplainer(
             model,
             class_index=class_index,
+            n_bits=test_case.n_bits,
         )
         iv_brute = explainer_brute.explain_function(test_case.x_val)
         sv_brute = _interaction_values_to_array(iv_brute)
@@ -95,15 +96,15 @@ def test_wknn_random() -> None:
     n_test_cases = 3
     min_training_points = 5
     max_training_points = 10
+    n_bits = 4
+    k = 3
 
-    rng = np.random.default_rng(seed=42)
+    rng = np.random.default_rng(seed=43)
 
     for _ in range(n_test_cases):
         n = int(rng.integers(min_training_points, max_training_points))
         X_train, y_train = _generate_binary_split_training_data(rng, n)
         x_val = rng.normal(size=(1, 2))[0]
-        n_bits = 5
-        k = 3
 
         _check_wknn_test_case(WKNNTestCase(X_train, y_train, x_val, k=k, n_bits=n_bits))
 
@@ -188,4 +189,4 @@ def _interaction_values_to_array(shapley_values: InteractionValues) -> npt.NDArr
 
 
 if __name__ == "__main__":
-    test_wknn_hardcoded_example()
+    test_wknn_random()
