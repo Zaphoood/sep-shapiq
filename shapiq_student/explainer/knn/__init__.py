@@ -4,9 +4,9 @@ from .base import KNNExplainerBase, interaction_values_from_array, interaction_v
 from .knn import (
     BruteForceKNNClassifierExplainer,
     KNNClassifierExplainer,
-    TKNNExplainer,
-    TKNNExplainerEfficient,
 )
+from .tknn import TKNNExplainer
+from .tknn_efficient import TKNNExplainerEfficient
 
 __all__ = [
     "KNNExplainerBase",
