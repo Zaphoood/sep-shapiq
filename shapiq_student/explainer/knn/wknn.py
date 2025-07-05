@@ -9,7 +9,7 @@ from typing_extensions import override
 from shapiq_student.explainer.knn.lookup_game import LookupGame
 from shapiq_student.explainer.knn.util import keep_first_n
 
-from .base import KNNExplainerBase, interaction_values_from_array, interaction_values_to_array
+from .base import KNNExplainer, interaction_values_from_array, interaction_values_to_array
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -22,7 +22,7 @@ import numpy as np
 from scipy.special import comb
 
 
-class WKNNExplainerBase(ABC, KNNExplainerBase):
+class WKNNExplainerBase(ABC, KNNExplainer):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
 
     @override

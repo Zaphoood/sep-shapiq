@@ -8,7 +8,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.neighbors import KNeighborsClassifier
 
 from shapiq_student.explainer.knn import (
-    KNNExplainerBase,
+    KNNExplainer,
     interaction_values_from_array,
 )
 from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
@@ -23,7 +23,7 @@ def test_extract_training_data_from_model():
     knn_model = KNeighborsClassifier(n_neighbors=k)
     knn_model.fit(X_train, y_train)
 
-    knn_explainer = KNNExplainerBase(knn_model, class_index=0)
+    knn_explainer = KNNExplainer(knn_model, class_index=0)
 
     assert np.allclose(knn_explainer.X_train, X_train)
     assert np.allclose(knn_explainer.y_train, y_train)
@@ -35,7 +35,7 @@ def test_raises_on_unfitted_model():
     knn_model = KNeighborsClassifier()
 
     with pytest.raises(NotFittedError):
-        KNNExplainerBase(knn_model, class_index=0)
+        KNNExplainer(knn_model, class_index=0)
 
 
 def test_raises_on_multi_output_model():
@@ -48,7 +48,7 @@ def test_raises_on_multi_output_model():
     knn_model.fit(X_train, y_train)
 
     with pytest.raises(MultiOutputKNNError):
-        KNNExplainerBase(knn_model, class_index=0)
+        KNNExplainer(knn_model, class_index=0)
 
 
 SHAPLEY_VALUES_INDEX = "SV"

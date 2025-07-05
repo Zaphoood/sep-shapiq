@@ -16,8 +16,15 @@ if TYPE_CHECKING:
     from sklearn.neighbors import KNeighborsClassifier
 
 
-class KNNExplainerBase(Explainer):
-    """Base class for KNN explainers."""
+class KNNExplainer(Explainer):
+    """The main KNNExplainer class for a simpler user interface.
+
+    shapiq_student.KNNExplainer is a simplified interface to KNN explainers. It detects between
+    :class:`~shapiq_student.explainer.knn.BasicKNNExplainer`,
+    :class:`~shapiq_student.explainer.knn.TKNNExplainer`,
+    and :class:`~shapiq_student.explainer.knn.WKNNExplainer`. For a detailed description of
+    the different explainers, see the respective classes.
+    """
 
     # The model attribute of the Explainer is defined in a non-optimal way,
     # using a type variable `Model`, which has no meaning. This is why we need

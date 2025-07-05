@@ -10,7 +10,7 @@ import numpy as np
 
 from shapiq_student.explainer.knn.util import keep_first_n
 
-from .base import KNNExplainerBase, interaction_values_from_array
+from .base import KNNExplainer, interaction_values_from_array
 from .lookup_game import LookupGame
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     import sklearn.neighbors
 
 
-class BruteForceBasicKNNExplainer(KNNExplainerBase):
+class BruteForceBasicKNNExplainer(KNNExplainer):
     """Brute force approach to computing Shapley Values for basic KNN models."""
 
     @override
@@ -54,7 +54,7 @@ class BruteForceBasicKNNExplainer(KNNExplainerBase):
         return iv
 
 
-class BasicKNNExplainer(KNNExplainerBase):
+class BasicKNNExplainer(KNNExplainer):
     """Explainer for basic KNN models.
 
     Efficiently calculates Shapley Values for unweighted k-Nearest-Neighbour models.

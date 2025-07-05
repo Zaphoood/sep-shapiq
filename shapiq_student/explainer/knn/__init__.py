@@ -1,6 +1,6 @@
 """Implementation of KNN Explainers."""
 
-from .base import KNNExplainerBase, interaction_values_from_array, interaction_values_to_array
+from .base import KNNExplainer, interaction_values_from_array, interaction_values_to_array
 from .tknn import (
     BruteForceTKNNExplainer,
     TKNNExplainer,
@@ -8,7 +8,7 @@ from .tknn import (
 from .knn import BasicKNNExplainer, BruteForceBasicKNNExplainer
 
 __all__ = [
-    "KNNExplainerBase",
+    "KNNExplainer",
     "interaction_values_from_array",
     "interaction_values_to_array",
     "BruteForceBasicKNNExplainer",

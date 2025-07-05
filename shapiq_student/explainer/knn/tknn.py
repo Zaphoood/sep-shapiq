@@ -17,10 +17,10 @@ if TYPE_CHECKING:
     import sklearn.neighbors
 
 
-from .base import KNNExplainerBase, interaction_values_from_array
+from .base import KNNExplainer, interaction_values_from_array
 
 
-class BruteForceTKNNExplainer(KNNExplainerBase):
+class BruteForceTKNNExplainer(KNNExplainer):
     """Brute force approach for explaining TKNN Classifiers.
 
     References:
@@ -72,7 +72,7 @@ class BruteForceTKNNExplainer(KNNExplainerBase):
         return sv
 
 
-class TKNNExplainer(KNNExplainerBase):
+class TKNNExplainer(KNNExplainer):
     """TKNN Classifier Explainer.
 
     For calculating exact shapley values for a thresholded KNN Classifier.
