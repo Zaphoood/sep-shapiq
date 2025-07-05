@@ -26,9 +26,7 @@ class KNNExplainer(Explainer):
     the different explainers, see the respective classes.
     """
 
-    # The model attribute of the Explainer is defined in a non-optimal way,
-    # using a type variable `Model`, which has no meaning. This is why we need
-    # to supress a type error here.
+    # TODO(Zaphoood): The base class allows `model` to be a `Callable`, which we don't allow -- violates Liskov subsitution principle
     model: KNeighborsClassifier  # type: ignore[assignment]
     """The KNN model provided in the constructor."""
 
