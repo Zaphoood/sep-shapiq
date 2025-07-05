@@ -31,7 +31,7 @@ class BruteForceTKNNExplainer(KNNExplainer):
     def __init__(
         self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
     ) -> None:
-        super().__init__(model, class_index)  # type: ignore[arg-type]
+        super().__init__(model, class_index=class_index)
         self._model = model
         self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
 
