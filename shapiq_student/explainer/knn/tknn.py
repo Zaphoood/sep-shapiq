@@ -10,7 +10,7 @@ import numpy as np
 from shapiq import InteractionValues
 from sklearn.neighbors import RadiusNeighborsClassifier
 
-from .base import KNNExplainerBase, interactionvaluesfromarray
+from .base import KNNExplainerBase, interaction_values_from_array
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -74,7 +74,7 @@ class TKNNExplainer(KNNExplainerBase):
 
         # Handle no neighbors case (marginal contribution is 0)
         if c_xval_tau == 1:  # No training neighbors
-            return interactionvaluesfromarray(sv)
+            return interaction_values_from_array(sv)
 
         # Compute A2 (reusable sum)
         A2_sum = 0.0
@@ -121,4 +121,4 @@ class TKNNExplainer(KNNExplainerBase):
         outside_mask = distances > self.tau
         sv[outside_mask] = 0.0
 
-        return interactionvaluesfromarray(sv)
+        return interaction_values_from_array(sv)

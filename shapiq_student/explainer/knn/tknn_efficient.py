@@ -9,7 +9,7 @@ import numpy as np
 from shapiq import InteractionValues
 from sklearn.neighbors import RadiusNeighborsClassifier
 
-from .base import KNNExplainerBase, interactionvaluesfromarray
+from .base import KNNExplainerBase, interaction_values_from_array
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -74,7 +74,7 @@ class TKNNExplainerEfficient(KNNExplainerBase):
 
         # If no neighbors (only validation point), return zeros
         if C_t == 1:
-            return interactionvaluesfromarray(sv)
+            return interaction_values_from_array(sv)
 
         # Count same-label neighbors
         C_a = np.sum(self.y_train[neighbor_indices] == y_val)
@@ -105,4 +105,4 @@ class TKNNExplainerEfficient(KNNExplainerBase):
                 sv[i] += correction * (reusable_sum - 1)
 
         # Points outside threshold remain 0 (already initialized)
-        return interactionvaluesfromarray(sv)
+        return interaction_values_from_array(sv)
