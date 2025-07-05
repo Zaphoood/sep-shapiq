@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import TYPE_CHECKING, cast, overload
 from typing_extensions import override
 
@@ -52,50 +52,6 @@ class ArrayGame(Game):
 class WKNNExplainerBase(ABC, KNNExplainerBase):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
 
-    @override
-    def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        n_players = self.X_train.shape[0]
-
-        n_classes = len(self.y_train_classes)
-        if n_classes == 1:
-            return interaction_values_from_array(np.zeros((n_players,), dtype=np.float64))
-
-        sortperm, weights = self._get_normalized_weights(x)
-
-        sv = np.zeros((n_players,))
-        for other_class_index in range(n_classes):
-            if other_class_index == self.class_index:
-                continue
-            sv_current = self._explain_binary(
-                self.class_index, other_class_index, sortperm, weights
-            )
-            sv += sv_current
-
-        sv /= n_classes - 1
-
-        return interaction_values_from_array(sv)
-
-    @abstractmethod
-    def _explain_binary(
-        self,
-        y_val: int,
-        y_other: int,
-        sortperm: npt.NDArray[np.integer],
-        weights: npt.NDArray[np.floating],
-    ) -> npt.NDArray[np.floating]:
-        """Computes the Shapley Values for a single binary-class classification game.
-
-        Only training data points which have class index ``y_val`` or ``y_other`` shall be considered and all others ignored.
-
-        Args:
-            y_val: The index of the class to explain.
-            y_other: The index of the other class to consider for the binary sub-game.
-            sortperm: Sorting permutation of the training data points with respect to weights.
-            weights: Array of weights assigned to each training data point.
-        """
-        msg = "Method _explain_binary() must be implemented by each subclass."
-        raise NotImplementedError(msg)
-
     def _get_normalized_weights(
         self, x_val: npt.NDArray[np.floating]
     ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
@@ -144,6 +100,29 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
         if model_weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
+
+    @override
+    def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
+        n_players = self.X_train.shape[0]
+
+        n_classes = len(self.y_train_classes)
+        if n_classes == 1:
+            return interaction_values_from_array(np.zeros((n_players,), dtype=np.float64))
+
+        sortperm, weights = self._get_normalized_weights(x)
+
+        sv = np.zeros((n_players,))
+        for other_class_index in range(n_classes):
+            if other_class_index == self.class_index:
+                continue
+            sv_current = self._explain_binary(
+                self.class_index, other_class_index, sortperm, weights
+            )
+            sv += sv_current
+
+        sv /= n_classes - 1
+
+        return interaction_values_from_array(sv)
 
     def _explain_binary(
         self,
