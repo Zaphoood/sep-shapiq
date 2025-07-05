@@ -86,17 +86,14 @@ class KNNExplainer(Explainer):
 
         self.model = model
         self.k = self.model.n_neighbors  # type: ignore[attr-defined]
-
         self.X_train = model._fit_X  # type: ignore[attr-defined] # noqa: SLF001
-
         self.y_train_indices = cast("npt.NDArray[np.integer]", model._y)  # type: ignore[attr-defined] # noqa: SLF001
-        self.y_train_classes = cast("npt.NDArray[np.object_]", model.classes_)
-
         if self.y_train_indices.ndim != 1:
             raise MultiOutputKNNError
-
+        self.y_train_classes = cast("npt.NDArray[np.object_]", model.classes_)
         self.y_train = self.y_train_classes[self.y_train_indices]
 
+        # This is highly sketchy. We are relying on `shapiq` to handle `class_index == None` analogously, but there is no way to check, since they don't set `class_index` as an attribute of `shapiq.Explainer`
         if class_index is None:
             class_index = 1
         self.class_index = class_index
