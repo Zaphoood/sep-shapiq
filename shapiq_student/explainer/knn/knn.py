@@ -28,7 +28,7 @@ class BruteForceBasicKNNExplainer(KNNExplainer):
         model: sklearn.neighbors.KNeighborsClassifier,
         class_index: int,
     ) -> None:
-        super().__init__(model, class_index)
+        super().__init__(model, class_index=class_index)
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
@@ -68,7 +68,7 @@ class BasicKNNExplainer(KNNExplainer):
         model: sklearn.neighbors.KNeighborsClassifier,
         class_index: int,
     ) -> None:
-        super().__init__(model, class_index)
+        super().__init__(model, class_index=class_index)
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
