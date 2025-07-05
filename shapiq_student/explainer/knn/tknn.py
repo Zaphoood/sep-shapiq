@@ -33,7 +33,7 @@ class BruteForceTKNNExplainer(KNNExplainer):
     ) -> None:
         super().__init__(model, class_index=class_index)
         self._model = model
-        self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
+        self.tau = cast("float", model.radius)
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
@@ -47,7 +47,7 @@ class BruteForceTKNNExplainer(KNNExplainer):
 
         y_train_is_class_index = self.y_train_indices == self.class_index
 
-        utilities = {}
+        utilities: dict[tuple[int, ...], float] = {}
 
         for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
             coalition = np.array(list(coalition_generator))
@@ -66,7 +66,7 @@ class BruteForceTKNNExplainer(KNNExplainer):
             coal_tuple = tuple(np.where(coalition)[0])
             utilities[coal_tuple] = utility
 
-        game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)  # type: ignore[arg-type]
+        game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)
         sv = game.exact_values("SV", order=1)
 
         return sv
@@ -85,10 +85,10 @@ class TKNNExplainer(KNNExplainer):
     def __init__(
         self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
     ) -> None:
-        super().__init__(model, class_index)  # type: ignore[arg-type]
+        super().__init__(model, class_index=class_index)
         self._model = model
 
-        self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
+        self.tau = cast("float", model.radius)
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:

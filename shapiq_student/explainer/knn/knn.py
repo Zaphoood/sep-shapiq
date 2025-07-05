@@ -16,7 +16,7 @@ from .lookup_game import LookupGame
 if TYPE_CHECKING:
     import numpy.typing as npt
     from shapiq import InteractionValues
-    import sklearn.neighbors
+    from sklearn.neighbors import KNeighborsClassifier
 
 
 class BruteForceBasicKNNExplainer(KNNExplainer):
@@ -25,16 +25,18 @@ class BruteForceBasicKNNExplainer(KNNExplainer):
     @override
     def __init__(
         self,
-        model: sklearn.neighbors.KNeighborsClassifier,
+        model: KNeighborsClassifier,
         class_index: int,
     ) -> None:
         super().__init__(model, class_index=class_index)
+
+        self._model = model
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
         utilities = {}
 
-        sortperm = self.model.kneighbors(
+        sortperm = self._model.kneighbors(
             x.reshape(1, -1), n_neighbors=self.X_train.shape[0], return_distance=False
         )
         sortperm = sortperm[0]
@@ -65,17 +67,21 @@ class BasicKNNExplainer(KNNExplainer):
     @override
     def __init__(
         self,
-        model: sklearn.neighbors.KNeighborsClassifier,
+        model: KNeighborsClassifier,
         class_index: int,
     ) -> None:
         super().__init__(model, class_index=class_index)
+
+        # The type of the superclass's `model` attribute is to broad, since it also allows for other KNN explainers
+        # To circumvent this, we store the model separately in an attribute with a narrower type
+        self._model = model
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
         n = len(self.X_train)
         sv = np.zeros(n)
 
-        sortperm = self.model.kneighbors(x.reshape(1, -1), n_neighbors=n, return_distance=False)
+        sortperm = self._model.kneighbors(x.reshape(1, -1), n_neighbors=n, return_distance=False)
         sortperm = sortperm[0]
 
         y_train_indices_sorted = self.y_train_indices[sortperm]

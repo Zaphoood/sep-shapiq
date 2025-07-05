@@ -10,11 +10,13 @@ from shapiq import Explainer
 from shapiq.interaction_values import InteractionValues
 from sklearn.utils.validation import check_is_fitted
 
-from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
+from .dispatch import get_explainer_class
+from .exceptions import MultiOutputKNNError
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from sklearn.neighbors import KNeighborsClassifier
+
+    from .custom_types import KNNClassifierModel
 
 
 class KNNExplainer(Explainer):
@@ -28,7 +30,7 @@ class KNNExplainer(Explainer):
     """
 
     # TODO(Zaphoood): The base class allows `model` to be a `Callable`, which we don't allow -- violates Liskov subsitution principle
-    model: KNeighborsClassifier  # type: ignore[assignment]
+    model: KNNClassifierModel  # type: ignore[assignment]
     """The KNN model provided in the constructor."""
 
     X_train: npt.NDArray[np.floating]
@@ -48,7 +50,7 @@ class KNNExplainer(Explainer):
 
     def __init__(
         self,
-        model: KNeighborsClassifier,
+        model: KNNClassifierModel,
         data: npt.NDArray[Any] | None = None,
         labels: npt.NDArray[Any] | None = None,
         class_index: int | None = None,
@@ -71,12 +73,25 @@ class KNNExplainer(Explainer):
 
             shapiq_student.explainer.knn.exceptions.MultiOutputKNNError: The constructor was called with a model that uses multi-output classification.
         """
+        # If this class is instantiated directly, automagically dispatch to the appropriate explainer for the given model
+
+        if self.__class__ is KNNExplainer:
+            explainer_class = get_explainer_class(model)
+            self.__class__ = explainer_class
+            explainer_class.__init__(
+                self,
+                model=model,
+                class_index=class_index,
+            )
+            return
+
         check_is_fitted(model)
 
         ignored_parameter_names = ["data", "labels"]
         for param in ignored_parameter_names:
             if locals()[param] is not None:
-                logging.warning(
+                logger = logging.getLogger("shapiq_student")
+                logger.warning(
                     "In the constructor of %s, a non-None value was passed to parameter `%s`, which will be ignored.",
                     self.__class__.__name__,
                     param,
@@ -85,9 +100,9 @@ class KNNExplainer(Explainer):
         super().__init__(model, data=None, class_index=class_index, index="SV", max_order=1)
 
         self.model = model
-        self.k = self.model.n_neighbors  # type: ignore[attr-defined]
-        self.X_train = model._fit_X  # type: ignore[attr-defined] # noqa: SLF001
-        self.y_train_indices = cast("npt.NDArray[np.integer]", model._y)  # type: ignore[attr-defined] # noqa: SLF001
+
+        self.X_train = model._fit_X  # type: ignore[union-attr] # noqa: SLF001
+        self.y_train_indices = cast("npt.NDArray[np.integer]", model._y)  # type: ignore[union-attr] # noqa: SLF001
         if self.y_train_indices.ndim != 1:
             raise MultiOutputKNNError
         self.y_train_classes = cast("npt.NDArray[np.object_]", model.classes_)
@@ -97,6 +112,9 @@ class KNNExplainer(Explainer):
         if class_index is None:
             class_index = 1
         self.class_index = class_index
+
+        # TODO(Zaphoood): Move this to KNeighborsClassifier-specific subclass
+        self.k = self.model.n_neighbors  # type: ignore
 
 
 def interaction_values_from_array(

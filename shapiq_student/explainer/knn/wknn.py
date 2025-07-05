@@ -33,7 +33,7 @@ class WKNNExplainerBase(ABC, KNNExplainer):
     ) -> None:
         super().__init__(model, class_index=class_index)
 
-        model_weights = self.model.weights  # type: ignore[attr-defined]
+        model_weights = self.model.weights
         if model_weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
@@ -200,7 +200,7 @@ class WKNNExplainer(WKNNExplainerBase):
             msg = f"Only values of k > 1 are supported, but {self.k=}"
             raise ValueError(msg)
 
-        model_weights = self.model.weights  # type: ignore[attr-defined]
+        model_weights = self.model.weights
         if model_weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
