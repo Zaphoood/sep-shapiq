@@ -6,7 +6,9 @@ from abc import ABC
 from typing import TYPE_CHECKING, cast, overload
 from typing_extensions import override
 
-from .base import KNNExplainerBase, interaction_values_from_array
+from shapiq_student.explainer.knn.lookup_game import LookupGame
+
+from .base import KNNExplainerBase, interaction_values_from_array, interaction_values_to_array
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -17,36 +19,6 @@ from itertools import product
 
 import numpy as np
 from scipy.special import comb
-from shapiq.games import Game
-
-
-class ArrayGame(Game):
-    """Game defined by an array containing the utility of each coalition."""
-
-    def __init__(self, n_players: int, utility: npt.NDArray[np.floating]) -> None:
-        """Initializes the ArrayGame.
-
-        Args:
-            n_players: The number of players.
-            utility: An array of size 2**n_players that defines the utilitity function v, such that for some coalition S = {i_1, ..., i_n},
-                v(S) == utility[2**i_1 + ... + 2**i_n].
-        """
-        if 2**n_players != utility.shape[0]:
-            msg = "Size of utility array must be 2**n_players"
-            raise ValueError(msg)
-
-        self.utility = utility
-        self._players = np.arange(n_players)
-
-        super().__init__(n_players=n_players, normalization_value=self.utility[0])
-
-    @override
-    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
-        bases = np.repeat(2 ** np.arange(self.n_players)[None, :], coalitions.shape[0], axis=0)
-        bases *= coalitions
-        indices = cast("npt.NDArray[np.int64]", np.sum(bases, axis=1))
-
-        return self.utility[indices]
 
 
 class WKNNExplainerBase(ABC, KNNExplainerBase):
@@ -144,6 +116,9 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
             y_other: The index of the other class to consider for the binary sub-game.
             sortperm: Sorting permutation of the training data points with respect to weights.
             weights: Array of weights assigned to each training data point.
+
+        Returns:
+            An ``np.ndarray`` of Shapley Values for each training data point.
         """
         if self.n_bits is not None:
             _wang_explainer = WKNNExplainer(self.model, self.class_index, n_bits=self.n_bits)
@@ -156,7 +131,7 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
         print("brute weights", weights[inv_sortperm])  # noqa: T201
 
         n_players = self.X_train.shape[0]
-        utilities = np.zeros((2**n_players,))
+        utilities = {}
 
         y_train_sorted = self.y_train_indices[sortperm]
         y_val_mask = y_train_sorted == y_val
@@ -174,17 +149,13 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
             y_other_nearest = y_other_mask & k_nearest_with_relevant_class
             utility = int(np.sum(weights[y_val_nearest]) >= np.sum(weights[y_other_nearest]))
 
-            idx = np.sum(2 ** (sortperm[coalition]))
-            utilities[idx] = utility
+            coalition_tuple = tuple(sorted(sortperm[coalition]))
+            utilities[coalition_tuple] = utility
 
-        game = ArrayGame(n_players=n_players, utility=utilities)
+        game = LookupGame(n_players, utilities)
         iv = game.exact_values("SII", order=1)
 
-        sv = np.zeros((n_players,), dtype=np.float64)
-        for i in range(n_players):
-            sv[i] = iv.values[iv.interaction_lookup[(i,)]]
-
-        return sv
+        return interaction_values_to_array(iv)
 
 
 def _first_n_true(mask: npt.NDArray[np.bool], n: int) -> npt.NDArray[np.bool]:
@@ -385,7 +356,6 @@ class WKNNExplainer(WKNNExplainerBase):
 
         return weight_sign * (first_summand + second_summand)
 
-    @override
     def _explain_binary(
         self,
         y_val: int,
