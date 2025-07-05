@@ -1,47 +1,55 @@
-"""Implementation of KNNExplainerBase class."""
+"""Implementation of TKNNExplainer Class."""
 
 from __future__ import annotations
 
-import numpy as np
-from shapiq import Explainer, InteractionValues
-from sklearn.neighbors import KNeighborsClassifier
+import math
+from typing import TYPE_CHECKING, Any
+from typing_extensions import override
 
-from ._base import KNNExplainerBase
+import numpy as np
+from shapiq import InteractionValues
+from sklearn.neighbors import RadiusNeighborsClassifier
+
+from shapiq_student.explainer.knn import KNNExplainerBase, interactionvaluesfromarray
+
+if TYPE_CHECKING:
+    from shapiq import InteractionValues
 
 
 class TKNNExplainer(KNNExplainerBase):
     """Threshold k-Nearest Neighbors Shapley explainer."""
 
-    def __init__(self, model: KNeighborsClassifier, tau: float) -> None:
-        """Init for TKNNExplainer.
+    def __init__(self, model: RadiusNeighborsClassifier, class_index: int) -> None:
+        """Initialize TKNNExplainer.
 
         Args:
-            model: KNeighborsClassifier
-            tau: threshold
+            model: RadiusNeighborsClassifier only
+            class_index: The class index to explain
 
-        Returns:
-            TKNNExplainer object
+        Raises:
+            TypeError: If model is not RadiusNeighborsClassifier
         """
-        super().__init__(model)
-        message = "'tau' must be strictly positive."
-        if tau <= 0:
-            raise ValueError(message)
+        if not isinstance(model, RadiusNeighborsClassifier):
+            model_error_message = "Model must be RadiusNeighborsClassifier."
+            raise TypeError(model_error_message)
+        super().__init__(model, class_index)
+        self.tau: float = model.radius  # use the radius from model as threshold tau
+        self.C: int = len(self.model.classes_)  # number of classes
 
-        self.tau = tau
-        self.C = len(self.model.classes_)  # Number of classes
-
-    def explain_function(self, x: np.ndarray, *args, **kwargs) -> InteractionValues:
+    @override
+    def explain_function(self, x: np.ndarray, *args: Any, **kwargs: Any) -> InteractionValues:
         """Compute TKNN-Shapley values for a given input point.
 
         Args:
             x: Input point to explain (will be reshaped to (1, -1))
+            *args: Additional arguments
+            **kwargs: Additional keyword arguments
 
         Returns:
             InteractionValues: Shapley values for each training point
         """
         x = x.reshape(1, -1)
         N = len(self.X_train)
-        tau = self.tau
 
         # Get prediction for validation point
         y_val = self.model.predict(x)[0]
@@ -49,135 +57,50 @@ class TKNNExplainer(KNNExplainerBase):
         # Initialize Shapley values
         sv = np.zeros(N)
 
-        # TODO:: Compute distances and find neighbors (using < not <=, matching original)
-        # TODO: use < OR <= 8 (original paper formula specifies <= HOWEVER implementation implements <)
+        # Compute distances to all training points
         distances = np.array([np.linalg.norm(x_train_point - x) for x_train_point in self.X_train])
-        neighbor_indices = (distances <= tau).nonzero()[0]  # RELEVANT PART HERE
 
-        Ct = len(neighbor_indices)  # Number of neighbors
+        # Find neighbors within threshold
+        neighbor_mask = distances <= self.tau
+        neighbor_indices = np.where(neighbor_mask)[0]
 
-        if Ct == 0:
-            # No neighbors - return zeros
-            return InteractionValues(
-                values=sv,
-                index="SV",  # Use string identifier instead of list
-                max_order=1,
-                min_order=1,
-                n_players=N,
-                baseline_value=0.0,  # TODO: 1/C
-            )
+        # Compute number of neighbors +1 (vor validation point)
+        c_xval_tau = len(neighbor_indices) + 1
 
-        # Count same-label neighbors
-        Ca = np.sum(self.y_train[neighbor_indices] == y_val)
+        # Handle no neighbors case (marginal contribution is 0)
+        if c_xval_tau == 1:  # No training neighbors
+            return interactionvaluesfromarray(sv)
 
-        # Compute reusable_sum exactly as in original implementation
-        reusable_sum = 0
-        stable_ratio = 1
-        for j in range(N):
-            if (N - j) > 0:  # Avoid division by zero
-                stable_ratio *= (N - j - Ct) / (N - j)
-                reusable_sum += (1 / (j + 1)) * (1 - stable_ratio)
+        c_zval_tau = np.sum(
+            self.y_train[neighbor_indices] == y_val
+        )  # Number of same label neighbors
+        c = N  # Dataset size
+        A2_sum = 0.0
 
-        # Compute Shapley values for each neighbor
+        for k in range(c + 1):
+            if k + 1 > 0:  # Avoid division by zero
+                term1 = 1.0 / (k + 1)
+
+                if c_xval_tau > 0 and k <= c:
+                    binom_coeff = math.comb(c, k)
+                    numerator = (c - k) / c_xval_tau
+                    denominator = (c + 1) / c_xval_tau
+
+                    if denominator != 0:
+                        ratio = numerator / denominator
+                        term2 = term1 * ratio
+                        weighted_term = binom_coeff * (term1 - term2) / (2**c)
+                        A2_sum += weighted_term
+
         for i in neighbor_indices:
-            yi = self.y_train[i]
+            y_i = self.y_train[i]
+            same_label = int(y_i == y_val)
+            A1_part1 = same_label / c_xval_tau
+            A1_part2 = c_zval_tau / (c_xval_tau * (c_xval_tau - 1)) if c_xval_tau > 1 else 0.0
+            A1 = A1_part1 - A1_part2
+            sv[i] = (1 / (c_xval_tau**2)) * (A1 - A2_sum) * same_label + (1 / self.C)
 
-            # Base term: (indicator - uniform) / number of neighbors
-            base_term = (int(yi == y_val) - 1 / self.C) / Ct
-            sv[i] = base_term
+        outside_mask = distances > self.tau
+        sv[outside_mask] = 0.0
 
-            # Correction term (only if Ct >= 2)
-            if Ct >= 2:
-                ca = Ca - int(yi == y_val)  # Same-label neighbors excluding point i
-                correction = (int(yi == y_val) / Ct - ca / (Ct * (Ct - 1))) * (reusable_sum - 1)
-                sv[i] += correction
-
-        # Return InteractionValues object
-        return InteractionValues(
-            values=sv,
-            index="SV",  # Use string identifier for Shapley values
-            max_order=1,
-            min_order=1,
-            n_players=N,
-            baseline_value=0.0,  # TODO:should be 1/C??
-        )
-
-
-# Test the inheritance structure
-def test_inheritance():
-    """Test that the inheritance structure works correctly"""
-    # Create test data
-    np.random.seed(42)
-    X = np.random.randn(10, 3)
-    y = np.array([0, 1, 0, 1, 2, 0, 1, 2, 0, 1])
-    x_test = np.array([0.5, 0.5, 0.5])
-
-    # Create KNN model
-    knn = KNeighborsClassifier(n_neighbors=3)
-    knn.fit(X, y)
-
-    # Test TKNN explainer
-    tau = 2.0
-    explainer = TKNNExplainer(knn, tau)
-
-    print("INHERITANCE STRUCTURE TEST")
-    print("=" * 40)
-    print(
-        f"TKNNExplainer isinstance of KNNExplainerBase: {isinstance(explainer, KNNExplainerBase)}"
-    )
-    print(f"TKNNExplainer isinstance of Explainer: {isinstance(explainer, Explainer)}")
-    print(
-        f"KNNExplainerBase is subclass of Explainer: {issubclass(explainer.__class__.__bases__[0], Explainer)}"
-    )
-
-    # Test the explain function returns InteractionValues
-    result = explainer.explain(x_test)
-    print(f"Result type: {type(result)}")
-    print(f"Result isinstance of InteractionValues: {isinstance(result, InteractionValues)}")
-    print(f"Shapley values: {result.values}")
-    print(f"Sum of Shapley values: {np.sum(result.values):.6f}")
-
-    # Test that it still matches the original implementation
-    def tnn_shapley_single_original(
-        x_train_few, y_train_few, x_test, y_test, tau=0, dis_metric="euclidean"
-    ):
-        N = len(y_train_few)
-        sv = np.zeros(N)
-        C = max(y_train_few) + 1
-
-        if dis_metric == "cosine":
-            distance = -np.dot(x_train_few, x_test) / np.linalg.norm(x_train_few, axis=1)
-        else:
-            distance = np.array([np.linalg.norm(x - x_test) for x in x_train_few])
-
-        Itau = (distance < tau).nonzero()[0]
-        Ct = len(Itau)
-        Ca = np.sum(y_train_few[Itau] == y_test)
-
-        reusable_sum = 0
-        stable_ratio = 1
-        for j in range(N):
-            if (N - j) > 0:
-                stable_ratio *= (N - j - Ct) / (N - j)
-                reusable_sum += (1 / (j + 1)) * (1 - stable_ratio)
-
-        for i in Itau:
-            sv[i] = (int(y_test == y_train_few[i]) - 1 / C) / Ct
-            if Ct >= 2:
-                ca = Ca - int(y_test == y_train_few[i])
-                sv[i] += (int(y_test == y_train_few[i]) / Ct - ca / (Ct * (Ct - 1))) * (
-                    reusable_sum - 1
-                )
-
-        return sv
-
-    y_test_pred = knn.predict(x_test.reshape(1, -1))[0]
-    original_result = tnn_shapley_single_original(X, y, x_test, y_test_pred, tau=tau)
-
-    print("\nVerification against original:")
-    print(f"Max difference: {np.max(np.abs(result.values - original_result)):.10f}")
-    print(f"Results match: {np.allclose(result.values, original_result, atol=1e-10)}")
-
-
-if __name__ == "__main__":
-    test_inheritance()
+        return interactionvaluesfromarray(sv)
