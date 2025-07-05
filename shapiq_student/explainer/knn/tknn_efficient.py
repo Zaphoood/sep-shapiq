@@ -9,7 +9,7 @@ import numpy as np
 from shapiq import InteractionValues
 from sklearn.neighbors import RadiusNeighborsClassifier
 
-from shapiq_student.explainer.knn import KNNExplainerBase, interactionvaluesfromarray
+from .base import KNNExplainerBase, interactionvaluesfromarray
 
 if TYPE_CHECKING:
     import numpy.typing as npt
