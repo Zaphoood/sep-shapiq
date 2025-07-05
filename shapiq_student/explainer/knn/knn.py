@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     import sklearn.neighbors
 
 
-class BruteForceKNNClassifierExplainer(KNNExplainerBase):
+class BruteForceBasicKNNExplainer(KNNExplainerBase):
     """Brute force approach to computing Shapley Values for basic KNN models."""
 
     @override
@@ -54,10 +54,10 @@ class BruteForceKNNClassifierExplainer(KNNExplainerBase):
         return iv
 
 
-class KNNClassifierExplainer(KNNExplainerBase):
-    """KNN Classifier Explainer.
+class BasicKNNExplainer(KNNExplainerBase):
+    """Explainer for basic KNN models.
 
-    For calculating exact shapley values for an unweighted KNN Classifier.
+    Efficiently calculates Shapley Values for unweighted k-Nearest-Neighbour models.
     """
 
     # TODO(Zaphoood): Explain functionality in class docstring
