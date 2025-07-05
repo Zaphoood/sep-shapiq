@@ -31,7 +31,7 @@ class WKNNExplainerBase(ABC, KNNExplainer):
         model: KNeighborsClassifier,
         class_index: int,
     ) -> None:
-        super().__init__(model, class_index)
+        super().__init__(model, class_index=class_index)
 
         model_weights = self.model.weights  # type: ignore[attr-defined]
         if model_weights != "distance":
