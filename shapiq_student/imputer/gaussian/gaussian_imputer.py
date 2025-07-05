@@ -83,15 +83,19 @@ class GaussianImputer(GaussianImputerBase):
         if categorical_indices:
             raise CategoricalFeatureError(categorical_indices)
 
-    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
-        """Impute missing values for given coalitions using Gaussian MC sampling, and call prediction function on imputed values.
+    def get_imputed_result_data(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+        """Impute missing values for given coalitions using Gaussian MC sampling.
+
+        This method performs the imputation but returns the imputed data cube without
+        calling the prediction function. Useful for testing and debugging.
 
         Args:
             coalitions (npt.NDArray[np.bool]): Binary array indicating which features are present (1) or missing (0)
                 for each coalition. Shape: (n_coalitions, n_features).
 
         Returns:
-            npt.NDArray[np.floating]: Imputed data points for each explanation point and coalition. Shape: (n_explain, n_coalitions, n_mc_samples, n_features).
+            npt.NDArray[np.floating]: Imputed data points for each explanation point and coalition.
+                Shape: (n_explain, n_coalitions, n_mc_samples, n_features).
 
         Raises:
             RuntimeError: If the explanation point x is not set.
@@ -107,12 +111,18 @@ class GaussianImputer(GaussianImputerBase):
         mean_per_feature = self.mean_per_feature
         cov_mat = self.cov_mat
         rng = default_rng(self.random_state)
+
+        # empty array for imputed data including MC samples for every coalition per n_explain
         result_cube = np.zeros((n_explain, n_coalitions, n_mc_samples, n_features))
 
-        for i, x in enumerate(x_mat):
+        for i in range(n_explain):  # For each explicand / row to impute
+            x_row = x_mat[i]
+
             for S_ind, coalition in enumerate(coalitions):
                 S_idx_known = np.where(coalition == 1)[0]
                 S_idx_unknown = np.where(coalition == 0)[0]
+
+                x_S_star = x_row[S_idx_known]
 
                 mu_S_known = mean_per_feature[S_idx_known]
                 mu_S_unknown = mean_per_feature[S_idx_unknown]
@@ -124,28 +134,58 @@ class GaussianImputer(GaussianImputerBase):
 
                 if cov_S_known_known.size > 0:
                     cov_S_known_known_inv = np.linalg.inv(cov_S_known_known)
-                    cov_SbarS_cov_SS_inv = cov_S_unknown_known @ cov_S_known_known_inv
-                    cond_cov = cov_S_unknown_unknown - cov_SbarS_cov_SS_inv @ cov_S_known_unknown
-                    x_S_star = x[S_idx_known]
-                    x_Sbar_mean = cov_SbarS_cov_SS_inv @ (x_S_star - mu_S_known) + mu_S_unknown
+                    # formula from Paper Aas.2021 et al. for calculating cond_cov_S_unknown_on_S_known & con_mean_S_unknown_on_S_known:
+                    cond_cov = (
+                        cov_S_unknown_unknown
+                        - (cov_S_unknown_known @ cov_S_known_known_inv) @ cov_S_known_unknown
+                    )
+                    cond_mean = mu_S_unknown + (cov_S_unknown_known @ cov_S_known_known_inv) @ (
+                        x_S_star - mu_S_known
+                    )
                 else:
                     cond_cov = cov_S_unknown_unknown
-                    x_Sbar_mean = mu_S_unknown
+                    cond_mean = mu_S_unknown
 
+                # for sampling from multivariate normal distribution with Cholesky we need to make sure that
+                # cond_cov is symmetric (regardless - Covariances should always be symmetric: Cov(X,Y) = Cov(Y,X))
+                cond_cov = 0.5 * (cond_cov + cond_cov.T)
+
+                # --- Draw MC samples and use Cholesky to turn N(0,1) to desired Gaussian distribution---
                 if S_idx_unknown.size > 0:
-                    chol_cond_cov = np.linalg.cholesky(cond_cov)
                     Z = rng.standard_normal((n_mc_samples, len(S_idx_unknown)))
-                    MC_samples_now = Z @ chol_cond_cov.T + x_Sbar_mean
+                    samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
                 else:
-                    MC_samples_now = np.zeros((n_mc_samples, 0))
+                    samples_unknown = np.zeros((n_mc_samples, 0))
 
+                # --- Build imputed data matrix for this coalition and explicand ---
                 aux_mat = np.zeros((n_mc_samples, n_features))
                 if S_idx_known.size > 0:
-                    aux_mat[:, S_idx_known] = x[S_idx_known]
+                    aux_mat[:, S_idx_known] = x_row[S_idx_known]
                 if S_idx_unknown.size > 0:
-                    aux_mat[:, S_idx_unknown] = MC_samples_now
+                    aux_mat[:, S_idx_unknown] = samples_unknown
 
                 result_cube[i, S_ind, :, :] = aux_mat
 
-        # TODO(Zaphoood): Call predict on this 4-dimensional cube somehow
-        raise NotImplementedError
+        return result_cube
+
+    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+        """Impute missing values and return model predictions for given coalitions.
+
+        This method performs imputation and then calls the model's prediction function
+        on the imputed data. This is the main interface expected by SHAP explainers.
+
+        Args:
+            coalitions (npt.NDArray[np.bool]): Binary array indicating which features are present (1) or missing (0)
+                for each coalition. Shape: (n_coalitions, n_features).
+
+        Returns:
+            npt.NDArray[np.floating]: Model predictions for each imputed data point.
+                Shape: (n_explain * n_coalitions * n_mc_samples,).
+
+        Raises:
+            RuntimeError: If the explanation point x is not set.
+        """
+        result_cube = self.get_imputed_result_data(coalitions)
+        # Flatten for prediction: shape (n_explain * n_coalitions * n_mc_samples, n_features)
+        X_predict = result_cube.reshape(-1, result_cube.shape[-1])
+        return self.predict(X_predict)
