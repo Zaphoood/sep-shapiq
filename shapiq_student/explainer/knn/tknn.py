@@ -13,6 +13,7 @@ from sklearn.neighbors import RadiusNeighborsClassifier
 from shapiq_student.explainer.knn import KNNExplainerBase, interactionvaluesfromarray
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
     from shapiq import InteractionValues
 
 
@@ -37,7 +38,9 @@ class TKNNExplainer(KNNExplainerBase):
         self.C: int = len(self.model.classes_)  # number of classes
 
     @override
-    def explain_function(self, x: np.ndarray, *args: Any, **kwargs: Any) -> InteractionValues:
+    def explain_function(
+        self, x: npt.NDArray[np.floating], *args: Any, **kwargs: Any
+    ) -> InteractionValues:
         """Compute TKNN-Shapley values for a given input point.
 
         Args:
@@ -64,42 +67,57 @@ class TKNNExplainer(KNNExplainerBase):
         neighbor_mask = distances <= self.tau
         neighbor_indices = np.where(neighbor_mask)[0]
 
-        # Compute number of neighbors +1 (vor validation point)
-        c_xval_tau = len(neighbor_indices) + 1
+        # Compute counting queries on full dataset D
+        c = N  # Dataset size
+        c_xval_tau = len(neighbor_indices) + 1  # Neighbors + validation point
+        c_zval_tau = np.sum(self.y_train[neighbor_indices] == y_val)  # Same label neighbors
 
         # Handle no neighbors case (marginal contribution is 0)
         if c_xval_tau == 1:  # No training neighbors
             return interactionvaluesfromarray(sv)
 
-        c_zval_tau = np.sum(
-            self.y_train[neighbor_indices] == y_val
-        )  # Number of same label neighbors
-        c = N  # Dataset size
+        # Compute A2 (reusable sum)
         A2_sum = 0.0
+        for k in range(c):
+            if c - k > 0:  # Avoid division by zero
+                binom_coeff = math.comb(c, k)
+                numerator = c - k - c_xval_tau
+                denominator = c - k
 
-        for k in range(c + 1):
-            if k + 1 > 0:  # Avoid division by zero
-                term1 = 1.0 / (k + 1)
+                if denominator != 0:
+                    ratio = numerator / denominator
+                    # Correct A2 formula: (1/(k+1)) * (1 - ratio) * binom_coeff / (2**c)
+                    weighted_term = (1 / (k + 1)) * (1 - ratio) * binom_coeff / (2**c)
+                    A2_sum += weighted_term
 
-                if c_xval_tau > 0 and k <= c:
-                    binom_coeff = math.comb(c, k)
-                    numerator = (c - k) / c_xval_tau
-                    denominator = (c + 1) / c_xval_tau
+        # Subtract 1 from A2 as per paper's formula
+        A2_sum = A2_sum - 1
 
-                    if denominator != 0:
-                        ratio = numerator / denominator
-                        term2 = term1 * ratio
-                        weighted_term = binom_coeff * (term1 - term2) / (2**c)
-                        A2_sum += weighted_term
-
+        # Compute Shapley values for each neighbor using leave-one-out statistics
         for i in neighbor_indices:
             y_i = self.y_train[i]
             same_label = int(y_i == y_val)
-            A1_part1 = same_label / c_xval_tau
-            A1_part2 = c_zval_tau / (c_xval_tau * (c_xval_tau - 1)) if c_xval_tau > 1 else 0.0
-            A1 = A1_part1 - A1_part2
-            sv[i] = (1 / (c_xval_tau**2)) * (A1 - A2_sum) * same_label + (1 / self.C)
 
+            # Leave-one-out counting queries for point i (as per paper's C.2.2)
+            c_xval_tau_leave_one_out = c_xval_tau - 1  # cx(val),τ(D\zi) = cx(val),τ(D) - 1[zi ∈ NB]
+            c_zval_tau_leave_one_out = (
+                c_zval_tau - same_label
+            )  # c(+)z(val),τ(D\zi) = c(+)z(val),τ(D) - 1[zi ∈ NB] * 1[yi = y(val)]
+
+            # Correct A1 computation using leave-one-out statistics
+            A1_part1 = same_label / c_xval_tau_leave_one_out
+            A1_part2 = (
+                c_zval_tau_leave_one_out
+                / (c_xval_tau_leave_one_out * (c_xval_tau_leave_one_out - 1))
+                if c_xval_tau_leave_one_out > 1
+                else 0.0
+            )
+            A1 = A1_part1 - A1_part2
+
+            # Final formula using leave-one-out c_xval_tau as per paper
+            sv[i] = (1 / (c_xval_tau_leave_one_out**2)) * (A1 - A2_sum) * same_label + (1 / self.C)
+
+        # Set Shapley values for points outside the threshold to 0
         outside_mask = distances > self.tau
         sv[outside_mask] = 0.0
 
