@@ -10,7 +10,7 @@ from shapiq import Explainer
 from shapiq.interaction_values import InteractionValues
 from sklearn.utils.validation import check_is_fitted
 
-from .dispatch import get_explainer_class
+from .dispatch import get_explainer_class_and_mode
 from .exceptions import MultiOutputKNNError
 
 if TYPE_CHECKING:
@@ -76,7 +76,7 @@ class KNNExplainer(Explainer):
         # If this class is instantiated directly, automagically dispatch to the appropriate explainer for the given model
 
         if self.__class__ is KNNExplainer:
-            explainer_class = get_explainer_class(model)
+            self._explainer_mode, explainer_class = get_explainer_class_and_mode(model)
             self.__class__ = explainer_class
             explainer_class.__init__(
                 self,
@@ -115,6 +115,11 @@ class KNNExplainer(Explainer):
 
         # TODO(Zaphoood): Move this to KNeighborsClassifier-specific subclass
         self.k = self.model.n_neighbors  # type: ignore
+
+    @property
+    def mode(self) -> str:
+        """The mode in which the Explainer operates."""
+        return self._explainer_mode.value
 
 
 def interaction_values_from_array(
