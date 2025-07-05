@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+import numpy as np
 from shapiq import Explainer
 from shapiq.interaction_values import InteractionValues
 from sklearn.utils.validation import check_is_fitted
@@ -11,7 +12,6 @@ from sklearn.utils.validation import check_is_fitted
 from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
 
 if TYPE_CHECKING:
-    import numpy as np
     import numpy.typing as npt
     from sklearn.neighbors import KNeighborsClassifier
 
@@ -76,7 +76,7 @@ class KNNExplainerBase(Explainer):
         self.class_index = class_index
 
 
-def interaction_lookup_from_knn_shapley_values(
+def interaction_values_from_array(
     shapley_values: npt.NDArray[np.floating],
 ) -> InteractionValues:
     """Convert an array of Shapley Values to a ``shapiq.interaction_values.InteractionValues`` object.
@@ -99,3 +99,28 @@ def interaction_lookup_from_knn_shapley_values(
         baseline_value=0,
         interaction_lookup=interaction_lookup,
     )
+
+
+def interaction_values_to_array(
+    interaction_values: InteractionValues,
+) -> npt.NDArray[np.floating]:
+    """Extract an array of Shapley Values from a ``shapiq.interaction_values.InteractionValues`` object.
+
+    Args:
+        interaction_values: An InteractionValues object with ``max_order==1``
+
+    Returns:
+        An ``np.ndarray`` of shape ``(n_players,)`` containing at index i the Shapley value of player i.
+    """
+    if interaction_values.max_order != 1:
+        msg = f"Max order must be 1 but was {interaction_values.max_order}"
+        raise ValueError(msg)
+
+    out = np.zeros((interaction_values.n_players,))
+
+    for coalition, lookup_idx in interaction_values.interaction_lookup.items():
+        if coalition == ():
+            continue
+        out[coalition[0]] = interaction_values.values[lookup_idx]
+
+    return out
