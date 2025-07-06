@@ -257,6 +257,10 @@ class WKNNExplainer(WKNNExplainerBase):
 
         return sortperm, weights_discrete
 
+    def _range_without_i(self, n: int, i: int) -> npt.NDArray[np.integer]:
+        """Returns the range [0, ..., i - 1, i + 1, ..., n - 1]."""
+        return np.hstack([np.arange(i), np.arange(i + 1, n)])
+
     def _compute_f_i(
         self,
         i: int,
@@ -265,7 +269,7 @@ class WKNNExplainer(WKNNExplainerBase):
     ) -> npt.NDArray[np.floating]:
         f_i = np.zeros((n, self.k - 1, self.weights_space_size))
 
-        indices_without_i = np.hstack([np.arange(i), np.arange(i + 1, n)])
+        indices_without_i = self._range_without_i(n, i)
         f_i[indices_without_i, 0, weights_discrete[indices_without_i]] = 1
 
         for l in range(1, self.k - 1):  # noqa: E741
@@ -324,11 +328,8 @@ class WKNNExplainer(WKNNExplainerBase):
                 weight_range_end = self._flip_weight_sign(weights_discrete[i])
 
             if weight_range_begin < weight_range_end:
-                for m in range(n):
-                    if m == i:
-                        continue
-                    for s in range(weight_range_begin, weight_range_end):
-                        g_i[l] += f_i[m, l - 1, s]
+                indices_without_i = self._range_without_i(n, i)
+                g_i[l] = np.sum(f_i[indices_without_i, l - 1, weight_range_begin:weight_range_end])
 
         return g_i
 
