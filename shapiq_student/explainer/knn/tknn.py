@@ -128,13 +128,15 @@ class TKNNExplainer(KNNExplainerBase):
                 continue
             for k in range(c + 1):
                 binom_term = comb(c - k, c_x_tau[i]) / comb(c + 1, c_x_tau[i])
-                a2[i] += 1 / (k + 1) * (1 - binom_term) - 1
+                a2[i] += 1 / (k + 1) * (1 - binom_term)
+            a2[i] -= 1
 
+        first_summand = a1 * a2
         second_summand = np.zeros((n_train,), dtype=np.float64)
         second_summand[in_neighborhood] = (
             y_train_is_class_index[in_neighborhood] - 1 / n_classes
         ) / c_x_tau[in_neighborhood]
 
-        sv = a1 * a2 + second_summand
+        sv = first_summand + second_summand
 
         return interaction_values_from_array(sv)
