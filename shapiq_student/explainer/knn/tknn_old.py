@@ -70,7 +70,7 @@ class TKNNExplainer(KNNExplainerBase):
         """
         x = x.reshape(1, -1)
         N = len(self.X_train)
-        y_val = self.model.predict(x)[0]
+        y_val = self.class_index
         sv = np.zeros(N)
         C = self.C
 
@@ -152,7 +152,7 @@ class TKNNExplainerEfficient(KNNExplainerBase):
         """
         x = x.reshape(1, -1)
         N = len(self.X_train)
-        y_val = self.model.predict(x)[0]
+        y_val = self.class_index
         sv = np.zeros(N)
 
         # Compute distances to all training points
