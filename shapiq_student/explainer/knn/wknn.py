@@ -299,10 +299,8 @@ class WKNNExplainer(WKNNExplainerBase):
                 weight_range_begin = self._flip_weight_sign(weights_discrete[m])
                 weight_range_end = self._flip_weight_sign(weights_discrete[i])
 
-            if weight_range_begin < weight_range_end:
-                for t in range(m):
-                    for s in range(weight_range_begin, weight_range_end):
-                        r_i[m] += f_i[t, self.k - 2, s]
+            # Case weight_range_begin > weight_range_end is okay and results in empty sum
+            r_i[m] = np.sum(f_i[:m, self.k - 2, weight_range_begin:weight_range_end])
 
         return r_i
 
