@@ -192,7 +192,7 @@ def test_gaussian_imputation_first_feature_known() -> None:
     )
     result_cube = imputer.get_imputed_result_data(
         coalitions
-    )  # shape: (1, n_coalitions, n_mc_samples, n_features)
+    )  # shape: (n_coalitions, n_mc_samples, n_features)
 
     # Find the coalition index for S = [1, 0, 0]
     n_coalitions = 2**n_features
@@ -202,7 +202,7 @@ def test_gaussian_imputation_first_feature_known() -> None:
     coalition_idx = np.where((S == [1, 0, 0]).all(axis=1))[0][0]
 
     # For our explicand (idx 0), coalition S = [1,0,0] is at index: [0, coalition_idx, :, :]
-    imputed_last_two = result_cube[0, coalition_idx, :, 1:3]  # all samples, features 1 and 2
+    imputed_last_two = result_cube[coalition_idx, :, 1:3]  # all samples, features 1 and 2
     # The mean should be close to [0.8, 0.5]
     imputed_mean = np.mean(imputed_last_two, axis=0)
     np.testing.assert_allclose(imputed_mean, [0.8, 0.5], atol=0.05)

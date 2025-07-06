@@ -104,8 +104,7 @@ class GaussianImputer(GaussianImputerBase):
             msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
             raise RuntimeError(msg)
 
-        x_mat = np.atleast_2d(self.x)
-        n_explain = x_mat.shape[0]
+        x = self.x.flatten()
         n_coalitions, n_features = coalitions.shape
         n_mc_samples = self.n_mc_samples
         mean_per_feature = self.mean_per_feature
@@ -113,58 +112,55 @@ class GaussianImputer(GaussianImputerBase):
         rng = default_rng(self.random_state)
 
         # empty array for imputed data including MC samples for every coalition per n_explain
-        result_cube = np.zeros((n_explain, n_coalitions, n_mc_samples, n_features))
+        result_cube = np.zeros((n_coalitions, n_mc_samples, n_features))
 
-        for i in range(n_explain):  # For each explicand / row to impute
-            x_row = x_mat[i]
+        for S_ind, coalition in enumerate(coalitions):
+            S_idx_known = np.where(coalition == 1)[0]
+            S_idx_unknown = np.where(coalition == 0)[0]
 
-            for S_ind, coalition in enumerate(coalitions):
-                S_idx_known = np.where(coalition == 1)[0]
-                S_idx_unknown = np.where(coalition == 0)[0]
+            x_S_star = x[S_idx_known]
 
-                x_S_star = x_row[S_idx_known]
+            mu_S_known = mean_per_feature[S_idx_known]
+            mu_S_unknown = mean_per_feature[S_idx_unknown]
 
-                mu_S_known = mean_per_feature[S_idx_known]
-                mu_S_unknown = mean_per_feature[S_idx_unknown]
+            cov_S_known_known = cov_mat[np.ix_(S_idx_known, S_idx_known)]
+            cov_S_known_unknown = cov_mat[np.ix_(S_idx_known, S_idx_unknown)]
+            cov_S_unknown_known = cov_mat[np.ix_(S_idx_unknown, S_idx_known)]
+            cov_S_unknown_unknown = cov_mat[np.ix_(S_idx_unknown, S_idx_unknown)]
 
-                cov_S_known_known = cov_mat[np.ix_(S_idx_known, S_idx_known)]
-                cov_S_known_unknown = cov_mat[np.ix_(S_idx_known, S_idx_unknown)]
-                cov_S_unknown_known = cov_mat[np.ix_(S_idx_unknown, S_idx_known)]
-                cov_S_unknown_unknown = cov_mat[np.ix_(S_idx_unknown, S_idx_unknown)]
+            if cov_S_known_known.size > 0:
+                cov_S_known_known_inv = np.linalg.inv(cov_S_known_known)
+                # formula from Paper Aas.2021 et al. for calculating cond_cov_S_unknown_on_S_known & con_mean_S_unknown_on_S_known:
+                cond_cov = (
+                    cov_S_unknown_unknown
+                    - (cov_S_unknown_known @ cov_S_known_known_inv) @ cov_S_known_unknown
+                )
+                cond_mean = mu_S_unknown + (cov_S_unknown_known @ cov_S_known_known_inv) @ (
+                    x_S_star - mu_S_known
+                )
+            else:
+                cond_cov = cov_S_unknown_unknown
+                cond_mean = mu_S_unknown
 
-                if cov_S_known_known.size > 0:
-                    cov_S_known_known_inv = np.linalg.inv(cov_S_known_known)
-                    # formula from Paper Aas.2021 et al. for calculating cond_cov_S_unknown_on_S_known & con_mean_S_unknown_on_S_known:
-                    cond_cov = (
-                        cov_S_unknown_unknown
-                        - (cov_S_unknown_known @ cov_S_known_known_inv) @ cov_S_known_unknown
-                    )
-                    cond_mean = mu_S_unknown + (cov_S_unknown_known @ cov_S_known_known_inv) @ (
-                        x_S_star - mu_S_known
-                    )
-                else:
-                    cond_cov = cov_S_unknown_unknown
-                    cond_mean = mu_S_unknown
+            # for sampling from multivariate normal distribution with Cholesky we need to make sure that
+            # cond_cov is symmetric (regardless - Covariances should always be symmetric: Cov(X,Y) = Cov(Y,X))
+            cond_cov = 0.5 * (cond_cov + cond_cov.T)
 
-                # for sampling from multivariate normal distribution with Cholesky we need to make sure that
-                # cond_cov is symmetric (regardless - Covariances should always be symmetric: Cov(X,Y) = Cov(Y,X))
-                cond_cov = 0.5 * (cond_cov + cond_cov.T)
+            # --- Draw MC samples and use Cholesky to turn N(0,1) to desired Gaussian distribution---
+            if S_idx_unknown.size > 0:
+                Z = rng.standard_normal((n_mc_samples, len(S_idx_unknown)))
+                samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
+            else:
+                samples_unknown = np.zeros((n_mc_samples, 0))
 
-                # --- Draw MC samples and use Cholesky to turn N(0,1) to desired Gaussian distribution---
-                if S_idx_unknown.size > 0:
-                    Z = rng.standard_normal((n_mc_samples, len(S_idx_unknown)))
-                    samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
-                else:
-                    samples_unknown = np.zeros((n_mc_samples, 0))
+            # --- Build imputed data matrix for this coalition and explicand ---
+            aux_mat = np.zeros((n_mc_samples, n_features))
+            if S_idx_known.size > 0:
+                aux_mat[:, S_idx_known] = x[S_idx_known]
+            if S_idx_unknown.size > 0:
+                aux_mat[:, S_idx_unknown] = samples_unknown
 
-                # --- Build imputed data matrix for this coalition and explicand ---
-                aux_mat = np.zeros((n_mc_samples, n_features))
-                if S_idx_known.size > 0:
-                    aux_mat[:, S_idx_known] = x_row[S_idx_known]
-                if S_idx_unknown.size > 0:
-                    aux_mat[:, S_idx_unknown] = samples_unknown
-
-                result_cube[i, S_ind, :, :] = aux_mat
+            result_cube[S_ind, :, :] = aux_mat
 
         return result_cube
 
