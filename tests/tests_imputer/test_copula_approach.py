@@ -23,6 +23,7 @@ def test_copula_approach_basic():
             "n_features": x_train.shape[1],
             "n_MC_samples": 5,
             "verbose": [],
+            "approach": "copula",
         },
         "iter_list": [{}],
     }

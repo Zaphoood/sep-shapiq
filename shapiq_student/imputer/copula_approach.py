@@ -1,8 +1,4 @@
-"""Copula's approach for imputation in SHAP value calculations.
-
-This module implements Copula's binning strategy for generating samples in SHAP value
-calculations. It uses a binning approach to handle the distribution of features.
-"""
+"""Copula's approach for imputation in SHAP value calculations."""
 
 from __future__ import annotations
 
@@ -43,7 +39,7 @@ class CategoricalFeatureError(ValueError):
 
 
 class CopulaApproach(Approach):
-    """Implementation of Copula's binning strategy for SHAP value calculations."""
+    """Implements the Gaussian Copula approach for feature imputation in SHAP value calculations."""
 
     def _check_categorical_features(self) -> None:
         """Check if any features are categorical variables.
