@@ -223,6 +223,9 @@ class WKNNExplainer(WKNNExplainerBase):
         n = len(self.y_train_indices)
         n_classes = len(self.y_train_classes)
 
+        if n_classes == 1:
+            return interaction_values_from_array(np.zeros((n,)))
+
         # TODO(Zaphoood): Handle multi-class prediction
         if n_classes != 2:  # noqa: PLR2004
             msg = f"Multi-class prediction is not yet implemented (got {n_classes=})"
