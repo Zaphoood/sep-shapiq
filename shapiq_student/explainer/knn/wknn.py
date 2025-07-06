@@ -280,7 +280,7 @@ class WKNNExplainer(WKNNExplainerBase):
                     continue
                 weight_m = weights_discrete[m]
                 for s in range(self.weights_space_size):
-                    for t in range(m - 1):
+                    for t in range(m):
                         s_minus_weight_m = self._discrete_weight_sub(s, weight_m)
                         if 0 <= s_minus_weight_m < self.weights_space_size:
                             f_i[m, l, s] += f_i[t, l - 1, s_minus_weight_m]
@@ -306,7 +306,7 @@ class WKNNExplainer(WKNNExplainerBase):
                 weight_range_end = self._flip_weight_sign(weights_discrete[i])
 
             if weight_range_begin < weight_range_end:
-                for t in range(m - 1):
+                for t in range(m):
                     for s in range(weight_range_begin, weight_range_end):
                         r_i[m] += f_i[t, self.k - 2, s]
 
