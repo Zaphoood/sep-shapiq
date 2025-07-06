@@ -5,7 +5,6 @@ This module contains unit tests for the GaussianImputer class, including tests f
 
 from __future__ import annotations
 
-from itertools import product
 from typing import Any
 
 import numpy as np
@@ -181,28 +180,16 @@ def test_gaussian_imputation_first_feature_known() -> None:
     rng = np.random.default_rng()
     x_train = rng.multivariate_normal(mean, cov, size=10000)
     x_explain = np.array([[1.0, np.nan, np.nan]])
-    n_features = x_train.shape[1]
-    # ususally coalitions (=S) are ot callculated within the imputer in shapiq package
-    coalitions = np.array(list(product([0, 1], repeat=n_features)))
+
+    coalition = np.array([True, False, False])
 
     imputer = GaussianImputer(
         model=dummy_model,
         data=x_train,
         x=x_explain[0],
     )
-    result_cube = imputer.get_imputed_result_data(
-        coalitions
-    )  # shape: (n_coalitions, n_mc_samples, n_features)
+    imputation_result = imputer.get_imputed_result_data(np.atleast_2d(coalition))
+    imputed_features = imputation_result[0, ~coalition]
 
-    # Find the coalition index for S = [1, 0, 0]
-    n_coalitions = 2**n_features
-    S = np.zeros((n_coalitions, n_features), dtype=int)
-    for i in range(2**n_features):
-        S[i, :] = [(i >> j) & 1 for j in range(n_features - 1, -1, -1)]
-    coalition_idx = np.where((S == [1, 0, 0]).all(axis=1))[0][0]
-
-    # For our explicand (idx 0), coalition S = [1,0,0] is at index: [0, coalition_idx, :, :]
-    imputed_last_two = result_cube[coalition_idx, :, 1:3]  # all samples, features 1 and 2
     # The mean should be close to [0.8, 0.5]
-    imputed_mean = np.mean(imputed_last_two, axis=0)
-    np.testing.assert_allclose(imputed_mean, [0.8, 0.5], atol=0.05)
+    np.testing.assert_allclose(imputed_features, [0.8, 0.5], atol=0.05)
