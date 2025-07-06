@@ -180,7 +180,6 @@ def test_gaussian_imputation_first_feature_known() -> None:
     rng = np.random.default_rng()
     x_train = rng.multivariate_normal(mean, cov, size=10000)
     x_explain = np.array([[1.0, np.nan, np.nan]])
-
     coalition = np.array([True, False, False])
 
     imputer = GaussianImputer(
@@ -193,3 +192,20 @@ def test_gaussian_imputation_first_feature_known() -> None:
 
     # The mean should be close to [0.8, 0.5]
     np.testing.assert_allclose(imputed_features, [0.8, 0.5], atol=0.05)
+
+
+def test_gaussian_imputer_value_function():
+    """Test the vlaue function of the gaussian imputer."""
+    mean = np.array([0.0, 0.0, 0.0])
+    cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
+    rng = np.random.default_rng()
+    x_train = rng.multivariate_normal(mean, cov, size=10000)
+    x_explain = np.array([[1.0, np.nan, np.nan]])
+    coalition = np.array([True, False, False])
+    model = np.sum
+
+    imputer = GaussianImputer(data=x_train, x=x_explain[0], model=model)
+
+    result_value_function = imputer.value_function(np.atleast_2d(coalition))
+    expected_sum = 1.0 + 0.8 + 0.5
+    np.testing.assert_allclose(result_value_function, expected_sum, atol=0.05)
