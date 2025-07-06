@@ -265,10 +265,8 @@ class WKNNExplainer(WKNNExplainerBase):
     ) -> npt.NDArray[np.floating]:
         f_i = np.zeros((n, self.k - 1, self.weights_space_size))
 
-        for m, weight_m in enumerate(weights_discrete):
-            if m == i:
-                continue
-            f_i[m, 0, weight_m] = 1
+        indices_without_i = np.hstack([np.arange(i), np.arange(i + 1, n)])
+        f_i[indices_without_i, 0, weights_discrete[indices_without_i]] = 1
 
         for l in range(1, self.k - 1):  # noqa: E741
             for m in range(l, n):
