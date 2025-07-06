@@ -209,6 +209,7 @@ class WKNNExplainer(WKNNExplainerBase):
 
         self.n_bits = n_bits
         self.weights_space_size = 2 * self.k * 2**n_bits + 1
+        self.weights_space = cast("npt.NDArray[np.integer]", np.arange(self.weights_space_size))
         # Index at which weight 0.0 is mapped to in the discrete weight space
         self.weights_space_zero = self.k * 2**n_bits
 
@@ -278,8 +279,7 @@ class WKNNExplainer(WKNNExplainerBase):
                     s_minus_weight_m = self._discrete_weight_sub(s, weight_m)
                     if not 0 <= s_minus_weight_m < self.weights_space_size:
                         continue
-                    for t in range(m):
-                        f_i[m, l, s] += f_i[t, l - 1, s_minus_weight_m]
+                    f_i[m, l, s] = np.sum(f_i[:m, l - 1, s_minus_weight_m])
 
         return f_i
 
@@ -391,7 +391,17 @@ class WKNNExplainer(WKNNExplainerBase):
         """Turns discrete weight index into the corresponding floating point weight."""
         return (weight_discrete - self.weights_space_zero) / (2**self.n_bits)
 
-    def _discrete_weight_sub(self, a_discrete: int, b_discrete: int) -> int:
+    @overload
+    def _discrete_weight_sub(self, a_discrete: int, b_discrete: int) -> int: ...
+
+    @overload
+    def _discrete_weight_sub(
+        self, a_discrete: npt.NDArray[np.integer], b_discrete: int
+    ) -> npt.NDArray[np.integer]: ...
+
+    def _discrete_weight_sub(
+        self, a_discrete: npt.NDArray[np.integer] | int, b_discrete: int
+    ) -> npt.NDArray[np.integer] | int:
         """Computes ``a - b`` for two discrete weight indices."""
         return self.weights_space_zero + a_discrete - b_discrete
 
