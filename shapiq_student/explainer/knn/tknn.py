@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from itertools import product
-from typing import TYPE_CHECKING, cast, override
+from typing import TYPE_CHECKING, cast
+from typing_extensions import override
 
 import numpy as np
 from scipy.special import comb
@@ -75,6 +76,7 @@ class TKNNExplainer(KNNExplainerBase):
     """TKNN Classifier Explainer.
 
     For calculating exact shapley values for a thresholded KNN Classifier.
+    Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
     """
 
     def __init__(self, model: RadiusNeighborsClassifier, class_index: int) -> None:
