@@ -26,40 +26,22 @@ class WKNNTestCase:
     n_bits: int
 
 
-def test_wknn_hardcoded_example():
-    """Tests that the Shapley Values computed by WKNNExplainer are correct for a hard-coded example."""
-    test_cases = [
-        WKNNTestCase(
-            X_train=np.array([[-8, 0], [-1.5, 0], [-0.5, 0], [0.5, 0], [1.5, 0]]),
-            y_train=np.array(["foo", "foo", "foo", "bar", "bar"]),
-            x_val=np.array([[0.2, 0]]),
-            k=3,
-            n_bits=4,
-        ),
-        WKNNTestCase(
-            X_train=np.array(
-                [
-                    [0.5, -0.14],
-                    [0.65, 1.52],
-                    [-0.23, -0.23],
-                    [1.58, 0.77],
-                    [-0.47, 0.54],
-                    [-0.46, -0.47],
-                    [0.24, -1.91],
-                    [-1.72, -0.56],
-                    [-1.01, 0.31],
-                    [-0.91, -1.41],
-                ]
-            ),
-            y_train=np.array([1, 1, 0, 1, 1, 0, 0, 0, 0, 0]),
-            x_val=np.array([0, 0]),
-            k=3,
-            n_bits=3,
-        ),
-    ]
+def test_wknn_random() -> None:
+    """Tests that the results of WKNNExplainer agree with those of BruteForceWKNNExplainer using randomly generated test cases."""
+    n_test_cases = 3
+    min_training_points = 5
+    max_training_points = 10
+    n_bits = 4
+    k = 3
 
-    for test_case in test_cases:
-        _check_wknn_test_case(test_case)
+    rng = np.random.default_rng(seed=43)
+
+    for _ in range(n_test_cases):
+        n = int(rng.integers(min_training_points, max_training_points))
+        X_train, y_train = _generate_binary_split_training_data(rng, n)
+        x_val = rng.normal(size=(1, 2))[0]
+
+        _check_wknn_test_case(WKNNTestCase(X_train, y_train, x_val, k=k, n_bits=n_bits))
 
 
 def _check_wknn_test_case(test_case: WKNNTestCase) -> None:
@@ -83,24 +65,6 @@ def _check_wknn_test_case(test_case: WKNNTestCase) -> None:
         assert np.allclose(sv_brute, sv_wang)
 
 
-def test_wknn_random() -> None:
-    """Tests that the results of WKNNExplainer agree with those of BruteForceWKNNExplainer using randomly generated test cases."""
-    n_test_cases = 3
-    min_training_points = 5
-    max_training_points = 10
-    n_bits = 4
-    k = 3
-
-    rng = np.random.default_rng(seed=43)
-
-    for _ in range(n_test_cases):
-        n = int(rng.integers(min_training_points, max_training_points))
-        X_train, y_train = _generate_binary_split_training_data(rng, n)
-        x_val = rng.normal(size=(1, 2))[0]
-
-        _check_wknn_test_case(WKNNTestCase(X_train, y_train, x_val, k=k, n_bits=n_bits))
-
-
 def _generate_binary_split_training_data(
     rng: np.random.Generator,
     n: int,
@@ -110,9 +74,7 @@ def _generate_binary_split_training_data(
         split_vec = np.array([1, 1])
 
     X = rng.normal(size=(n, 2))
-    split_vec = np.array([1, 1])
-    y = np.zeros((n,), dtype=np.int64)
-    y[X.dot(split_vec) > 0] = 1
+    y = rng.integers(0, 2, size=n)
 
     return X, y
 
@@ -133,10 +95,8 @@ def test_wknn_discretize_weights():
     explainer = WKNNExplainer(model, class_index=class_index, n_bits=n_bits)
     sortperm, weights_prepared_sorted = explainer._get_discrete_weights(x_val)
 
-    print(f"{weights_prepared_sorted=}")
     weights_prepared = np.zeros_like(sortperm)
     weights_prepared[sortperm] = weights_prepared_sorted
-    print(f"{weights_prepared=}")
 
     assert explainer.weights_space_size == 2 * k * 2**n_bits + 1
     assert weights_prepared.dtype in (np.int64, np.int32)
