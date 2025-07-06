@@ -1,8 +1,7 @@
-"""Implementation of TKNNExplainer Class."""
+"""Implementation of TKNN Explainer Class."""
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING, Any
 from typing_extensions import override
 
@@ -12,113 +11,108 @@ from sklearn.neighbors import RadiusNeighborsClassifier
 
 from .base import KNNExplainerBase, interaction_values_from_array
 
+# TODO @murscht: add more explanations in docstrings for class index and falling factorials
+
 if TYPE_CHECKING:
     import numpy.typing as npt
     from shapiq import InteractionValues
 
 
+def falling_factorial(n: int, k: int) -> int:
+    """Helper function.
+
+    Args:
+        n: int
+        k: int
+    Returns:
+        result: helper result
+    """
+    if k < 0 or k > n:
+        return 0
+    result = 1
+    for i in range(k):
+        result *= n - i
+    return result
+
+
 class TKNNExplainer(KNNExplainerBase):
-    """Threshold k-Nearest Neighbors Shapley explainer."""
+    """Threshold k-Nearest Neighbors Shapley explainer (A1A2, matches paper)."""
 
     def __init__(self, model: RadiusNeighborsClassifier, class_index: int) -> None:
-        """Initialize TKNNExplainer.
+        """Initialize TKNN Explainer.
 
         Args:
-            model: RadiusNeighborsClassifier only
+            model: RadiusNeighborsClassifier
             class_index: The class index to explain
 
         Raises:
             TypeError: If model is not RadiusNeighborsClassifier
         """
         if not isinstance(model, RadiusNeighborsClassifier):
-            model_error_message = "Model must be RadiusNeighborsClassifier."
-            raise TypeError(model_error_message)
+            model_type_error = "Model must be RadiusNeighborsClassifier"
+            raise TypeError(model_type_error)
         super().__init__(model, class_index)
-        self.tau: float = model.radius  # use the radius from model as threshold tau
-        self.C: int = len(self.model.classes_)  # number of classes
+        self.tau: float = model.radius
+        self.C: int = len(self.model.classes_)
 
     @override
     def explain_function(
         self, x: npt.NDArray[np.floating], *args: Any, **kwargs: Any
     ) -> InteractionValues:
-        """Compute TKNN-Shapley values for a given input point.
+        """Compute TKNN Shapley values for a given input point.
 
         Args:
-            x: Input point to explain (will be reshaped to (1, -1))
+            x: Input point to explain
             *args: Additional arguments
             **kwargs: Additional keyword arguments
-
         Returns:
-            InteractionValues: Shapley values for each training point
+            InteractionValues: Interaction values for each training point
         """
         x = x.reshape(1, -1)
         N = len(self.X_train)
-
-        # Get prediction for validation point
         y_val = self.model.predict(x)[0]
-
-        # Initialize Shapley values
         sv = np.zeros(N)
+        C = self.C
 
-        # Compute distances to all training points
         distances = np.array([np.linalg.norm(x_train_point - x) for x_train_point in self.X_train])
-
-        # Find neighbors within threshold
         neighbor_mask = distances <= self.tau
-        neighbor_indices = np.where(neighbor_mask)[0]
 
-        # Compute counting queries on full dataset D
-        c = N  # Dataset size
-        c_xval_tau = len(neighbor_indices) + 1  # Neighbors + validation point
-        c_zval_tau = np.sum(self.y_train[neighbor_indices] == y_val)  # Same label neighbors
+        for i in range(N):
+            if not neighbor_mask[i]:
+                continue
 
-        # Handle no neighbors case (marginal contribution is 0)
-        if c_xval_tau == 1:  # No training neighbors
-            return interaction_values_from_array(sv)
+            # Leave-one-out: exclude i-th point
+            mask_loo = np.ones(N, dtype=bool)
+            mask_loo[i] = False
+            x_train_loo = self.X_train[mask_loo]
+            y_train_loo = self.y_train[mask_loo]
 
-        # Compute A2 (reusable sum)
-        A2_sum = 0.0
-        for k in range(c):
-            if c - k > 0:  # Avoid division by zero
-                binom_coeff = math.comb(c, k)
-                numerator = c - k - c_xval_tau
-                denominator = c - k
+            distances_loo = np.linalg.norm(x_train_loo - x, axis=1)
+            neighbor_mask_loo = distances_loo <= self.tau
+            c_xval_tau = np.sum(neighbor_mask_loo) + 1  # +1 for validation point
+            c_zval_tau = np.sum(y_train_loo[neighbor_mask_loo] == y_val)
+            same_label = int(self.y_train[i] == y_val)
 
-                if denominator != 0:
-                    ratio = numerator / denominator
-                    # Correct A2 formula: (1/(k+1)) * (1 - ratio) * binom_coeff / (2**c)
-                    weighted_term = (1 / (k + 1)) * (1 - ratio) * binom_coeff / (2**c)
-                    A2_sum += weighted_term
+            # Compute A1 (only if c_xval_tau >= 2)
+            comparison = 2
+            if c_xval_tau >= comparison:
+                A1 = same_label / c_xval_tau - c_zval_tau / (c_xval_tau * (c_xval_tau - 1))
+            else:
+                A1 = 0.0
 
-        # Subtract 1 from A2 as per paper's formula
-        A2_sum = A2_sum - 1
+            # Compute A2 (falling factorials as in paper)
+            c = N - 1
+            A2 = 0.0
+            for k in range(c + 1):
+                denom = falling_factorial(c, c_xval_tau)
+                numer = falling_factorial(c - k, c_xval_tau) if (c - k) >= c_xval_tau else 0
+                term = (1 / (k + 1)) * (1 - numer / denom if denom > 0 else 0)
+                A2 += term
+            A2 -= 1
 
-        # Compute Shapley values for each neighbor using leave-one-out statistics
-        for i in neighbor_indices:
-            y_i = self.y_train[i]
-            same_label = int(y_i == y_val)
-
-            # Leave-one-out counting queries for point i (as per paper's C.2.2)
-            c_xval_tau_leave_one_out = c_xval_tau - 1  # cx(val),τ(D\zi) = cx(val),τ(D) - 1[zi ∈ NB]
-            c_zval_tau_leave_one_out = (
-                c_zval_tau - same_label
-            )  # c(+)z(val),τ(D\zi) = c(+)z(val),τ(D) - 1[zi ∈ NB] * 1[yi = y(val)]
-
-            # Correct A1 computation using leave-one-out statistics
-            A1_part1 = same_label / c_xval_tau_leave_one_out
-            A1_part2 = (
-                c_zval_tau_leave_one_out
-                / (c_xval_tau_leave_one_out * (c_xval_tau_leave_one_out - 1))
-                if c_xval_tau_leave_one_out > 1
-                else 0.0
-            )
-            A1 = A1_part1 - A1_part2
-
-            # Final formula using leave-one-out c_xval_tau as per paper
-            sv[i] = (1 / (c_xval_tau_leave_one_out**2)) * (A1 - A2_sum) * same_label + (1 / self.C)
-
-        # Set Shapley values for points outside the threshold to 0
-        outside_mask = distances > self.tau
-        sv[outside_mask] = 0.0
+            if c_xval_tau >= comparison:
+                sv[i] = A1 * A2 + (same_label - 1 / C) / c_xval_tau
+            else:
+                sv[i] = (same_label - 1 / C) / c_xval_tau
 
         return interaction_values_from_array(sv)
