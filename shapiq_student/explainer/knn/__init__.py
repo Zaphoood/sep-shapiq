@@ -6,7 +6,6 @@ from .knn import (
     KNNClassifierExplainer,
 )
 from .tknn import TKNNExplainer
-from .tknn_efficient import TKNNExplainerEfficient
 
 __all__ = [
     "KNNExplainerBase",
@@ -15,5 +14,4 @@ __all__ = [
     "BruteForceKNNClassifierExplainer",
     "KNNClassifierExplainer",
     "TKNNExplainer",
-    "TKNNExplainerEfficient",
 ]
