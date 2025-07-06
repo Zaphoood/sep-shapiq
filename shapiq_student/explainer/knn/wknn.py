@@ -277,11 +277,12 @@ class WKNNExplainer(WKNNExplainerBase):
                 if m == i:
                     continue
                 weight_m = weights_discrete[m]
-                for s in range(self.weights_space_size):
-                    s_minus_weight_m = self._discrete_weight_sub(s, weight_m)
-                    if not 0 <= s_minus_weight_m < self.weights_space_size:
-                        continue
-                    f_i[m, l, s] = np.sum(f_i[:m, l - 1, s_minus_weight_m])
+
+                weight_diff = self._discrete_weight_sub(self.weights_space, weight_m)
+                weight_diff_in_bounds = (weight_diff >= 0) & (weight_diff < self.weights_space_size)
+                f_i[m, l, weight_diff_in_bounds] = np.sum(
+                    f_i[:m, l - 1, weight_diff[weight_diff_in_bounds]], axis=0
+                )
 
         return f_i
 
