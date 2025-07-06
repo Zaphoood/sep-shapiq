@@ -275,10 +275,11 @@ class WKNNExplainer(WKNNExplainerBase):
                     continue
                 weight_m = weights_discrete[m]
                 for s in range(self.weights_space_size):
+                    s_minus_weight_m = self._discrete_weight_sub(s, weight_m)
+                    if not 0 <= s_minus_weight_m < self.weights_space_size:
+                        continue
                     for t in range(m):
-                        s_minus_weight_m = self._discrete_weight_sub(s, weight_m)
-                        if 0 <= s_minus_weight_m < self.weights_space_size:
-                            f_i[m, l, s] += f_i[t, l - 1, s_minus_weight_m]
+                        f_i[m, l, s] += f_i[t, l - 1, s_minus_weight_m]
 
         return f_i
 
