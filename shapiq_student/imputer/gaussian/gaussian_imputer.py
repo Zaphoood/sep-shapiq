@@ -115,8 +115,8 @@ class GaussianImputer(GaussianImputerBase):
         result_cube = np.zeros((n_coalitions, n_mc_samples, n_features))
 
         for S_ind, coalition in enumerate(coalitions):
-            S_idx_known = np.where(coalition == 1)[0]
-            S_idx_unknown = np.where(coalition == 0)[0]
+            S_idx_known = np.where(coalition)[0]
+            S_idx_unknown = np.where(~coalition)[0]
 
             x_S_star = x[S_idx_known]
 
