@@ -115,6 +115,8 @@ class TKNNExplainer(KNNExplainerBase):
             else:
                 sv[i] = (same_label - 1 / C) / c_xval_tau
 
+        return interaction_values_from_array(sv)
+
 
 class TKNNExplainerEfficient(KNNExplainerBase):
     """Threshold k-Nearest Neighbors Shapley explainer (O(N), closed-form as in the paper)."""
