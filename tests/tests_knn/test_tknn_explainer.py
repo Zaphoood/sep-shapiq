@@ -8,6 +8,9 @@ from typing import Any
 import numpy as np
 from sklearn.neighbors import RadiusNeighborsClassifier
 
+# Initialize all implementations
+from shapiq_student.explainer.knn.tknn_old import TKNNExplainer, TKNNExplainerEfficient
+
 # TODO @murscht: get rid of print statements
 # TODO @murscht: ignore linter errors for reference implementation
 
@@ -23,9 +26,6 @@ def test_tknn_implementations_comparison():
     # Create RadiusNeighborsClassifier
     model = RadiusNeighborsClassifier(radius=1.5)
     model.fit(X_train, y_train)
-
-    # Initialize all implementations
-    from shapiq_student.explainer.knn import TKNNExplainer, TKNNExplainerEfficient
 
     # Reference implementation from https://github.com/Jiachen-T-Wang/TKNN-Shapley/blob/main/helper_knn.py
     # Change default dis_metric from cosine to euclidean
