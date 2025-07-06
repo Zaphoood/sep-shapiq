@@ -273,10 +273,9 @@ class WKNNExplainer(WKNNExplainerBase):
         f_i[indices_without_i, 0, weights_discrete[indices_without_i]] = 1
 
         for l in range(1, self.k - 1):  # noqa: E741
-            for m in range(l, n):
+            for m, weight_m in enumerate(weights_discrete[l:n], start=l):
                 if m == i:
                     continue
-                weight_m = weights_discrete[m]
 
                 weight_diff = self._discrete_weight_sub(self.weights_space, weight_m)
                 weight_diff_in_bounds = (weight_diff >= 0) & (weight_diff < self.weights_space_size)
