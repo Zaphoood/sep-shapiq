@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from itertools import product
 from typing import TYPE_CHECKING, cast, override
 
 import numpy as np
 from scipy.special import comb
+
+from shapiq_student.explainer.knn.knn import LookupGame
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -14,6 +17,58 @@ if TYPE_CHECKING:
 
 
 from .base import KNNExplainerBase, interaction_values_from_array
+
+
+class BruteForceTKNNExplainer(KNNExplainerBase):
+    """Brute force approach for explaining TKNN Classifiers."""
+
+    def __init__(self, model: RadiusNeighborsClassifier, class_index: int) -> None:
+        """Initialize TKNN Explainer.
+
+        Args:
+            model: RadiusNeighborsClassifier
+            class_index: The class index to explain
+
+        Raises:
+            TypeError: If model is not RadiusNeighborsClassifier
+        """
+        super().__init__(model, class_index)
+        self._model = model
+        self.tau = cast("float", model.radius)
+
+    @override
+    def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
+        n_train = self.X_train.shape[0]
+        n_classes = len(self.y_train_indices)
+
+        neighbor_indices = self._model.radius_neighbors(x.reshape(1, -1), return_distance=False)
+        neighbor_indices = neighbor_indices[0]
+        in_neighborhood = np.zeros((n_train,), dtype=bool)
+        in_neighborhood[neighbor_indices] = True
+
+        y_train_is_class_index = self.y_train_indices == self.class_index
+
+        utilities = {}
+
+        for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
+            coalition = np.array(list(coalition_generator))
+
+            coal_nhood = coalition & in_neighborhood
+            coal_nhood_with_class_index = coal_nhood & y_train_is_class_index
+
+            n_coal_nhood = np.sum(coal_nhood)
+            if n_coal_nhood == 0:
+                utility = 1 / n_classes
+            else:
+                utility = np.sum(coal_nhood_with_class_index) / n_coal_nhood
+
+            coal_tuple = tuple(np.where(coalition)[0])
+            utilities[coal_tuple] = utility
+
+        game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)
+        iv = game.exact_values("SII", order=1)
+
+        return iv
 
 
 class TKNNExplainer(KNNExplainerBase):
