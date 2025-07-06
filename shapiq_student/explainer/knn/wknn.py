@@ -126,10 +126,6 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
                 _wang_explainer._discretize_weight(weights)  # noqa: SLF001
             )
 
-        inv_sortperm = np.zeros_like(sortperm)
-        inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
-        print("brute weights", weights[inv_sortperm])  # noqa: T201
-
         n_players = self.X_train.shape[0]
         utilities = {}
 
@@ -233,10 +229,6 @@ class WKNNExplainer(WKNNExplainerBase):
             raise NotImplementedError(msg)
 
         sortperm, weights_discrete = self._get_discrete_weights(x_val)
-
-        inv_sortperm = np.zeros_like(sortperm)
-        inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
-        print("wang weights", self._undiscretize_weight(weights_discrete[inv_sortperm]))  # noqa: T201
 
         sv = np.zeros(n)
 
