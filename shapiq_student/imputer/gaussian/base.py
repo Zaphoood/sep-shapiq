@@ -100,8 +100,8 @@ class GaussianImputerBase(Imputer):
         """Ensure covariance matrix is positive definite by correcting eigenvalues if necessary.
 
         Args:
-            cov_mat (npt.NDArray[np.floating]): Input covariance matrix.
-            min_eigen_value (float, optional): Minimum allowed eigenvalue. Defaults to 1e-06.
+            cov_mat: Input covariance matrix.
+            min_eigen_value: Minimum allowed eigenvalue. Defaults to 1e-06.
 
         Returns:
             npt.NDArray[np.floating]: Positive definite covariance matrix.

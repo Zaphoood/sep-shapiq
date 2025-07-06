@@ -146,14 +146,14 @@ class GaussianImputer(GaussianImputerBase):
             # cond_cov is symmetric (regardless - Covariances should always be symmetric: Cov(X,Y) = Cov(Y,X))
             cond_cov = 0.5 * (cond_cov + cond_cov.T)
 
-            # --- Draw MC samples and use Cholesky to turn N(0,1) to desired Gaussian distribution---
+            # MC samples and Cholesky to turn N(0,1) to desired Gaussian distribution
             if S_idx_unknown.size > 0:
                 Z = rng.standard_normal((n_mc_samples, len(S_idx_unknown)))
                 samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
             else:
                 samples_unknown = np.zeros((n_mc_samples, 0))
 
-            # --- Build imputed data matrix for this coalition and explicand ---
+            # Building imputed data matrix for this coalition and explanation point
             aux_mat = np.zeros((n_mc_samples, n_features))
             if S_idx_known.size > 0:
                 aux_mat[:, S_idx_known] = x[S_idx_known]
