@@ -162,7 +162,7 @@ class GaussianImputer(GaussianImputerBase):
 
             result_cube[S_ind, :, :] = aux_mat
 
-        return result_cube
+        return np.mean(result_cube, axis=1)
 
     def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Impute missing values and return model predictions for given coalitions.
@@ -181,7 +181,4 @@ class GaussianImputer(GaussianImputerBase):
         Raises:
             RuntimeError: If the explanation point x is not set.
         """
-        result_cube = self.get_imputed_result_data(coalitions)
-        # Flatten for prediction: shape (n_explain * n_coalitions * n_mc_samples, n_features)
-        X_predict = result_cube.reshape(-1, result_cube.shape[-1])
-        return self.predict(X_predict)
+        return self.predict(self.get_imputed_result_data(coalitions))
