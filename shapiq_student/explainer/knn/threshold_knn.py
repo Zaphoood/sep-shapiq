@@ -81,10 +81,8 @@ class BruteForceTKNNExplainer(KNNExplainer):
         return sv
 
 
-class TKNNExplainer(KNNExplainer):
-    """TKNN Classifier Explainer.
-
-    For calculating exact shapley values for a thresholded KNN Classifier.
+class ThresholdNNExplainer(KNNExplainer):
+    """Explainer for thresholded NN models.
 
     References:
         Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.

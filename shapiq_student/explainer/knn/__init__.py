@@ -4,7 +4,7 @@ from .base import KNNExplainer, interaction_values_from_array, interaction_value
 from .normal_knn import BruteForceNormalKNNExplainer, NormalKNNExplainer
 from .threshold_knn import (
     BruteForceTKNNExplainer,
-    TKNNExplainer,
+    ThresholdNNExplainer,
 )
 
 __all__ = [
@@ -13,6 +13,6 @@ __all__ = [
     "interaction_values_to_array",
     "BruteForceNormalKNNExplainer",
     "NormalKNNExplainer",
-    "TKNNExplainer",
+    "ThresholdNNExplainer",
     "BruteForceTKNNExplainer",
 ]
