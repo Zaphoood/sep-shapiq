@@ -231,7 +231,7 @@ class WKNNExplainer(WKNNExplainerBase):
 
         n_classes = len(self.y_train_classes)
         if n_classes == 1:
-            return interaction_values_from_array(np.zeros((n_players,), dtype=np.float64))
+            return interaction_values_from_array(np.zeros(n_players))
 
         sortperm, weights_discrete = self._get_discrete_weights(x)
 

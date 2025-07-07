@@ -210,6 +210,23 @@ class TestWKNNSanity:
         with pytest.raises(ValueError, match=r"value.*\bk\b"):
             WKNNExplainer(model, class_index=0)
 
+    def test_single_class(self):
+        """Tests that if the training data only consists of a single class, all Shapley Values are zero."""
+        n = 10
+        rng = np.random.default_rng(seed=42)
+        X_train = rng.normal(size=(n, 2))
+        y_train = np.full((n,), "foo")
+        x_val = rng.normal(size=(1, 2)).flatten()
+
+        model = KNeighborsClassifier(n_neighbors=3, weights="distance")
+        model.fit(X_train, y_train)
+
+        explainer = WKNNExplainer(model, class_index=0)
+
+        sv = interaction_values_to_array(explainer.explain(x_val))
+
+        assert np.allclose(sv, 0)
+
     def test_wknn_discretize_weights(self):
         """Tests the pre-processing of weights involved in the WKNN algorithm, and the weight sign flipping method."""
         # Distances are [1, 0, 1, 4, 4] -> normalized weights are [3/4, 4/4, 3/4, 0, 0]
