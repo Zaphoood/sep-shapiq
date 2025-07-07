@@ -136,7 +136,7 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
             )
 
         n_players = self.X_train.shape[0]
-        utilities = {}
+        utilities: dict[tuple[int, ...], float] = {}
 
         y_train_sorted = self.y_train_indices[sortperm]
         y_val_mask = y_train_sorted == y_val
@@ -189,8 +189,9 @@ class WKNNExplainer(WKNNExplainerBase):
             msg = f"Only values of k > 1 are supported, but {self.k=}"
             raise ValueError(msg)
 
-        if self.model.weights != "distance":
-            msg = f"KNeighboursClassifier must use weights='distance', but has weights='{self.model.weights}'"
+        model_weights = self.model.weights  # type: ignore[attr-defined]
+        if model_weights != "distance":
+            msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
 
         if n_bits < 0:
@@ -201,7 +202,7 @@ class WKNNExplainer(WKNNExplainerBase):
         self.weights_space_size = 2 * self.k * 2**n_bits + 1
         self.weights_space = cast("npt.NDArray[np.integer]", np.arange(self.weights_space_size))
         # Index in the discrete weight space which weight zero is mapped to
-        self.weights_space_zero = self.k * 2**n_bits
+        self.weights_space_zero = self.k * cast("int", 2**n_bits)
 
         self.n_train = self.X_train.shape[0]
 
@@ -347,9 +348,15 @@ class WKNNExplainer(WKNNExplainerBase):
         weights: npt.NDArray[np.integer],
     ) -> float:
         weight_sign = self._weight_sign(weights[i])
-        first_summand = sum(g_i[l] / comb(n - 1, l) for l in range(min(self.k, n))) / n  # noqa: E741
-        second_summand = sum(
-            r_i[m - 1] / (m * comb(m - 1, self.k)) for m in range(max(i + 2, self.k + 1), n + 1)
+        first_summand = cast(
+            "float",
+            sum(g_i[l] / comb(n - 1, l) for l in range(min(self.k, n))) / n,  # noqa: E741
+        )
+        second_summand = cast(
+            "float",
+            sum(
+                r_i[m - 1] / (m * comb(m - 1, self.k)) for m in range(max(i + 2, self.k + 1), n + 1)
+            ),
         )
 
         return weight_sign * (first_summand + second_summand)
@@ -368,10 +375,10 @@ class WKNNExplainer(WKNNExplainerBase):
         Maps a given ``w`` to ``w^disc``, according to the following linear mapping:
         Weight ``-k`` will be mapped to index ``0`` and weight ``k`` to index ``2 * k * 2**n_bits``.
         """
-        return self.weights_space_zero + np.round(weight * 2**self.n_bits).astype(int)
+        return self.weights_space_zero + np.round(weight * cast("int", 2**self.n_bits)).astype(int)
 
     @overload
-    def _undiscretize_weight(self, weight_discrete: int) -> float: ...
+    def _undiscretize_weight(self, weight_discrete: np.integer) -> float: ...
 
     @overload
     def _undiscretize_weight(
@@ -379,30 +386,32 @@ class WKNNExplainer(WKNNExplainerBase):
     ) -> npt.NDArray[np.floating]: ...
 
     def _undiscretize_weight(
-        self, weight_discrete: int | npt.NDArray[np.integer]
+        self, weight_discrete: np.integer | npt.NDArray[np.integer]
     ) -> float | npt.NDArray[np.floating]:
         """Turns discrete weight index into the corresponding floating point weight.
 
         Returns ``w`` for some ``w^disc``.
         """
-        return (weight_discrete - self.weights_space_zero) / (2**self.n_bits)
-
-    @overload
-    def _sub_weight(self, weight_a_discrete: int, weight_b_discrete: int) -> int: ...
+        return (weight_discrete - self.weights_space_zero) / cast("int", (2**self.n_bits))
 
     @overload
     def _sub_weight(
-        self, weight_a_discrete: npt.NDArray[np.integer], weight_b_discrete: int
+        self, weight_a_discrete: np.integer, weight_b_discrete: np.integer
+    ) -> np.integer: ...
+
+    @overload
+    def _sub_weight(
+        self, weight_a_discrete: npt.NDArray[np.integer], weight_b_discrete: np.integer
     ) -> npt.NDArray[np.integer]: ...
 
     def _sub_weight(
-        self, weight_a_discrete: npt.NDArray[np.integer] | int, weight_b_discrete: int
-    ) -> npt.NDArray[np.integer] | int:
+        self, weight_a_discrete: npt.NDArray[np.integer] | np.integer, weight_b_discrete: np.integer
+    ) -> npt.NDArray[np.integer] | np.integer:
         """Computes ``(w_a - w_b)^disc`` for two discrete weight indices ``w_a^disc`` and ``w_b^disc``."""
         return self.weights_space_zero + weight_a_discrete - weight_b_discrete
 
     @overload
-    def _flip_weight_sign(self, weight_discrete: int) -> int: ...
+    def _flip_weight_sign(self, weight_discrete: np.integer) -> np.integer: ...
 
     @overload
     def _flip_weight_sign(
@@ -410,8 +419,8 @@ class WKNNExplainer(WKNNExplainerBase):
     ) -> npt.NDArray[np.integer]: ...
 
     def _flip_weight_sign(
-        self, weight_discrete: int | npt.NDArray[np.integer]
-    ) -> int | npt.NDArray[np.integer]:
+        self, weight_discrete: np.integer | npt.NDArray[np.integer]
+    ) -> np.integer | npt.NDArray[np.integer]:
         """Given a discretized weight index, returns the discretized index of the corresponding weight with the sign flipped.
 
         In other words, it returns ``(-w)^disc`` for a given ``w^disc``.
@@ -419,23 +428,23 @@ class WKNNExplainer(WKNNExplainerBase):
         return 2 * self.weights_space_zero - weight_discrete
 
     @overload
-    def _is_weight_negative(self, weight_discrete: int) -> int: ...
+    def _is_weight_negative(self, weight_discrete: np.integer) -> np.bool: ...
 
     @overload
     def _is_weight_negative(
         self, weight_discrete: npt.NDArray[np.integer]
-    ) -> npt.NDArray[np.integer]: ...
+    ) -> npt.NDArray[np.bool]: ...
 
     def _is_weight_negative(
-        self, weight_discrete: int | npt.NDArray[np.integer]
-    ) -> int | npt.NDArray[np.integer]:
+        self, weight_discrete: np.integer | npt.NDArray[np.integer]
+    ) -> np.bool | npt.NDArray[np.bool]:
         """Checks whether the weight corresponding to a discretized weight index is negative.
 
         In other words, it returns ``w < 0`` for some ``w^disc``.
         """
         return weight_discrete < self.weights_space_zero
 
-    def _weight_sign(self, weight_discrete: int) -> int:
+    def _weight_sign(self, weight_discrete: np.integer) -> int:
         """Implements the sign function for discretized weights.
 
         Given some discretized weight index ``w^disc``, returns 1 if ``w > 0``, -1 if ``w < 0``, and 0 if ``w == 0```
