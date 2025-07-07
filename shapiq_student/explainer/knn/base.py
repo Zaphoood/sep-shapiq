@@ -17,7 +17,7 @@ from .exceptions import MultiOutputKNNError
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-    from .custom_types import KNNClassifierModel
+KNNClassifierModel = KNeighborsClassifier | RadiusNeighborsClassifier
 
 
 class KNNExplainer(Explainer):
