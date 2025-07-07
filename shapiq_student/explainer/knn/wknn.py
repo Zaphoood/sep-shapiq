@@ -215,36 +215,62 @@ class WKNNExplainer(WKNNExplainerBase):
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
+        n_players = self.X_train.shape[0]
+
+        n_classes = len(self.y_train_classes)
+        if n_classes == 1:
+            return interaction_values_from_array(np.zeros((n_players,), dtype=np.float64))
+
+        sortperm, weights_discrete = self._get_discrete_weights(x)
+
+        sv = np.zeros((n_players,))
+        for other_class_index in range(n_classes):
+            if other_class_index == self.class_index:
+                continue
+            sv_current = self._explain_binary(
+                self.class_index, other_class_index, sortperm, weights_discrete
+            )
+            sv += sv_current
+
+        sv /= n_classes - 1
+
+        return interaction_values_from_array(sv)
+
+    def _explain_binary(
+        self,
+        y_val: int,
+        y_other: int,
+        sortperm: npt.NDArray[np.integer],
+        weights_discrete: npt.NDArray[np.integer],
+    ) -> npt.NDArray[np.floating]:
         # TODO(Zaphoood): Consider removing aliases
         # Convenience aliases
-        x_val = x
         y_val = self.class_index
 
         # Number of training points
         n = len(self.y_train_indices)
-        n_classes = len(self.y_train_classes)
 
-        if n_classes == 1:
-            return interaction_values_from_array(np.zeros((n,)))
-
-        # TODO(Zaphoood): Handle multi-class prediction
-        if n_classes != 2:  # noqa: PLR2004
-            msg = f"Multi-class prediction is not yet implemented (got {n_classes=})"
-            raise NotImplementedError(msg)
-
-        sortperm, weights_discrete = self._get_discrete_weights(x_val)
+        y_train_sorted = self.y_train_indices[sortperm]
+        y_val_mask = y_train_sorted == y_val
+        y_other_mask = y_train_sorted == y_other
+        subgame_mask = y_val_mask | y_other_mask
+        n_subgame = np.sum(subgame_mask)
+        # Maps an index from the sorted subgame to the sorted multi-class game
+        subgame = np.arange(n)[subgame_mask]
+        weights_discrete_subgame = weights_discrete[subgame]
 
         sv = np.zeros(n)
+        for i in range(n_subgame):
+            y_i = cast("int", self.y_train_indices[sortperm[subgame[i]]])
+            f_i = self._compute_f_i(i, n_subgame, weights_discrete_subgame)
+            r_i = self._compute_r_i(i, n_subgame, f_i, y_i, y_val, weights_discrete_subgame)
+            g_i = self._compute_g_i(i, n_subgame, f_i, y_i, y_val, weights_discrete_subgame)
 
-        for i in range(n):
-            y_i = cast("int", self.y_train_indices[sortperm[i]])
-            f_i = self._compute_f_i(i, n, weights_discrete)
-            r_i = self._compute_r_i(i, n, f_i, y_i, y_val, weights_discrete)
-            g_i = self._compute_g_i(i, n, f_i, y_i, y_val, weights_discrete)
+            sv[sortperm[subgame[i]]] = self._compute_single_shapley_value(
+                i, n_subgame, r_i, g_i, weights_discrete_subgame
+            )
 
-            sv[sortperm[i]] = self._compute_single_shapley_value(i, n, r_i, g_i, weights_discrete)
-
-        return interaction_values_from_array(sv)
+        return sv
 
     def _get_discrete_weights(
         self, x_val: npt.NDArray[np.floating]
@@ -342,22 +368,12 @@ class WKNNExplainer(WKNNExplainerBase):
         weights_discrete: npt.NDArray[np.integer],
     ) -> float:
         weight_sign = self._weight_sign(weights_discrete[i])
-        first_summand = sum(g_i[l] / comb(n - 1, l) for l in range(self.k)) / n  # noqa: E741
+        first_summand = sum(g_i[l] / comb(n - 1, l) for l in range(min(self.k, n))) / n  # noqa: E741
         second_summand = sum(
             r_i[m - 1] / (m * comb(m - 1, self.k)) for m in range(max(i + 2, self.k + 1), n + 1)
         )
 
         return weight_sign * (first_summand + second_summand)
-
-    def _explain_binary(
-        self,
-        y_val: int,
-        y_other: int,
-        sortperm: npt.NDArray[np.integer],
-        weights: npt.NDArray[np.floating],
-    ) -> npt.NDArray[np.floating]:
-        msg = f"{self.__class__.__name__} does not implement _explain_binary() yet"
-        raise NotImplementedError(msg)
 
     @overload
     def _discretize_weight(self, weight: float) -> int: ...
