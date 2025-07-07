@@ -132,6 +132,49 @@ def _compare_wknn_exact(test_case: WKNNTestCase) -> None:
         assert np.allclose(sv_brute, sv_wang)
 
 
+def test_wknn_approximate() -> None:
+    """Tests that the Shapley Values computed by WKNNExplainer with discretized weights are approximately equal to the values computed by BruteForceWKNNExplainer with continuous weights."""
+    n_test_cases = 3
+    n_train_min = 10
+    n_train_max = 10
+    n_bits = 10
+    tolerance = 1e-10
+
+    rng = np.random.default_rng(seed=43)
+
+    for dataset, k in random_test_datasets(
+        rng,
+        n_test_cases,
+        n_train_min=n_train_min,
+        n_train_max=n_train_max,
+        k_min=3,
+        k_max=5,
+    ):
+        _compare_wknn_approximate(
+            WKNNTestCase.from_dataset(dataset, k=k, n_bits=n_bits), tolerance=tolerance
+        )
+
+
+def _compare_wknn_approximate(test_case: WKNNTestCase, tolerance: float) -> None:
+    model = _get_fitted_wknn_model(test_case)
+
+    total_error = 0
+    for class_index in range(len(set(test_case.y_train))):
+        # WKNNExplainer will use discretized weights
+        explainer = WKNNExplainer(model, class_index=class_index, n_bits=test_case.n_bits)
+        iv = explainer.explain(test_case.x_val)
+        sv = interaction_values_to_array(iv)
+
+        # BruteForceWKNNExplainer will use continuous weights
+        explainer_brute = BruteForceWKNNExplainer(model, class_index=class_index)
+        iv_brute = explainer_brute.explain_function(test_case.x_val)
+        sv_brute = interaction_values_to_array(iv_brute)
+
+        total_error += np.sum(np.abs(sv_brute - sv))
+
+    assert total_error < tolerance
+
+
 def test_wknn_discretize_weights():
     """Tests the pre-processing of weights involved in the WKNN algorithm, and the weight sign flipping method."""
     # Distances are [1, 0, 1, 4, 4] -> normalized weights are [3/4, 4/4, 3/4, 0, 0]
