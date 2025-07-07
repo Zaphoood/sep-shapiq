@@ -202,6 +202,14 @@ class TestWKNNSanity:
         with pytest.raises(ValueError, match="bits"):
             WKNNExplainer(model, class_index=0, n_bits=-1)
 
+    def test_raises_invalid_k(self):
+        """Tests that instantiating WKNNExplainer with a value of one for parameter k."""
+        model = KNeighborsClassifier(n_neighbors=1, weights="distance")
+        model.fit(np.array([[0]]), np.array([0]))
+
+        with pytest.raises(ValueError, match=r"value.*\bk\b"):
+            WKNNExplainer(model, class_index=0)
+
     def test_wknn_discretize_weights(self):
         """Tests the pre-processing of weights involved in the WKNN algorithm, and the weight sign flipping method."""
         # Distances are [1, 0, 1, 4, 4] -> normalized weights are [3/4, 4/4, 3/4, 0, 0]
