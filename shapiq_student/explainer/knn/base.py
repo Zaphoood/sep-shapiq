@@ -127,7 +127,7 @@ def get_explainer_class(
 ) -> type[KNNExplainer]:
     """Returns the appropriate subclass of KNNExplainer for the given model."""
     from ._common_knn import CommonKNNExplainer
-    from .tknn import TKNNExplainer
+    from .threshold_knn import TKNNExplainer
 
     if isinstance(model, KNeighborsClassifier):
         return CommonKNNExplainer

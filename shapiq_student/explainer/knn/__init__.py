@@ -6,6 +6,7 @@ from .tknn import (
     TKNNExplainer,
 )
 from .knn import BasicKNNExplainer, BruteForceBasicKNNExplainer
+from .normal_knn import BasicKNNExplainer, BruteForceBasicKNNExplainer
 
 __all__ = [
     "KNNExplainer",

@@ -51,8 +51,8 @@ def get_knn_explainer_class(
     model: KNeighborsClassifier,
 ) -> type[CommonKNNExplainer]:
     """Returns the appropriate subclass of CommonKNNExplainer for the given model."""
-    from .knn import BasicKNNExplainer
-    from .wknn import WKNNExplainer
+    from .normal_knn import BasicKNNExplainer
+    from .weighted_knn import WKNNExplainer
 
     weights = model.weights  # type: ignore[attr-defined]
 
