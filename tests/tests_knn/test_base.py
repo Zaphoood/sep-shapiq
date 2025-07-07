@@ -54,8 +54,8 @@ def test_raises_on_multi_output_model():
 SHAPLEY_VALUES_INDEX = "SV"
 
 
-def test_interaction_values_from_knn_shapley_values():
-    """Tests that the values passed to interaction_values_from_knn_shapley_values are correct and parameters are adequately set."""
+def test_interaction_lookup_from_knn_shapley_values():
+    """Tests that the values passed to interaction_lookup_from_knn_shapley_values are correct and parameters are adequately set."""
     sv = np.array(
         [
             -0.60893233,
@@ -85,8 +85,8 @@ def test_interaction_values_from_knn_shapley_values():
     assert iv.baseline_value == 0
 
 
-def test_interaction_values_from_knn_shapley_values_emtpy():
-    """Tests interaction_values_from_knn_shapley_values can handle empty arrays."""
+def test_interaction_lookup_from_knn_shapley_values_emtpy():
+    """Tests interaction_lookup_from_knn_shapley_values can handle empty arrays."""
     sv = np.array([])
 
     iv = interaction_values_from_array(sv)
