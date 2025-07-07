@@ -18,7 +18,7 @@ class SupportedKNNWeights(Enum):
 
 
 class CommonKNNExplainer(KNNExplainer):
-    """Helper class that performs functionality shared between BasicKNNExplainer and WKNNExplainer."""
+    """Helper class that performs functionality shared between NormalKNNExplainer and WeightedKNNExplainer."""
 
     @override
     def __init__(
