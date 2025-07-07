@@ -9,7 +9,8 @@ from typing_extensions import override
 from shapiq_student.explainer.knn.lookup_game import LookupGame
 from shapiq_student.explainer.knn.util import keep_first_n
 
-from .base import KNNExplainer, interaction_values_from_array, interaction_values_to_array
+from ._common_knn import CommonKNNExplainer
+from .base import interaction_values_from_array, interaction_values_to_array
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -22,7 +23,7 @@ import numpy as np
 from scipy.special import comb
 
 
-class WKNNExplainerBase(ABC, KNNExplainer):
+class WKNNExplainerBase(ABC, CommonKNNExplainer):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
 
     MODE = "weighted"
@@ -138,7 +139,7 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
             An ``np.ndarray`` of Shapley Values for each training data point.
         """
         if self.n_bits is not None:
-            _wang_explainer = WKNNExplainer(self.model, self.class_index, n_bits=self.n_bits)
+            _wang_explainer = WKNNExplainer(self.knn_model, self.class_index, n_bits=self.n_bits)
             weights = _wang_explainer._undiscretize_weight(  # noqa: SLF001
                 _wang_explainer._discretize_weight(weights)  # noqa: SLF001
             )

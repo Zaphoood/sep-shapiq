@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from abc import abstractmethod
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, assert_never, cast
 
 import numpy as np
 from shapiq import Explainer
 from shapiq.interaction_values import InteractionValues
+from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 from sklearn.utils.validation import check_is_fitted
 
-from .dispatch import get_explainer_class_and_mode
 from .exceptions import MultiOutputKNNError
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ class KNNExplainer(Explainer):
         # If this class is instantiated directly, automagically dispatch to the appropriate explainer for the given model
 
         if self.__class__ is KNNExplainer:
-            explainer_class = get_explainer_class_and_mode(model)
+            explainer_class = get_explainer_class(model)
             self.__class__ = explainer_class
             explainer_class.__init__(
                 self,
@@ -114,15 +114,27 @@ class KNNExplainer(Explainer):
             class_index = 1
         self.class_index = class_index
 
-        # TODO(Zaphoood): Move this to KNeighborsClassifier-specific subclass
-        self.k = self.model.n_neighbors  # type: ignore
-
     @property
     @abstractmethod
     def mode(self) -> str:
         """The mode in which the Explainer operates."""
         msg = "Each specific KNNExplainer subclass must implement the mode() property. ʕノ•ᴥ•ʔノ ︵ ┻━┻"  # noqa: RUF001
         raise NotImplementedError(msg)
+
+
+def get_explainer_class(
+    model: KNNClassifierModel,
+) -> type[KNNExplainer]:
+    """Returns the appropriate subclass of KNNExplainer for the given model."""
+    from ._common_knn import CommonKNNExplainer
+    from .tknn import TKNNExplainer
+
+    if isinstance(model, KNeighborsClassifier):
+        return CommonKNNExplainer
+    if isinstance(model, RadiusNeighborsClassifier):
+        return TKNNExplainer
+
+    assert_never(model)
 
 
 def interaction_values_from_array(
