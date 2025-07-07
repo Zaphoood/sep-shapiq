@@ -52,14 +52,14 @@ def get_knn_explainer_class(
 ) -> type[CommonKNNExplainer]:
     """Returns the appropriate subclass of CommonKNNExplainer for the given model."""
     from .normal_knn import NormalKNNExplainer
-    from .weighted_knn import WKNNExplainer
+    from .weighted_knn import WeightedKNNExplainer
 
     weights = model.weights  # type: ignore[attr-defined]
 
     if weights == SupportedKNNWeights.uniform.value:
         return NormalKNNExplainer
     if weights == SupportedKNNWeights.distance.value:
-        return WKNNExplainer
+        return WeightedKNNExplainer
     raise UnsupportedKNNWeightsError(
         unsupported_weights=weights,
         allowed_weights=[member.value for member in SupportedKNNWeights],

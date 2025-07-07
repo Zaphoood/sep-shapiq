@@ -25,7 +25,7 @@ from scipy.special import comb
 MODE_WEIGHTED = "weighted"
 
 
-class WKNNExplainerBase(ABC, CommonKNNExplainer):
+class WeightedKNNExplainerBase(ABC, CommonKNNExplainer):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
 
     @override
@@ -75,8 +75,12 @@ class WKNNExplainerBase(ABC, CommonKNNExplainer):
         return MODE_WEIGHTED
 
 
-class BruteForceWKNNExplainer(WKNNExplainerBase):
-    """A brute force implementation of WKNN Shapley Values."""
+class BruteForceWKNNExplainer(WeightedKNNExplainerBase):
+    """A brute force implementation of WKNN Shapley Values.
+
+    References:
+        .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024.
+    """
 
     def __init__(
         self,
@@ -182,7 +186,7 @@ def _greater_or_close(a: np.floating, b: np.floating) -> np.bool:
     return cast("np.bool", a >= b) or np.isclose(a, b)
 
 
-class WKNNExplainer(WKNNExplainerBase):
+class WeightedKNNExplainer(WeightedKNNExplainerBase):
     """Efficient implementation of WKNN according to `Wang et al. (2024)` [Wng24]_.
 
     References:
