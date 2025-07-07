@@ -234,7 +234,7 @@ class WKNNExplainer(WKNNExplainerBase):
         y_other_mask = y_train_sorted == y_other
         subgame_mask = y_val_mask | y_other_mask
         n_subgame = np.sum(subgame_mask)
-        # Maps an index from the sorted subgame to the sorted multi-class game
+        # Maps an index from the sorted subgame weights/labels to the sorted multi-class weights/labels
         subgame = np.arange(self.n_train)[subgame_mask]
         weights_subgame = weights[subgame]
 
@@ -365,6 +365,7 @@ class WKNNExplainer(WKNNExplainerBase):
     ) -> int | npt.NDArray[np.integer]:
         """Turns floating-point weight into an integer index in the discretized weights space.
 
+        Maps a given ``w`` to ``w^disc``, according to the following linear mapping:
         Weight ``-k`` will be mapped to index ``0`` and weight ``k`` to index ``2 * k * 2**n_bits``.
         """
         return self.weights_space_zero + np.round(weight * 2**self.n_bits).astype(int)
@@ -380,7 +381,10 @@ class WKNNExplainer(WKNNExplainerBase):
     def _undiscretize_weight(
         self, weight_discrete: int | npt.NDArray[np.integer]
     ) -> float | npt.NDArray[np.floating]:
-        """Turns discrete weight index into the corresponding floating point weight."""
+        """Turns discrete weight index into the corresponding floating point weight.
+
+        Returns ``w`` for some ``w^disc``.
+        """
         return (weight_discrete - self.weights_space_zero) / (2**self.n_bits)
 
     @overload
@@ -408,7 +412,10 @@ class WKNNExplainer(WKNNExplainerBase):
     def _flip_weight_sign(
         self, weight_discrete: int | npt.NDArray[np.integer]
     ) -> int | npt.NDArray[np.integer]:
-        """Given a discretized weight index, returns the discretized index of the corresponding weight with the sign flipped."""
+        """Given a discretized weight index, returns the discretized index of the corresponding weight with the sign flipped.
+
+        In other words, it returns ``(-w)^disc`` for a given ``w^disc``.
+        """
         return 2 * self.weights_space_zero - weight_discrete
 
     @overload
@@ -422,13 +429,16 @@ class WKNNExplainer(WKNNExplainerBase):
     def _is_weight_negative(
         self, weight_discrete: int | npt.NDArray[np.integer]
     ) -> int | npt.NDArray[np.integer]:
-        """Checks whether the weight corresponding to a discretized weight index is negative."""
+        """Checks whether the weight corresponding to a discretized weight index is negative.
+
+        In other words, it returns ``w < 0`` for some ``w^disc``.
+        """
         return weight_discrete < self.weights_space_zero
 
     def _weight_sign(self, weight_discrete: int) -> int:
         """Implements the sign function for discretized weights.
 
-        Given some discretized weight index ``weight_discrete`` with corresponding weight ``w``, returns 1 if ``w > 0``, -1 if ``w < 0``, and 0 if ``w == 0```
+        Given some discretized weight index ``w^disc``, returns 1 if ``w > 0``, -1 if ``w < 0``, and 0 if ``w == 0```
         """
         if weight_discrete > self.weights_space_zero:
             return 1
