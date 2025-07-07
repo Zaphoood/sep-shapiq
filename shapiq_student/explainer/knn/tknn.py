@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, cast
 from typing_extensions import override
 
 import numpy as np
-from scipy.special import comb
+from scipy.special import comb  # type: ignore[import-untyped]
 
 from shapiq_student.explainer.knn.knn import LookupGame
 
@@ -33,9 +33,9 @@ class BruteForceTKNNExplainer(KNNExplainerBase):
         Raises:
             TypeError: If model is not RadiusNeighborsClassifier
         """
-        super().__init__(model, class_index)
+        super().__init__(model, class_index)  # type: ignore[arg-type]
         self._model = model
-        self.tau = cast("float", model.radius)
+        self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
@@ -66,8 +66,8 @@ class BruteForceTKNNExplainer(KNNExplainerBase):
             coal_tuple = tuple(np.where(coalition)[0])
             utilities[coal_tuple] = utility
 
-        game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)
-        iv = game.exact_values("SII", order=1)
+        game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)  # type: ignore[arg-type]
+        iv = game.exact_values("SV", order=1)
 
         return iv
 
@@ -89,10 +89,10 @@ class TKNNExplainer(KNNExplainerBase):
         Raises:
             TypeError: If model is not RadiusNeighborsClassifier
         """
-        super().__init__(model, class_index)
+        super().__init__(model, class_index)  # type: ignore[arg-type]
         self._model = model
 
-        self.tau = cast("float", model.radius)
+        self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
