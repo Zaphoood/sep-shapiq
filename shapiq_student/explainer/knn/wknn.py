@@ -215,7 +215,11 @@ class WKNNExplainer(WKNNExplainerBase):
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{self.model.weights}'"
             raise ValueError(msg)
 
+        if n_bits < 0:
+            msg = f"Number of bits for discretization must be non-negative but was {n_bits}"
+            raise ValueError(msg)
         self.n_bits = n_bits
+
         self.weights_space_size = 2 * self.k * 2**n_bits + 1
         self.weights_space = cast("npt.NDArray[np.integer]", np.arange(self.weights_space_size))
         # Index at which weight 0.0 is mapped to in the discrete weight space

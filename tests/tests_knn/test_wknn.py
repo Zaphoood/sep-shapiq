@@ -181,7 +181,7 @@ class TestWKNNSanity:
 
     def test_raises_unfitted_inadequate_model(self):
         """Tests that instantiating WKNNExplainer with an unfitted model raises an exception."""
-        model = KNeighborsClassifier(n_neighbors=3)
+        model = KNeighborsClassifier(n_neighbors=3, weights="distance")
 
         with pytest.raises(NotFittedError):
             WKNNExplainer(model, class_index=0)
@@ -193,6 +193,14 @@ class TestWKNNSanity:
 
         with pytest.raises(ValueError, match="weights"):
             WKNNExplainer(model, class_index=0)
+
+    def test_raises_negative_discretization_bits(self):
+        """Tests that instantiating WKNNExplainer with a value of n_bits below zero."""
+        model = KNeighborsClassifier(n_neighbors=3, weights="distance")
+        model.fit(np.array([[0]]), np.array([0]))
+
+        with pytest.raises(ValueError, match="bits"):
+            WKNNExplainer(model, class_index=0, n_bits=-1)
 
     def test_wknn_discretize_weights(self):
         """Tests the pre-processing of weights involved in the WKNN algorithm, and the weight sign flipping method."""
