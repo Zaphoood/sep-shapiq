@@ -24,6 +24,19 @@ from scipy.special import comb
 class WKNNExplainerBase(ABC, KNNExplainerBase):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
 
+    @override
+    def __init__(
+        self,
+        model: KNeighborsClassifier,
+        class_index: int,
+    ) -> None:
+        super().__init__(model, class_index)
+
+        model_weights = self.model.weights  # type: ignore[attr-defined]
+        if model_weights != "distance":
+            msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
+            raise ValueError(msg)
+
     def _get_normalized_weights(
         self, x_val: npt.NDArray[np.floating]
     ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.floating]]:
@@ -69,11 +82,6 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
             n_bits: If not None, then weights will be discretized to this number of bits.
         """
         super().__init__(model, class_index)
-
-        model_weights = self.model.weights  # type: ignore[attr-defined]
-        if model_weights != "distance":
-            msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
-            raise ValueError(msg)
 
         self.n_bits = n_bits
 
