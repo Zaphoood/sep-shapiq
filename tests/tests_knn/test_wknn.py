@@ -46,19 +46,20 @@ class WKNNTestCase:
         return self.X_train.shape[0]
 
 
-def random_binary_test_datasets(
+def random_test_datasets(
     rng: np.random.Generator,
-    n: int,
+    n_test_cases: int,
     n_train_min: int,
     n_train_max: int,
     k_min: int,
     k_max: int,
+    n_classes: int = 2,
 ) -> Iterator[tuple[Dataset, int]]:
     """Randomly generates binary datasets for testing."""
-    for _ in range(n):
-        n = int(rng.integers(n_train_min, n_train_max, endpoint=True))
-        X_train = rng.normal(size=(n, 2))
-        y_train = rng.integers(0, 2, size=n)
+    for _ in range(n_test_cases):
+        n_test_cases = int(rng.integers(n_train_min, n_train_max, endpoint=True))
+        X_train = rng.normal(size=(n_test_cases, 2))
+        y_train = rng.integers(0, n_classes, size=n_test_cases)
         x_val = rng.normal(size=(1, 2))[0]
 
         k = int(rng.integers(k_min, k_max, endpoint=True))
@@ -66,8 +67,8 @@ def random_binary_test_datasets(
         yield Dataset(X_train=X_train, y_train=y_train, x_val=x_val), k
 
 
-def test_wknn_exact() -> None:
-    """Tests that the results of WKNNExplainer agree with those of BruteForceWKNNExplainer when using the same (discretized) weights."""
+def test_wknn_exact_binary() -> None:
+    """Tests that the results of WKNNExplainer agree with those of BruteForceWKNNExplainer for binary classification when using the same (discretized) weights."""
     n_test_cases = 10
     n_train_min = 5
     n_train_max = 10
@@ -75,9 +76,33 @@ def test_wknn_exact() -> None:
 
     rng = np.random.default_rng(seed=43)
 
-    for dataset, k in random_binary_test_datasets(
+    for dataset, k in random_test_datasets(
         rng, n_test_cases, n_train_min=n_train_min, n_train_max=n_train_max, k_min=3, k_max=5
     ):
+        _compare_wknn_exact(WKNNTestCase.from_dataset(dataset, k=k, n_bits=n_bits))
+
+
+def test_wknn_exact_multiclass() -> None:
+    """Tests that the results of WKNNExplainer agree with those of BruteForceWKNNExplainer for multi-class classification when using the same (discretized) weights."""
+    n_test_cases = 10
+    n_train_min = 9
+    n_train_max = 10
+    n_bits = 4
+
+    rng = np.random.default_rng(seed=43)
+
+    for n_classes in range(3, 6):
+        dataset, k = next(
+            random_test_datasets(
+                rng,
+                n_test_cases,
+                n_train_min=n_train_min,
+                n_train_max=n_train_max,
+                k_min=3,
+                k_max=5,
+                n_classes=n_classes,
+            )
+        )
         _compare_wknn_exact(WKNNTestCase.from_dataset(dataset, k=k, n_bits=n_bits))
 
 
@@ -146,4 +171,4 @@ def test_wknn_discretize_weights():
 
 
 if __name__ == "__main__":
-    test_wknn_exact()
+    test_wknn_exact_multiclass()
