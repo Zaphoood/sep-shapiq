@@ -200,7 +200,7 @@ class WKNNExplainer(WKNNExplainerBase):
 
         self.weights_space_size = 2 * self.k * 2**n_bits + 1
         self.weights_space = cast("npt.NDArray[np.integer]", np.arange(self.weights_space_size))
-        # Index at which weight 0.0 is mapped to in the discrete weight space
+        # Index in the discrete weight space which weight zero is mapped to
         self.weights_space_zero = self.k * 2**n_bits
 
         self.n_train = self.X_train.shape[0]
