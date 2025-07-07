@@ -67,9 +67,9 @@ class BruteForceTKNNExplainer(KNNExplainerBase):
             utilities[coal_tuple] = utility
 
         game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)  # type: ignore[arg-type]
-        iv = game.exact_values("SV", order=1)
+        sv = game.exact_values("SV", order=1)
 
-        return iv
+        return sv
 
 
 class TKNNExplainer(KNNExplainerBase):
