@@ -30,6 +30,21 @@ def test_extract_parameters_from_radius_model():
     assert tknn_explainer.tau == tau
 
 
+def test_no_neighbors_in_threshold():
+    """Tests TKNNExplainer behavior when no neighbors are within threshold tau. Should return zero."""
+    X_train = np.array([[10, 10, 10], [10, 10, 10]])
+    y_train = np.array([0, 1])
+    tau = 1
+    x_val = np.array([1, 1, 1])
+    radius_model = RadiusNeighborsClassifier(radius=tau)
+    radius_model.fit(X_train, y_train)
+    class_index = 0
+    tknn_explainer = TKNNExplainer(radius_model, class_index=class_index)
+    sv_array_tknn = interaction_values_to_array(tknn_explainer.explain(x_val))
+
+    assert np.sum(sv_array_tknn) == 0
+
+
 def test_with_load_iris():
     """Tests the correctness of the TKNN explainer by comparing its results to the baseline brute forece implementation.
 
