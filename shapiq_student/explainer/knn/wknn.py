@@ -225,6 +225,8 @@ class WKNNExplainer(WKNNExplainerBase):
         # Index at which weight 0.0 is mapped to in the discrete weight space
         self.weights_space_zero = self.k * 2**n_bits
 
+        self.n_train = self.X_train.shape[0]
+
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
         n_players = self.X_train.shape[0]
@@ -239,9 +241,7 @@ class WKNNExplainer(WKNNExplainerBase):
         for other_class_index in range(n_classes):
             if other_class_index == self.class_index:
                 continue
-            sv_current = self._explain_binary(
-                self.class_index, other_class_index, sortperm, weights_discrete
-            )
+            sv_current = self._explain_binary(other_class_index, sortperm, weights_discrete)
             sv += sv_current
 
         sv /= n_classes - 1
@@ -250,28 +250,21 @@ class WKNNExplainer(WKNNExplainerBase):
 
     def _explain_binary(
         self,
-        y_val: int,
         y_other: int,
         sortperm: npt.NDArray[np.integer],
         weights_discrete: npt.NDArray[np.integer],
     ) -> npt.NDArray[np.floating]:
-        # TODO(Zaphoood): Consider removing aliases
-        # Convenience aliases
         y_val = self.class_index
-
-        # Number of training points
-        n = len(self.y_train_indices)
-
         y_train_sorted = self.y_train_indices[sortperm]
         y_val_mask = y_train_sorted == y_val
         y_other_mask = y_train_sorted == y_other
         subgame_mask = y_val_mask | y_other_mask
         n_subgame = np.sum(subgame_mask)
         # Maps an index from the sorted subgame to the sorted multi-class game
-        subgame = np.arange(n)[subgame_mask]
+        subgame = np.arange(self.n_train)[subgame_mask]
         weights_discrete_subgame = weights_discrete[subgame]
 
-        sv = np.zeros(n)
+        sv = np.zeros(self.n_train)
         for i in range(n_subgame):
             y_i = cast("int", self.y_train_indices[sortperm[subgame[i]]])
             f_i = self._compute_f_i(i, n_subgame, weights_discrete_subgame)
