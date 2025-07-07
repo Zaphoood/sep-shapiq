@@ -202,8 +202,8 @@ class WKNNExplainer(WKNNExplainerBase):
 
         Args:
             model: The KNN model to explain.
-            n_bits: The number of bits to use for the discretized weight space.
             class_index: The class index of the model to explain.
+            n_bits: The number of bits to use for the discretized weight space.
         """
         super().__init__(model, class_index)
 
