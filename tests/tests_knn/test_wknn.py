@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
+from sklearn.exceptions import NotFittedError
 from sklearn.neighbors import KNeighborsClassifier
 
 from shapiq_student.explainer.knn.base import interaction_values_to_array
@@ -167,6 +170,30 @@ class TestWKNNValues:
 
         assert total_error < tolerance
 
+    def _get_fitted_wknn_model(self, test_case: WKNNTestCase) -> KNeighborsClassifier:
+        model = KNeighborsClassifier(n_neighbors=test_case.k, weights="distance")
+        model.fit(test_case.X_train, test_case.y_train)
+        return model
+
+
+class TestWKNNSanity:
+    """Performs various sanity checks and tests helper functions."""
+
+    def test_raises_unfitted_inadequate_model(self):
+        """Tests that instantiating WKNNExplainer with an unfitted model raises an exception."""
+        model = KNeighborsClassifier(n_neighbors=3)
+
+        with pytest.raises(NotFittedError):
+            WKNNExplainer(model, class_index=0)
+
+    def test_raises_on_inadequate_model(self):
+        """Tests that instantiating WKNNExplainer with a model that uses unweighted weights raises an exception."""
+        model = KNeighborsClassifier(n_neighbors=3, weights="uniform")
+        model.fit(np.array([[0]]), np.array([0]))
+
+        with pytest.raises(ValueError, match="weights"):
+            WKNNExplainer(model, class_index=0)
+
     def test_wknn_discretize_weights(self):
         """Tests the pre-processing of weights involved in the WKNN algorithm, and the weight sign flipping method."""
         # Distances are [1, 0, 1, 4, 4] -> normalized weights are [3/4, 4/4, 3/4, 0, 0]
@@ -203,11 +230,6 @@ class TestWKNNValues:
 
         assert explainer._flip_weight_sign(weights_prepared[0]) == weights_prepared[2]
         assert explainer._flip_weight_sign(weights_prepared[2]) == weights_prepared[0]
-
-    def _get_fitted_wknn_model(self, test_case: WKNNTestCase) -> KNeighborsClassifier:
-        model = KNeighborsClassifier(n_neighbors=test_case.k, weights="distance")
-        model.fit(test_case.X_train, test_case.y_train)
-        return model
 
 
 if __name__ == "__main__":
