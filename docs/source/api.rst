@@ -6,3 +6,4 @@ API Reference
     :recursive:
 
     shapiq_student.foo
+    shapiq_student.imputer

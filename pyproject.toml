@@ -138,3 +138,12 @@ exclude_lines = [
 ]
 
 # TODO(mmschlk): add mypy or ty typing configuration below
+# mypy studd
+[tool.mypy]
+python_version = "3.10"
+strict = true
+exclude = "tests_grading/"
+
+[[tool.mypy.overrides]]
+module = ["shapiq.*"]
+follow_untyped_imports = true
