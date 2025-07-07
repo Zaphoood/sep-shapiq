@@ -25,6 +25,8 @@ from scipy.special import comb
 class WKNNExplainerBase(ABC, KNNExplainer):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
 
+    MODE = "weighted"
+
     @override
     def __init__(
         self,
@@ -65,6 +67,11 @@ class WKNNExplainerBase(ABC, KNNExplainer):
             weights = (max_dist - distances) / (max_dist - min_dist)
 
         return sortperm, weights
+
+    @property
+    @override
+    def mode(self) -> str:
+        return self.MODE
 
 
 class BruteForceWKNNExplainer(WKNNExplainerBase):

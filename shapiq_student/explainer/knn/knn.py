@@ -63,6 +63,7 @@ class BasicKNNExplainer(KNNExplainer):
     """
 
     # TODO(Zaphoood): Explain functionality in class docstring
+    MODE = "normal"
 
     @override
     def __init__(
@@ -99,3 +100,8 @@ class BasicKNNExplainer(KNNExplainer):
         inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
 
         return interaction_values_from_array(sv[inv_sortperm])
+
+    @property
+    @override
+    def mode(self) -> str:
+        return self.MODE

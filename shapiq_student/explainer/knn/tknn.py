@@ -27,6 +27,8 @@ class BruteForceTKNNExplainer(KNNExplainer):
         Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
     """
 
+    MODE = "threshold"
+
     @override
     def __init__(
         self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
@@ -63,7 +65,7 @@ class BruteForceTKNNExplainer(KNNExplainer):
             else:
                 utility = np.sum(coal_nhood_with_class_index) / n_coal_nhood
 
-            coal_tuple = tuple(np.where(coalition)[0])
+            coal_tuple = tuple(map(int, np.where(coalition)[0]))
             utilities[coal_tuple] = utility
 
         game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)
@@ -81,6 +83,8 @@ class TKNNExplainer(KNNExplainer):
         Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
     """
 
+    MODE = "threshold"
+
     @override
     def __init__(
         self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
@@ -89,6 +93,11 @@ class TKNNExplainer(KNNExplainer):
         self._model = model
 
         self.tau = cast("float", model.radius)
+
+    @property
+    @override
+    def mode(self) -> str:
+        return self.MODE
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:

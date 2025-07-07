@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from abc import abstractmethod
 import logging
 from typing import TYPE_CHECKING, Any, cast
 
@@ -117,9 +118,11 @@ class KNNExplainer(Explainer):
         self.k = self.model.n_neighbors  # type: ignore
 
     @property
+    @abstractmethod
     def mode(self) -> str:
         """The mode in which the Explainer operates."""
-        return self._explainer_mode.value
+        msg = "Each specific KNNExplainer subclass must implement the mode() property. ʕノ•ᴥ•ʔノ ︵ ┻━┻"  # noqa: RUF001
+        raise NotImplementedError(msg)
 
 
 def interaction_values_from_array(
