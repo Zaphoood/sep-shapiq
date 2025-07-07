@@ -8,6 +8,8 @@ from typing_extensions import override
 
 import numpy as np
 
+from shapiq_student.explainer.knn.util import keep_first_n
+
 from .base import KNNExplainerBase, interaction_values_from_array
 from .lookup_game import LookupGame
 
@@ -40,7 +42,7 @@ class BruteForceKNNClassifierExplainer(KNNExplainerBase):
 
         for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
             coalition = np.array(list(coalition_generator))
-            coalition_first_k = _first_n_true(coalition, n=self.k)
+            coalition_first_k = keep_first_n(coalition, n=self.k)
             utility = np.sum(y_train_sorted[coalition_first_k] == self.class_index) / self.k
 
             coalition_tuple = tuple(sorted(sortperm[coalition]))
@@ -50,29 +52,6 @@ class BruteForceKNNClassifierExplainer(KNNExplainerBase):
         iv = game.exact_values("SII", order=1)
 
         return iv
-
-
-def _first_n_true(mask: npt.NDArray[np.bool], n: int) -> npt.NDArray[np.bool]:
-    """Set all but the first n True entries of the given boolean mask to False.
-
-    This will just return a reference to the input array if ``np.sum(mask) <= n``
-
-    Args:
-        mask: The mask in question.
-        n: The maximum number of true entries.
-    """
-    if n == 0:
-        return np.zeros_like(mask)
-
-    n_true = 0
-    for i, val in enumerate(mask):
-        n_true += int(val)
-        if n_true == n:
-            out = np.zeros_like(mask)
-            out[: i + 1] = mask[: i + 1]
-            return out
-
-    return mask
 
 
 class KNNClassifierExplainer(KNNExplainerBase):

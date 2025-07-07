@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, cast, overload
 from typing_extensions import override
 
 from shapiq_student.explainer.knn.lookup_game import LookupGame
+from shapiq_student.explainer.knn.util import keep_first_n
 
 from .base import KNNExplainerBase, interaction_values_from_array, interaction_values_to_array
 
@@ -146,7 +147,7 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
             # Utility function according to equation (15) in Wang et al. (2024)
 
             # Mask of k nearest training points of current coalition with class y_val or y_other
-            k_nearest_with_relevant_class = _first_n_true(
+            k_nearest_with_relevant_class = keep_first_n(
                 coalition & (y_val_mask | y_other_mask), self.k
             )
             y_val_nearest = y_val_mask & k_nearest_with_relevant_class
@@ -160,29 +161,6 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
         iv = game.exact_values("SII", order=1)
 
         return interaction_values_to_array(iv)
-
-
-def _first_n_true(mask: npt.NDArray[np.bool], n: int) -> npt.NDArray[np.bool]:
-    """Set all but the first n True entries of the given boolean mask to False.
-
-    This will just return a reference to the input array if ``np.sum(mask) <= n``
-
-    Args:
-        mask: The mask in question.
-        n: The maximum number of true entries.
-    """
-    if n == 0:
-        return np.zeros_like(mask)
-
-    n_true = 0
-    for i, val in enumerate(mask):
-        n_true += val
-        if n_true == n:
-            out = np.zeros_like(mask)
-            out[: i + 1] = mask[: i + 1]
-            return out
-
-    return mask
 
 
 class WKNNExplainer(WKNNExplainerBase):
