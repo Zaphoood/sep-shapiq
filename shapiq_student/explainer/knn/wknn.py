@@ -235,13 +235,13 @@ class WKNNExplainer(WKNNExplainerBase):
         if n_classes == 1:
             return interaction_values_from_array(np.zeros(n_players))
 
-        sortperm, weights_discrete = self._get_discrete_weights(x)
+        sortperm, weights = self._get_prepared_weights(x)
 
         sv = np.zeros((n_players,))
         for other_class_index in range(n_classes):
             if other_class_index == self.class_index:
                 continue
-            sv_current = self._explain_binary(other_class_index, sortperm, weights_discrete)
+            sv_current = self._explain_binary(other_class_index, sortperm, weights)
             sv += sv_current
 
         sv /= n_classes - 1
@@ -252,7 +252,7 @@ class WKNNExplainer(WKNNExplainerBase):
         self,
         y_other: int,
         sortperm: npt.NDArray[np.integer],
-        weights_discrete: npt.NDArray[np.integer],
+        weights: npt.NDArray[np.integer],
     ) -> npt.NDArray[np.floating]:
         y_val = self.class_index
         y_train_sorted = self.y_train_indices[sortperm]
@@ -262,22 +262,22 @@ class WKNNExplainer(WKNNExplainerBase):
         n_subgame = np.sum(subgame_mask)
         # Maps an index from the sorted subgame to the sorted multi-class game
         subgame = np.arange(self.n_train)[subgame_mask]
-        weights_discrete_subgame = weights_discrete[subgame]
+        weights_subgame = weights[subgame]
 
         sv = np.zeros(self.n_train)
         for i in range(n_subgame):
             y_i = cast("int", self.y_train_indices[sortperm[subgame[i]]])
-            f_i = self._compute_f_i(i, n_subgame, weights_discrete_subgame)
-            r_i = self._compute_r_i(i, n_subgame, f_i, y_i, y_val, weights_discrete_subgame)
-            g_i = self._compute_g_i(i, n_subgame, f_i, y_i, y_val, weights_discrete_subgame)
+            f_i = self._compute_f_i(i, n_subgame, weights_subgame)
+            r_i = self._compute_r_i(i, n_subgame, f_i, y_i, y_val, weights_subgame)
+            g_i = self._compute_g_i(i, n_subgame, f_i, y_i, y_val, weights_subgame)
 
             sv[sortperm[subgame[i]]] = self._compute_single_shapley_value(
-                i, n_subgame, r_i, g_i, weights_discrete_subgame
+                i, n_subgame, r_i, g_i, weights_subgame
             )
 
         return sv
 
-    def _get_discrete_weights(
+    def _get_prepared_weights(
         self, x_val: npt.NDArray[np.floating]
     ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.integer]]:
         """Returns weigths after normalization, discretization and sign-flipping."""
@@ -296,19 +296,19 @@ class WKNNExplainer(WKNNExplainerBase):
         self,
         i: int,
         n: int,
-        weights_discrete: npt.NDArray[np.integer],
+        weights: npt.NDArray[np.integer],
     ) -> npt.NDArray[np.floating]:
         f_i = np.zeros((n, self.k - 1, self.weights_space_size))
 
         indices_without_i = self._range_without_i(n, i)
-        f_i[indices_without_i, 0, weights_discrete[indices_without_i]] = 1
+        f_i[indices_without_i, 0, weights[indices_without_i]] = 1
 
         for l in range(1, self.k - 1):  # noqa: E741
-            for m, weight_m in enumerate(weights_discrete[l:n], start=l):
+            for m, weight_m in enumerate(weights[l:n], start=l):
                 if m == i:
                     continue
 
-                weight_diff = self._discrete_weight_sub(self.weights_space, weight_m)
+                weight_diff = self._sub_weight(self.weights_space, weight_m)
                 weight_diff_in_bounds = (weight_diff >= 0) & (weight_diff < self.weights_space_size)
                 f_i[m, l, weight_diff_in_bounds] = np.sum(
                     f_i[:m, l - 1, weight_diff[weight_diff_in_bounds]], axis=0
@@ -323,16 +323,16 @@ class WKNNExplainer(WKNNExplainerBase):
         f_i: npt.NDArray[np.floating],
         y_i: int,
         y_val: int,
-        weights_discrete: npt.NDArray[np.integer],
+        weights: npt.NDArray[np.integer],
     ) -> npt.NDArray[np.floating]:
         r_i = np.zeros((n,))
         for m in range(max(i + 1, self.k), n):
             if y_i == y_val:
-                weight_range_begin = self._flip_weight_sign(weights_discrete[i])
-                weight_range_end = self._flip_weight_sign(weights_discrete[m])
+                weight_range_begin = self._flip_weight_sign(weights[i])
+                weight_range_end = self._flip_weight_sign(weights[m])
             else:
-                weight_range_begin = self._flip_weight_sign(weights_discrete[m])
-                weight_range_end = self._flip_weight_sign(weights_discrete[i])
+                weight_range_begin = self._flip_weight_sign(weights[m])
+                weight_range_end = self._flip_weight_sign(weights[i])
 
             if weight_range_begin < weight_range_end:
                 r_i[m] = np.sum(f_i[:m, self.k - 2, weight_range_begin:weight_range_end])
@@ -346,17 +346,17 @@ class WKNNExplainer(WKNNExplainerBase):
         f_i: npt.NDArray[np.floating],
         y_i: int,
         y_val: int,
-        weights_discrete: npt.NDArray[np.integer],
+        weights: npt.NDArray[np.integer],
     ) -> npt.NDArray[np.floating]:
         g_i = np.zeros((self.k,))
-        g_i[0] = 1 if self._is_weight_negative(weights_discrete[i]) else 0
+        g_i[0] = 1 if self._is_weight_negative(weights[i]) else 0
         for l in range(1, self.k):  # noqa: E741
             if y_i == y_val:
-                weight_range_begin = self._flip_weight_sign(weights_discrete[i])
+                weight_range_begin = self._flip_weight_sign(weights[i])
                 weight_range_end = self.weights_space_zero
             else:
                 weight_range_begin = self.weights_space_zero
-                weight_range_end = self._flip_weight_sign(weights_discrete[i])
+                weight_range_end = self._flip_weight_sign(weights[i])
 
             if weight_range_begin < weight_range_end:
                 indices_without_i = self._range_without_i(n, i)
@@ -370,9 +370,9 @@ class WKNNExplainer(WKNNExplainerBase):
         n: int,
         r_i: npt.NDArray[np.floating],
         g_i: npt.NDArray[np.floating],
-        weights_discrete: npt.NDArray[np.integer],
+        weights: npt.NDArray[np.integer],
     ) -> float:
-        weight_sign = self._weight_sign(weights_discrete[i])
+        weight_sign = self._weight_sign(weights[i])
         first_summand = sum(g_i[l] / comb(n - 1, l) for l in range(min(self.k, n))) / n  # noqa: E741
         second_summand = sum(
             r_i[m - 1] / (m * comb(m - 1, self.k)) for m in range(max(i + 2, self.k + 1), n + 1)
@@ -410,18 +410,18 @@ class WKNNExplainer(WKNNExplainerBase):
         return (weight_discrete - self.weights_space_zero) / (2**self.n_bits)
 
     @overload
-    def _discrete_weight_sub(self, a_discrete: int, b_discrete: int) -> int: ...
+    def _sub_weight(self, weight_a_discrete: int, weight_b_discrete: int) -> int: ...
 
     @overload
-    def _discrete_weight_sub(
-        self, a_discrete: npt.NDArray[np.integer], b_discrete: int
+    def _sub_weight(
+        self, weight_a_discrete: npt.NDArray[np.integer], weight_b_discrete: int
     ) -> npt.NDArray[np.integer]: ...
 
-    def _discrete_weight_sub(
-        self, a_discrete: npt.NDArray[np.integer] | int, b_discrete: int
+    def _sub_weight(
+        self, weight_a_discrete: npt.NDArray[np.integer] | int, weight_b_discrete: int
     ) -> npt.NDArray[np.integer] | int:
-        """Computes ``a - b`` for two discrete weight indices."""
-        return self.weights_space_zero + a_discrete - b_discrete
+        """Computes ``(w_a - w_b)^disc`` for two discrete weight indices ``w_a^disc`` and ``w_b^disc``."""
+        return self.weights_space_zero + weight_a_discrete - weight_b_discrete
 
     @overload
     def _flip_weight_sign(self, weight_discrete: int) -> int: ...

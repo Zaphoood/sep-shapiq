@@ -241,7 +241,7 @@ class TestWKNNSanity:
         model.fit(X_train, y_train)
 
         explainer = WKNNExplainer(model, class_index=class_index, n_bits=n_bits)
-        sortperm, weights_prepared_sorted = explainer._get_discrete_weights(x_val)
+        sortperm, weights_prepared_sorted = explainer._get_prepared_weights(x_val)
 
         weights_prepared = np.zeros_like(sortperm)
         weights_prepared[sortperm] = weights_prepared_sorted
