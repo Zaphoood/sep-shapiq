@@ -5,7 +5,10 @@ from .knn import (
     BruteForceKNNClassifierExplainer,
     KNNClassifierExplainer,
 )
-from .tknn import TKNNExplainer
+from .tknn import (
+    BruteForceTKNNExplainer,
+    TKNNExplainer,
+)
 
 __all__ = [
     "KNNExplainerBase",
@@ -14,4 +17,5 @@ __all__ = [
     "BruteForceKNNClassifierExplainer",
     "KNNClassifierExplainer",
     "TKNNExplainer",
+    "BruteForceTKNNExplainer",
 ]
