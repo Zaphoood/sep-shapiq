@@ -216,12 +216,8 @@ class WKNNExplainer(WKNNExplainerBase):
         sortperm, weights = self._get_prepared_weights(x)
 
         sv = np.zeros((n_players,))
-        for other_class_index in range(n_classes):
-            if other_class_index == self.class_index:
-                continue
-            sv_current = self._explain_binary(other_class_index, sortperm, weights)
-            sv += sv_current
-
+        for other_class_index in self._range_without_i(n_classes, self.class_index):
+            sv += self._explain_binary(other_class_index, sortperm, weights)
         sv /= n_classes - 1
 
         return interaction_values_from_array(sv)
