@@ -40,22 +40,10 @@ class WKNNTestCase:
         """Converts a Dataset to a WKNNTestCase."""
         return cls(dataset.X_train, dataset.y_train, dataset.x_val, k=k, n_bits=n_bits)
 
-
-def test_wknn_sv_agrees_with_brute_force() -> None:
-    """Tests that the results of WKNNExplainer agree with those of BruteForceWKNNExplainer using randomly generated test cases."""
-    n_test_cases = 10
-    n_train_min = 5
-    n_train_max = 10
-    n_bits = 4
-
-    rng = np.random.default_rng(seed=43)
-
-    for dataset, k in random_binary_test_datasets(
-        rng, n_test_cases, n_train_min=n_train_min, n_train_max=n_train_max, k_min=3, k_max=5
-    ):
-        _check_wknn_test_case_with_brute_froce(
-            WKNNTestCase.from_dataset(dataset, k=k, n_bits=n_bits)
-        )
+    @property
+    def n_train(self) -> int:
+        """The number of training points."""
+        return self.X_train.shape[0]
 
 
 def random_binary_test_datasets(
@@ -78,9 +66,29 @@ def random_binary_test_datasets(
         yield Dataset(X_train=X_train, y_train=y_train, x_val=x_val), k
 
 
-def _check_wknn_test_case_with_brute_froce(test_case: WKNNTestCase) -> None:
+def test_wknn_exact() -> None:
+    """Tests that the results of WKNNExplainer agree with those of BruteForceWKNNExplainer when using the same (discretized) weights."""
+    n_test_cases = 10
+    n_train_min = 5
+    n_train_max = 10
+    n_bits = 4
+
+    rng = np.random.default_rng(seed=43)
+
+    for dataset, k in random_binary_test_datasets(
+        rng, n_test_cases, n_train_min=n_train_min, n_train_max=n_train_max, k_min=3, k_max=5
+    ):
+        _compare_wknn_exact(WKNNTestCase.from_dataset(dataset, k=k, n_bits=n_bits))
+
+
+def _get_fitted_wknn_model(test_case: WKNNTestCase) -> KNeighborsClassifier:
     model = KNeighborsClassifier(n_neighbors=test_case.k, weights="distance")
     model.fit(test_case.X_train, test_case.y_train)
+    return model
+
+
+def _compare_wknn_exact(test_case: WKNNTestCase) -> None:
+    model = _get_fitted_wknn_model(test_case)
 
     for class_index in range(len(set(test_case.y_train))):
         explainer_wang = WKNNExplainer(model, class_index=class_index, n_bits=test_case.n_bits)
@@ -138,4 +146,4 @@ def test_wknn_discretize_weights():
 
 
 if __name__ == "__main__":
-    test_wknn_sv_agrees_with_brute_force()
+    test_wknn_exact()
