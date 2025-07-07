@@ -77,7 +77,7 @@ class KNNExplainer(Explainer):
         # If this class is instantiated directly, automagically dispatch to the appropriate explainer for the given model
 
         if self.__class__ is KNNExplainer:
-            self._explainer_mode, explainer_class = get_explainer_class_and_mode(model)
+            explainer_class = get_explainer_class_and_mode(model)
             self.__class__ = explainer_class
             explainer_class.__init__(
                 self,

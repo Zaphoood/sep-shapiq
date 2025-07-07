@@ -32,7 +32,7 @@ class KNNExplainerMode(Enum):
 
 def get_explainer_class_and_mode(
     model: KNNClassifierModel,
-) -> tuple[KNNExplainerMode, type[KNNExplainer]]:
+) -> type[KNNExplainer]:
     """Returns the appropriate subclass of KNNExplainer for the given model."""
     from .knn import BasicKNNExplainer
     from .tknn import TKNNExplainer
@@ -42,15 +42,15 @@ def get_explainer_class_and_mode(
         weights = model.weights  # type: ignore[attr-defined]
 
         if weights == SupportedKNNWeights.uniform.value:
-            return KNNExplainerMode.basic, BasicKNNExplainer
+            return BasicKNNExplainer
         if weights == SupportedKNNWeights.distance.value:
-            return KNNExplainerMode.weighted, WKNNExplainer
+            return WKNNExplainer
         raise UnsupportedKNNWeightsError(
             unsupported_weights=weights,
             allowed_weights=[member.value for member in SupportedKNNWeights],
         )
     if isinstance(model, RadiusNeighborsClassifier):
-        return KNNExplainerMode.threshold, TKNNExplainer
+        return TKNNExplainer
 
     msg = f"Exhaustive check of KNN classifier models in _get_subclass_for_model: Unhandled {model}"
     raise RuntimeError(msg)
