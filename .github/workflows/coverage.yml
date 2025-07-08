@@ -47,4 +47,4 @@ jobs:
         env:
           MIN_CODE_COVERAGE: ${{ vars.MIN_CODE_COVERAGE }}
         run: |
-          python .github/scripts/check_coverage.py --fail-too-low coverage.xml
+          python .github/scripts/check_coverage.py --fail-too-low report.txt
