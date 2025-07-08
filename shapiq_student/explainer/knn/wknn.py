@@ -170,7 +170,7 @@ def _greater_or_close(a: np.floating, b: np.floating) -> np.bool:
 
     That is, if ``a < b`` but ``np.isclose(a, b)``, ``True`` will be returned.
     """
-    return a >= b or np.isclose(a, b)
+    return cast("np.bool", a >= b) or np.isclose(a, b)
 
 
 class WKNNExplainer(WKNNExplainerBase):
