@@ -28,15 +28,15 @@ jobs:
         run: |
           uv sync --only-group test
 
-      - name: Run tests with coverage
+      - name: Run tests and save coverage as txt
         run: |
-          uv run pytest --cov=shapiq_student --cov-report=xml
+          uv run pytest --cov=shapiq_student --cov-report=term -q | grep -A 100 '^Name\s\+Stmts' | sed '/^$/q' > report.txt
 
       - name: Generate comment
         env:
           MIN_CODE_COVERAGE: ${{ vars.MIN_CODE_COVERAGE }}
         run: |
-          python .github/scripts/check_coverage.py coverage.xml > comment.txt
+          python .github/scripts/check_coverage.py report.txt > comment.txt
 
       - name: Post PR comment
         uses: mshick/add-pr-comment@v2
