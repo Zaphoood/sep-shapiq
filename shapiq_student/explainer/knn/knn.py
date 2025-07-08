@@ -74,9 +74,9 @@ class BruteForceKNNClassifierExplainer(KNNExplainerBase):
             utilities[coalition_tuple] = utility
 
         game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)
-        sv = game.exact_values("SV", order=1)
+        iv = game.exact_values("SII", order=1)
 
-        return sv
+        return iv
 
 
 def _first_n_true(mask: npt.NDArray[np.bool], n: int) -> npt.NDArray[np.bool]:
