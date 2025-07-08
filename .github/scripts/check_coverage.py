@@ -71,7 +71,7 @@ def main() -> None:  # noqa: D103
         if coverage >= min_coverage
         else f"❌ Code coverage is **{coverage:.2f}%**, which is less than the required **{min_coverage}%**."
     )
-    msg += f"\n\n```\n{report}\n```"
+    msg += f"\n\n```\n{report}```"
     print(msg)
 
     if args.fail_too_low and coverage < min_coverage:

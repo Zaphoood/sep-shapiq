@@ -30,7 +30,7 @@ jobs:
 
       - name: Run tests and save coverage as txt
         run: |
-          uv run pytest --cov=shapiq_student --cov-report=term -q | grep -A 100 '^Name\s\+Stmts' | sed '/^$/q' > report.txt
+          uv run pytest --cov=shapiq_student --cov-report=term -q | grep -A 100 '^Name\s\+Stmts' | sed '/^$/q' | head -n -1 > report.txt
 
       - name: Generate comment
         env:
