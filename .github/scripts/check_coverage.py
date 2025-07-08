@@ -67,9 +67,9 @@ def main() -> None:  # noqa: D103
         sys.exit(1)
 
     msg = (
-        f"✅ Code coverage is **{coverage:.2f}%**. Great!"
+        f"✅ Code coverage is **{coverage}%**. Great!"
         if coverage >= min_coverage
-        else f"❌ Code coverage is **{coverage:.2f}%**, which is less than the required **{min_coverage}%**."
+        else f"❌ Code coverage is **{coverage}%**, which is less than the required **{min_coverage}%**."
     )
     msg += f"\n\n```\n{report}```"
     print(msg)
