@@ -14,24 +14,29 @@ from shapiq_student.explainer.knn.knn import LookupGame
 if TYPE_CHECKING:
     import numpy.typing as npt
     from shapiq import InteractionValues
-    from sklearn.neighbors import RadiusNeighborsClassifier
+    import sklearn.neighbors
 
 
 from .base import KNNExplainerBase, interaction_values_from_array
 
 
 class BruteForceTKNNExplainer(KNNExplainerBase):
-    """Brute force approach for explaining TKNN Classifiers."""
+    """Brute force approach for explaining TKNN Classifiers.
 
-    def __init__(self, model: RadiusNeighborsClassifier, class_index: int) -> None:
-        """Initialize TKNN Explainer.
+    References:
+        Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
+    """
+
+    @override
+    def __init__(
+        self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
+    ) -> None:
+        """Initializes the BruteForceTKNNExplainer.
 
         Args:
-            model: RadiusNeighborsClassifier
+            model: The model RadiusNeighborsClassifier to explain
             class_index: The class index to explain
 
-        Raises:
-            TypeError: If model is not RadiusNeighborsClassifier
         """
         super().__init__(model, class_index)  # type: ignore[arg-type]
         self._model = model
@@ -51,6 +56,7 @@ class BruteForceTKNNExplainer(KNNExplainerBase):
 
         utilities = {}
 
+        # utility function according to equation (3) in paper by Wang et. al (2023) DOI: 2308.15709v2
         for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
             coalition = np.array(list(coalition_generator))
 
@@ -76,14 +82,19 @@ class TKNNExplainer(KNNExplainerBase):
     """TKNN Classifier Explainer.
 
     For calculating exact shapley values for a thresholded KNN Classifier.
-    Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
+
+    References:
+        Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
     """
 
-    def __init__(self, model: RadiusNeighborsClassifier, class_index: int) -> None:
+    @override
+    def __init__(
+        self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
+    ) -> None:
         """Initialize TKNN Explainer.
 
         Args:
-            model: RadiusNeighborsClassifier
+            model: The model RadiusNeighborsClassifier to explain
             class_index: The class index to explain
 
         Raises:
@@ -96,6 +107,9 @@ class TKNNExplainer(KNNExplainerBase):
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
+        # Efficient sv computation
+        # Following Theorem 17 and equation (7) (Wang et. al (2023) DOI: 2308.15709v2)
+        # Counting queries defined in C2.2 (by Wang et. al (2023) DOI: 2308.15709v2)
         n_train = self.X_train.shape[0]
         n_classes = len(self.y_train_indices)
 
