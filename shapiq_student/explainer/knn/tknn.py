@@ -96,9 +96,6 @@ class TKNNExplainer(KNNExplainerBase):
         Args:
             model: The model RadiusNeighborsClassifier to explain
             class_index: The class index to explain
-
-        Raises:
-            TypeError: If model is not RadiusNeighborsClassifier
         """
         super().__init__(model, class_index)  # type: ignore[arg-type]
         self._model = model
