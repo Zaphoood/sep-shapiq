@@ -52,7 +52,7 @@ class BruteForceNormalKNNExplainer(CommonKNNExplainer):
             utilities[coalition_tuple] = utility
 
         game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)
-        iv = game.exact_values("SII", order=1)
+        iv = game.exact_values("SV", order=1)
 
         return iv
 
