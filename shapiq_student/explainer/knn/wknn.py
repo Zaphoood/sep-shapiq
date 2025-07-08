@@ -152,7 +152,9 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
             )
             y_val_nearest = y_val_mask & k_nearest_with_relevant_class
             y_other_nearest = y_other_mask & k_nearest_with_relevant_class
-            utility = int(np.sum(weights[y_val_nearest]) >= np.sum(weights[y_other_nearest]))
+            utility = int(
+                _greater_or_close(np.sum(weights[y_val_nearest]), np.sum(weights[y_other_nearest]))
+            )
 
             coalition_tuple = tuple(sorted(sortperm[coalition]))
             utilities[coalition_tuple] = utility
@@ -161,6 +163,14 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
         iv = game.exact_values("SII", order=1)
 
         return interaction_values_to_array(iv)
+
+
+def _greater_or_close(a: np.floating, b: np.floating) -> np.bool:
+    """Returns ``a >= b`` but allows for floating point error.
+
+    That is, if ``a < b`` but ``np.isclose(a, b)``, ``True`` will be returned.
+    """
+    return a >= b or np.isclose(a, b)
 
 
 class WKNNExplainer(WKNNExplainerBase):
