@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from shapiq import InteractionValues
     from sklearn.neighbors import KNeighborsClassifier
 
+MODE_NORMAL = "normal"
+
 
 class BruteForceNormalKNNExplainer(CommonKNNExplainer):
     """Brute force approach to computing Shapley Values for normal (unweighted) KNN models."""
@@ -54,6 +56,11 @@ class BruteForceNormalKNNExplainer(CommonKNNExplainer):
 
         return iv
 
+    @property
+    @override
+    def mode(self) -> str:
+        return MODE_NORMAL
+
 
 class NormalKNNExplainer(CommonKNNExplainer):
     """Explainer for normal (unweighted) KNN models.
@@ -62,7 +69,6 @@ class NormalKNNExplainer(CommonKNNExplainer):
     """
 
     # TODO(Zaphoood): Explain functionality in class docstring
-    MODE = "normal"
 
     @override
     def __init__(
@@ -99,4 +105,4 @@ class NormalKNNExplainer(CommonKNNExplainer):
     @property
     @override
     def mode(self) -> str:
-        return self.MODE
+        return MODE_NORMAL

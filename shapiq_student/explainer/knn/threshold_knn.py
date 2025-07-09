@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 from .base import KNNExplainer, interaction_values_from_array
 
+MODE_THRESHOLD = "threshold"
+
 
 class BruteForceTKNNExplainer(KNNExplainer):
     """Brute force approach for explaining TKNN Classifiers.
@@ -26,8 +28,6 @@ class BruteForceTKNNExplainer(KNNExplainer):
     References:
         Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
     """
-
-    MODE = "threshold"
 
     @override
     def __init__(
@@ -38,6 +38,11 @@ class BruteForceTKNNExplainer(KNNExplainer):
         # To circumvent this, we store the model separately in an attribute with a narrower type
         self.tknn_model = model
         self.tau = cast("float", model.radius)
+
+    @property
+    @override
+    def mode(self) -> str:
+        return MODE_THRESHOLD
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
@@ -85,8 +90,6 @@ class TKNNExplainer(KNNExplainer):
         Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
     """
 
-    MODE = "threshold"
-
     @override
     def __init__(
         self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
@@ -99,7 +102,7 @@ class TKNNExplainer(KNNExplainer):
     @property
     @override
     def mode(self) -> str:
-        return self.MODE
+        return MODE_THRESHOLD
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:

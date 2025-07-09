@@ -22,11 +22,11 @@ from itertools import product
 import numpy as np
 from scipy.special import comb
 
+MODE_WEIGHTED = "weighted"
+
 
 class WKNNExplainerBase(ABC, CommonKNNExplainer):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
-
-    MODE = "weighted"
 
     @override
     def __init__(
@@ -72,7 +72,7 @@ class WKNNExplainerBase(ABC, CommonKNNExplainer):
     @property
     @override
     def mode(self) -> str:
-        return self.MODE
+        return MODE_WEIGHTED
 
 
 class BruteForceWKNNExplainer(WKNNExplainerBase):
@@ -224,6 +224,11 @@ class WKNNExplainer(WKNNExplainerBase):
         self.weights_space_zero = self.k * cast("int", 2**n_bits)
 
         self.n_train = self.X_train.shape[0]
+
+    @property
+    @override
+    def mode(self) -> str:
+        return MODE_WEIGHTED
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
