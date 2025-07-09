@@ -57,7 +57,12 @@ class WKNNExplainerBase(ABC, KNNExplainerBase):
         distances = distances[0]
         sortperm = sortperm[0]
 
-        weights = (distances[-1] - distances) / (distances[-1] - distances[0])
+        max_dist = distances[-1]
+        min_dist = distances[0]
+        if np.isclose(min_dist, max_dist):
+            weights = np.full_like(distances, 1)
+        else:
+            weights = (max_dist - distances) / (max_dist - min_dist)
 
         return sortperm, weights
 
