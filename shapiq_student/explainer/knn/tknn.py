@@ -31,12 +31,6 @@ class BruteForceTKNNExplainer(KNNExplainerBase):
     def __init__(
         self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
     ) -> None:
-        """Initializes the BruteForceTKNNExplainer.
-
-        Args:
-            model: The model RadiusNeighborsClassifier to explain
-            class_index: The class index to explain
-        """
         super().__init__(model, class_index)  # type: ignore[arg-type]
         self._model = model
         self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
@@ -91,12 +85,6 @@ class TKNNExplainer(KNNExplainerBase):
     def __init__(
         self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
     ) -> None:
-        """Initialize TKNN Explainer.
-
-        Args:
-            model: The model RadiusNeighborsClassifier to explain
-            class_index: The class index to explain
-        """
         super().__init__(model, class_index)  # type: ignore[arg-type]
         self._model = model
 
