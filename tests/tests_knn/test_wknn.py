@@ -263,7 +263,3 @@ class TestWKNNSanity:
 
         assert explainer._flip_weight_sign(weights_prepared[0]) == weights_prepared[2]
         assert explainer._flip_weight_sign(weights_prepared[2]) == weights_prepared[0]
-
-
-if __name__ == "__main__":
-    TestWKNNValues().test_wknn_exact_multiclass()
