@@ -60,7 +60,9 @@ class GaussianImputer(GaussianImputerBase):
         )
         self._check_categorical_features()
 
-    def get_imputed_result_data(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+    def get_imputed_result_data_gaussian(
+        self, coalitions: npt.NDArray[np.bool]
+    ) -> npt.NDArray[np.floating]:
         """Impute missing values for given coalitions using Gaussian MC sampling.
 
         This method performs the imputation but returns the imputed data cube without
@@ -88,7 +90,6 @@ class GaussianImputer(GaussianImputerBase):
         cov_mat = self.cov_mat
         rng = default_rng(self.random_state)
 
-        # empty array for imputed data including MC samples for every coalition per n_explain
         result_cube = np.zeros((n_coalitions, n_mc_samples, n_features))
 
         for S_ind, coalition in enumerate(coalitions):
@@ -158,4 +159,4 @@ class GaussianImputer(GaussianImputerBase):
         Raises:
             RuntimeError: If the explanation point x is not set.
         """
-        return self.predict(self.get_imputed_result_data(coalitions))
+        return self.predict(self.get_imputed_result_data_gaussian(coalitions))

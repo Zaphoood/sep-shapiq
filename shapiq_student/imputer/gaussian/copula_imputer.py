@@ -65,7 +65,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
         self._cov_gaussian_copula = self._ensure_positive_definite(
             np.cov(self._data_gaussian_copula.T)
         )
-        self._x_gaussian_copula = self._transform_x_explain(self.x.flatten(), self.data)
 
     def _gaussian_transform(self, x: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
         """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
@@ -121,7 +120,9 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         return x_original
 
-    def copula_imputation(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+    def get_imputed_result_data_copula(
+        self, coalitions: npt.NDArray[np.bool]
+    ) -> npt.NDArray[np.floating]:
         """Perform Gaussian Copula imputation for SHAP value calculations.
 
         Returns:
@@ -134,47 +135,58 @@ class GaussianCopulaImputer(GaussianImputerBase):
             msg = "Explanation point x must be set first"
             raise RuntimeError(msg)
 
-        x_gaussian_copula = self._x_gaussian_copula
+        x_gaussian_copula = self._transform_x_explain(self.x.flatten(), self.data)
         n_coalitions, n_features = coalitions.shape
+        n_mc_samples = self.n_mc_samples
+        mean_gaussian_copula = self._mean_gaussian_copula
+        cov_gaussian_copula = self._cov_gaussian_copula
         rng = default_rng(self.random_state)
 
-        result_cube = np.zeros((n_coalitions, self.n_mc_samples, n_features))
+        result_cube = np.zeros((n_coalitions, n_mc_samples, n_features))
 
-        for S_ind in range(n_coalitions):
-            for _idx_now in range(coalitions.shape[0]):
-                S_known = np.where(coalitions)[0]
-                S_unknown = np.where(~coalitions)[0]
+        for S_ind, coalition in enumerate(coalitions):
+            S_idx_known = np.where(coalition)[0]
+            S_idx_unknown = np.where(~coalition)[0]
 
-                if len(S_known) == 0:
-                    # No conditioning - sample from marginal
-                    Z = rng.standard_normal((self.n_mc_samples, n_features))
-                    samples_gaussian = Z @ np.linalg.cholesky(self._cov_gaussian_copula).T
-                elif len(S_unknown) == 0:
-                    # All features known - just repeat the explicand
-                    samples_gaussian = np.tile(x_gaussian_copula[0], (self.n_mc_samples, 1))
-                else:
-                    # Conditional sampling
-                    cov_SS = self._cov_gaussian_copula[np.ix_(S_known, S_known)]
-                    cov_SuS = self._cov_gaussian_copula[np.ix_(S_unknown, S_known)]
-                    cov_SuSu = self._cov_gaussian_copula[np.ix_(S_unknown, S_unknown)]
+            if len(S_idx_known) == 0:
+                # No conditioning - sample from marginal
+                Z = rng.standard_normal((n_mc_samples, n_features))
+                samples_gaussian = Z @ np.linalg.cholesky(cov_gaussian_copula).T
+            elif len(S_idx_unknown) == 0:
+                # All features known - just repeat the explicand
+                samples_gaussian = np.tile(x_gaussian_copula[0], (n_mc_samples, 1))
+            else:
+                x_S_star = x_gaussian_copula[S_idx_known]
 
-                    cov_SS_inv = np.linalg.inv(cov_SS)
-                    cond_mean = self._mean_gaussian_copula[S_unknown] + cov_SuS @ cov_SS_inv @ (
-                        x_gaussian_copula[0, S_known] - self._mean_gaussian_copula[S_known]
-                    )
-                    cond_cov = cov_SuSu - cov_SuS @ cov_SS_inv @ cov_SuS.T
-                    cond_cov = 0.5 * (cond_cov + cond_cov.T)  # Ensure symmetry
+                mu_S_known = mean_gaussian_copula[S_idx_known]
+                mu_S_unknown = mean_gaussian_copula[S_idx_unknown]
 
-                    Z = rng.standard_normal((self.n_mc_samples, len(S_unknown)))
-                    samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
+                cov_S_known_known = cov_gaussian_copula[np.ix_(S_idx_known, S_idx_known)]
+                cov_S_known_unknown = cov_gaussian_copula[np.ix_(S_idx_known, S_idx_unknown)]
+                cov_S_unknown_known = cov_gaussian_copula[np.ix_(S_idx_unknown, S_idx_known)]
+                cov_S_unknown_unknown = cov_gaussian_copula[np.ix_(S_idx_unknown, S_idx_unknown)]
 
-                    samples_gaussian = np.tile(x_gaussian_copula[0], (self.n_mc_samples, 1))
-                    samples_gaussian[:, S_unknown] = samples_unknown
+                cov_S_known_known_inv = np.linalg.inv(cov_S_known_known)
 
-                result_cube[S_ind] = self._inverse_transform(samples_gaussian)
+                cond_mean = mu_S_unknown + (cov_S_unknown_known @ cov_S_known_known_inv) @ (
+                    x_S_star - mu_S_known
+                )
+                cond_cov = (
+                    cov_S_unknown_unknown
+                    - (cov_S_unknown_known @ cov_S_known_known_inv) @ cov_S_known_unknown
+                )
+                cond_cov = 0.5 * (cond_cov + cond_cov.T)  # Ensure symmetry
+
+                Z = rng.standard_normal((n_mc_samples, len(S_idx_unknown)))
+                samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
+
+                samples_gaussian = np.tile(x_gaussian_copula[0], (n_mc_samples, 1))
+                samples_gaussian[:, S_idx_unknown] = samples_unknown
+
+            result_cube[S_ind] = self._inverse_transform(samples_gaussian)
 
         return np.mean(result_cube, axis=1)
 
     def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Compute model predictions for imputed coalitions."""
-        return self.predict(self.copula_imputation(coalitions))
+        return self.predict(self.get_imputed_result_data_copula(coalitions))
