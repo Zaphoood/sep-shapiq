@@ -50,34 +50,61 @@ class GaussianCopulaImputer(GaussianImputerBase):
             verbose=verbose,
         )
         self._check_categorical_features()
-        self._data_gaussian = self._gaussian_transform(self.data)
-        self._mean_per_feature_gaussian = np.mean(self._data_gaussian, axis=0)
-        self._cov_mat_gaussian = self._ensure_positive_definite(np.cov(self._data_gaussian.T))
+        self._initialize_copula_parameters()
 
     def _initialize_copula_parameters(self) -> None:
-        """Initialize Gaussian-transformed data and statistics."""
-        self._data_gaussian = self._gaussian_transform(self.data)
-        self._mean_gaussian = np.mean(self._data_gaussian, axis=0)
-        self._cov_gaussian = self._ensure_positive_definite(np.cov(self._data_gaussian.T))
+        """Transform training data to Gaussian space and compute mean and covariance.
+
+        This method applies a Gaussian (normal) transformation to each feature in the training data
+        and then calculates the mean vector and covariance matrix in the transformed (Gaussian) data set.
+        """
+        self._data_gaussian_copula = self._gaussian_transform(self.data)
+        self._mean_gaussian_copula = np.mean(
+            self._data_gaussian_copula, axis=0
+        )  # in theory mean should be (nearly) zero
+        self._cov_gaussian_copula = self._ensure_positive_definite(
+            np.cov(self._data_gaussian_copula.T)
+        )
+        self._x_gaussian_copula = self._transform_x_explain(self.x.flatten(), self.data)
 
     def _gaussian_transform(self, x: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
-        """Transform data to standard normal distribution using empirical CDF."""
-        ranks = rankdata(x, method="average")
-        u = ranks / (len(ranks) + 1)
-        return norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
+        """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
 
-    def _transform_explain_data(self, x: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
-        """Transform explanation data to Gaussian space using training data's ECDF."""
-        x_gaussian = np.zeros_like(x)
-        for i in range(x.shape[1]):
-            combined = np.vstack([x[:, [i]], self.data[:, [i]]])
-            ranks = rankdata(combined, axis=0, method="average")
-            explain_ranks = ranks[: x.shape[0]]
+        For each feature (column), this method applies a transformation so that the values follow a standard normal
+        distribution (mean 0, std 1), while preserving the rank order of the original data. This is also known as a
+        rank-Gaussian or empirical CDF transformation.
+        """
+        x_train = np.asarray(x)
+        x_trans = np.zeros_like(x_train, dtype=float)
+        for i in range(x_train.shape[1]):
+            ranks = rankdata(x_train[:, i], method="average")
+            u = ranks / (len(ranks) + 1)
+            x_trans[:, i] = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
+        return x_trans
 
-            adjusted_ranks = explain_ranks - rankdata(explain_ranks, axis=0, method="average") + 0.5
-            u = adjusted_ranks / (len(combined) - x.shape[0] + 1)
-            x_gaussian[:, i] = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
-        return x_gaussian
+    def _transform_x_explain(
+        self, x_explain: npt.NDArray[np.floating], x_train: npt.NDArray[np.floating]
+    ) -> npt.NDArray[np.floating]:
+        """Transform a single explanation point to Gaussian space using the training data's ECDF.
+
+        Args:
+            x_explain: The explanation point (1D array, shape (n_features,))
+            x_train: The training data (2D array, shape (n_samples, n_features))
+
+        Returns:
+            Transformed explanation point in Gaussian space (1D array, shape (n_features,))
+        """
+        x = np.asarray(x_explain).flatten()
+        x_train = np.asarray(x_train)
+        n_features = x.shape[0]
+
+        x_gaussian_copula = np.zeros_like(x, dtype=float)
+        for j in range(n_features):
+            vals = np.concatenate([[x[j]], x_train[:, j]])
+            rank = rankdata(vals, method="average")[0]
+            u = rank / (len(x_train) + 1)
+            x_gaussian_copula[j] = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
+        return x_gaussian_copula
 
     def _inverse_transform(self, z_samples: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
         """Transform Gaussian samples back to original space."""
@@ -107,8 +134,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
             msg = "Explanation point x must be set first"
             raise RuntimeError(msg)
 
-        x = np.atleast_2d(self.x)
-        x_gaussian = self._transform_explain_data(x)
+        x_gaussian_copula = self._x_gaussian_copula
         n_coalitions, n_features = coalitions.shape
         rng = default_rng(self.random_state)
 
@@ -122,19 +148,19 @@ class GaussianCopulaImputer(GaussianImputerBase):
                 if len(S_known) == 0:
                     # No conditioning - sample from marginal
                     Z = rng.standard_normal((self.n_mc_samples, n_features))
-                    samples_gaussian = Z @ np.linalg.cholesky(self._cov_gaussian).T
+                    samples_gaussian = Z @ np.linalg.cholesky(self._cov_gaussian_copula).T
                 elif len(S_unknown) == 0:
                     # All features known - just repeat the explicand
-                    samples_gaussian = np.tile(x_gaussian[0], (self.n_mc_samples, 1))
+                    samples_gaussian = np.tile(x_gaussian_copula[0], (self.n_mc_samples, 1))
                 else:
                     # Conditional sampling
-                    cov_SS = self._cov_gaussian[np.ix_(S_known, S_known)]
-                    cov_SuS = self._cov_gaussian[np.ix_(S_unknown, S_known)]
-                    cov_SuSu = self._cov_gaussian[np.ix_(S_unknown, S_unknown)]
+                    cov_SS = self._cov_gaussian_copula[np.ix_(S_known, S_known)]
+                    cov_SuS = self._cov_gaussian_copula[np.ix_(S_unknown, S_known)]
+                    cov_SuSu = self._cov_gaussian_copula[np.ix_(S_unknown, S_unknown)]
 
                     cov_SS_inv = np.linalg.inv(cov_SS)
-                    cond_mean = self._mean_gaussian[S_unknown] + cov_SuS @ cov_SS_inv @ (
-                        x_gaussian[0, S_known] - self._mean_gaussian[S_known]
+                    cond_mean = self._mean_gaussian_copula[S_unknown] + cov_SuS @ cov_SS_inv @ (
+                        x_gaussian_copula[0, S_known] - self._mean_gaussian_copula[S_known]
                     )
                     cond_cov = cov_SuSu - cov_SuS @ cov_SS_inv @ cov_SuS.T
                     cond_cov = 0.5 * (cond_cov + cond_cov.T)  # Ensure symmetry
@@ -142,7 +168,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
                     Z = rng.standard_normal((self.n_mc_samples, len(S_unknown)))
                     samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
 
-                    samples_gaussian = np.tile(x_gaussian[0], (self.n_mc_samples, 1))
+                    samples_gaussian = np.tile(x_gaussian_copula[0], (self.n_mc_samples, 1))
                     samples_gaussian[:, S_unknown] = samples_unknown
 
                 result_cube[S_ind] = self._inverse_transform(samples_gaussian)
