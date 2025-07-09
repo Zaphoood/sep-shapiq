@@ -7,41 +7,16 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 import numpy as np
-from shapiq import Game, InteractionValues
 
-from shapiq_student.explainer.knn import KNNExplainerBase, interaction_values_from_array
+from shapiq_student.explainer.knn.util import keep_first_n
+
+from .base import KNNExplainerBase, interaction_values_from_array
+from .lookup_game import LookupGame
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+    from shapiq import InteractionValues
     import sklearn.neighbors
-
-
-class LookupGame(Game):
-    """Defines a Game via a dictionary giving the utility function."""
-
-    def __init__(self, n_players: int, utilities: dict[tuple[int, ...], float]) -> None:
-        """Initializes the LookupGame."""
-        self.characteristic_function = utilities
-        super().__init__(
-            n_players=n_players,
-            normalization_value=self.characteristic_function[()],
-        )
-
-    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
-        """Defines the worth of a coalition as a lookup in the characteristic function.
-
-        Args:
-            coalitions: A 2D array where each row represents a coalition as a binary
-                vector (1 for present, 0 for absent).
-
-        Returns:
-            A 1D array containing the value of each coalition based on the
-                characteristic function.
-        """
-        output = [
-            self.characteristic_function[tuple(np.where(coalition)[0])] for coalition in coalitions
-        ]
-        return np.array(output)
 
 
 class BruteForceKNNClassifierExplainer(KNNExplainerBase):
@@ -67,7 +42,7 @@ class BruteForceKNNClassifierExplainer(KNNExplainerBase):
 
         for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
             coalition = np.array(list(coalition_generator))
-            coalition_first_k = _first_n_true(coalition, n=self.k)
+            coalition_first_k = keep_first_n(coalition, n=self.k)
             utility = np.sum(y_train_sorted[coalition_first_k] == self.class_index) / self.k
 
             coalition_tuple = tuple(sorted(sortperm[coalition]))
@@ -77,29 +52,6 @@ class BruteForceKNNClassifierExplainer(KNNExplainerBase):
         iv = game.exact_values("SII", order=1)
 
         return iv
-
-
-def _first_n_true(mask: npt.NDArray[np.bool], n: int) -> npt.NDArray[np.bool]:
-    """Set all but the first n True entries of the given boolean mask to False.
-
-    This will just return a reference to the input array if ``np.sum(mask) <= n``
-
-    Args:
-        mask: The mask in question.
-        n: The maximum number of true entries.
-    """
-    if n == 0:
-        return np.zeros_like(mask)
-
-    n_true = 0
-    for i, val in enumerate(mask):
-        n_true += int(val)
-        if n_true == n:
-            out = np.zeros_like(mask)
-            out[: i + 1] = mask[: i + 1]
-            return out
-
-    return mask
 
 
 class KNNClassifierExplainer(KNNExplainerBase):
