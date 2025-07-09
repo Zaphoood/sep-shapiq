@@ -8,10 +8,10 @@ import numpy as np
 from numpy.random import default_rng
 from scipy.stats import norm, rankdata
 
-from .base import GaussianImputerBase
-
 if TYPE_CHECKING:
     import numpy.typing as npt
+
+from .base import GaussianImputerBase
 
 
 class GaussianCopulaImputer(GaussianImputerBase):

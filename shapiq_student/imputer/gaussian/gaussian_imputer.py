@@ -16,12 +16,6 @@ if TYPE_CHECKING:
     import numpy.typing as npt
 
 from .base import GaussianImputerBase
-from .exceptions import CategoricalFeatureError
-
-# We disallow columns with <= 2 unique values, since they are likely either:
-# - Binary features
-# - One-hot encoded features (which would have at most 2 values per encoded column)
-MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 2
 
 
 class GaussianImputer(GaussianImputerBase):
@@ -65,23 +59,6 @@ class GaussianImputer(GaussianImputerBase):
             verbose=verbose,
         )
         self._check_categorical_features()
-
-    def _check_categorical_features(self) -> None:
-        """Check if any features are categorical variables.
-
-        Raises:
-            CategoricalFeatureError: If any categorical features are detected.
-        """
-        categorical_indices: list[int] = []
-        for i, col in enumerate(self.data.T):
-            if any(isinstance(v, str) for v in col):
-                categorical_indices.append(i)
-                continue
-            unique_count = len(np.unique(col))
-            if unique_count <= MAX_UNIQUE_VALUES_FOR_CATEGORICAL:
-                categorical_indices.append(i)
-        if categorical_indices:
-            raise CategoricalFeatureError(categorical_indices)
 
     def get_imputed_result_data(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Impute missing values for given coalitions using Gaussian MC sampling.
