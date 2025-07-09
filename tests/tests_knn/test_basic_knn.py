@@ -12,8 +12,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import MinMaxScaler
 
 from shapiq_student.explainer.knn import (
-    BasicKNNExplainer,
-    BruteForceBasicKNNExplainer,
+    BruteForceNormalKNNExplainer,
+    NormalKNNExplainer,
     interaction_values_to_array,
 )
 
@@ -40,10 +40,10 @@ def test_agrees_with_brute_force():
     model.fit(X_train, y_train)
 
     for class_index in range(n_classes):
-        brute_explainer = BruteForceBasicKNNExplainer(model, class_index=class_index)
+        brute_explainer = BruteForceNormalKNNExplainer(model, class_index=class_index)
         iv_brute = interaction_values_to_array(brute_explainer.explain(x_val))
 
-        jia_explainer = BasicKNNExplainer(model, class_index=class_index)
+        jia_explainer = NormalKNNExplainer(model, class_index=class_index)
         iv_jia = interaction_values_to_array(jia_explainer.explain_function(x_val))
 
         assert np.allclose(iv_brute, iv_jia)
@@ -63,7 +63,7 @@ def test_output_length():
     probierModel = KNeighborsClassifier(n_neighbors=20)
     probierModel.fit(X_train, y_train)
 
-    knn_expl = BasicKNNExplainer(model=probierModel, class_index=y_test[5])
+    knn_expl = NormalKNNExplainer(model=probierModel, class_index=y_test[5])
 
     testoutput = knn_expl.explain_function(x=X_test[5])
 

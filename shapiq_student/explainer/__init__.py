@@ -1,5 +1,5 @@
 """Implementation of Explainers."""
 
-from .knn import BasicKNNExplainer, KNNExplainer
+from .knn import KNNExplainer, NormalKNNExplainer
 
-__all__ = ["KNNExplainer", "BasicKNNExplainer"]
+__all__ = ["KNNExplainer", "NormalKNNExplainer"]

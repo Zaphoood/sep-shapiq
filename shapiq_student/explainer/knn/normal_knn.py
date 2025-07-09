@@ -20,8 +20,8 @@ if TYPE_CHECKING:
     from sklearn.neighbors import KNeighborsClassifier
 
 
-class BruteForceBasicKNNExplainer(CommonKNNExplainer):
-    """Brute force approach to computing Shapley Values for basic KNN models."""
+class BruteForceNormalKNNExplainer(CommonKNNExplainer):
+    """Brute force approach to computing Shapley Values for normal (unweighted) KNN models."""
 
     @override
     def __init__(
@@ -55,8 +55,8 @@ class BruteForceBasicKNNExplainer(CommonKNNExplainer):
         return iv
 
 
-class BasicKNNExplainer(CommonKNNExplainer):
-    """Explainer for basic KNN models.
+class NormalKNNExplainer(CommonKNNExplainer):
+    """Explainer for normal (unweighted) KNN models.
 
     Efficiently calculates Shapley Values for unweighted k-Nearest-Neighbour models.
     """
