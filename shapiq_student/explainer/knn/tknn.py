@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, cast
 from typing_extensions import override
 
 import numpy as np
-from scipy.special import comb  # type: ignore[import-untyped]
+from scipy.special import comb
 
-from shapiq_student.explainer.knn.knn import LookupGame
+from shapiq_student.explainer.knn.lookup_game import LookupGame
 
 if TYPE_CHECKING:
     import numpy.typing as npt
