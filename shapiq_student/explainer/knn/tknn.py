@@ -36,7 +36,6 @@ class BruteForceTKNNExplainer(KNNExplainerBase):
         Args:
             model: The model RadiusNeighborsClassifier to explain
             class_index: The class index to explain
-
         """
         super().__init__(model, class_index)  # type: ignore[arg-type]
         self._model = model
@@ -56,7 +55,6 @@ class BruteForceTKNNExplainer(KNNExplainerBase):
 
         utilities = {}
 
-        # utility function according to equation (3) in paper by Wang et. al (2023) DOI: 2308.15709v2
         for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
             coalition = np.array(list(coalition_generator))
 
@@ -64,6 +62,8 @@ class BruteForceTKNNExplainer(KNNExplainerBase):
             coal_nhood_with_class_index = coal_nhood & y_train_is_class_index
 
             n_coal_nhood = np.sum(coal_nhood)
+
+            # Utility function according to equation (3) in paper by Wang et. al (2023) DOI: 2308.15709v2
             if n_coal_nhood == 0:
                 utility = 1 / n_classes
             else:
