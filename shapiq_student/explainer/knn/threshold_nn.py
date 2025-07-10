@@ -29,7 +29,6 @@ class _BruteForceTNNExplainer(KNNExplainer):
         Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
     """
 
-    @override
     def __init__(
         self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
     ) -> None:
@@ -88,10 +87,26 @@ class ThresholdNNExplainer(KNNExplainer):
         Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
     """
 
-    @override
     def __init__(
         self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
     ) -> None:
+        r"""Initializes the class.
+
+        This methods extracts the training data and the threshold :math:`\tau` from the provided model and stores it as class members.
+
+        Args:
+            model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
+                The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit()`` must be a 1D vector.
+
+            data: This parameter is currently ignored but may be used in future versions.
+
+            labels: This parameter is currently ignored but may be used in future versions.
+
+            class_index: The class index of the model to explain. Defaults to ``1``.
+
+        Raises:
+            sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
+        """
         super().__init__(model, class_index=class_index)
         self._model = model
 
