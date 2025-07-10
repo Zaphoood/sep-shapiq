@@ -67,20 +67,6 @@ class GaussianImputer(GaussianImputerBase):
 
         return np.mean(self.impute(self.x, coalitions), axis=1)
 
+    @override
     def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
-        """Impute missing values and return model predictions for given coalitions.
-
-        This method performs imputation and then calls the model's prediction function
-        on the imputed data. This is the main interface expected by Shapley Value explainers.
-
-        Args:
-            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0)
-                for each coalition.
-
-        Returns:
-            An array of shape ``(n_coalitions,)`` with model predictions for each imputed data point.
-
-        Raises:
-            RuntimeError: If no explanation has been provided, neither in the constructor nor by calling ``fit()``.
-        """
         return self.predict(self.get_imputed_result_data(coalitions))

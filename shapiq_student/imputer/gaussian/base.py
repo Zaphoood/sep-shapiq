@@ -8,7 +8,8 @@ calculations. It inherits from shapiq's Imputer base class and provides a common
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from abc import abstractmethod
+from typing import TYPE_CHECKING, override
 
 import numpy as np
 from numpy.random import default_rng
@@ -206,3 +207,24 @@ class GaussianImputerBase(Imputer):
             imputed_data[S_ind] = samples
 
         return imputed_data
+
+    @abstractmethod
+    @override
+    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+        """Impute missing values and return model predictions for given coalitions.
+
+        This method performs imputation and then calls the model's prediction function
+        on the imputed data. This is the main interface expected by Shapley Value explainers.
+
+        Args:
+            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0)
+                for each coalition.
+
+        Returns:
+            An array of shape ``(n_coalitions,)`` with model predictions for each imputed data point.
+
+        Raises:
+            RuntimeError: If no explanation has been provided, neither in the constructor nor by calling ``fit()``.
+        """
+        msg = f"The value_function() method must be implemented by each subclass of {self.__class__.__name__}."
+        raise NotImplementedError(msg)
