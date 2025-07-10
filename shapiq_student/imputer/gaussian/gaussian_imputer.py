@@ -83,7 +83,7 @@ class GaussianImputer(GaussianImputerBase):
             msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
             raise RuntimeError(msg)
 
-        x = self.x.flatten()
+        x_explain = self.x.flatten()
         n_coalitions, n_features = coalitions.shape
         n_mc_samples = self.n_mc_samples
         mean_per_feature = self.mean_per_feature
@@ -96,49 +96,46 @@ class GaussianImputer(GaussianImputerBase):
             S_idx_known = np.where(coalition)[0]
             S_idx_unknown = np.where(~coalition)[0]
 
-            x_S_star = x[S_idx_known]
+            if len(S_idx_known) == 0:
+                # No conditioning on known features, therefore sample from original data distribution
+                Z = rng.standard_normal((n_mc_samples, len(S_idx_unknown)))
+                samples = Z @ np.linalg.cholesky(cov_mat).T + mean_per_feature
+            if len(S_idx_unknown) == 0:
+                # all features known, therefore we just return explanation point
+                samples = np.tile(x_explain, (n_mc_samples, 1))
+                # TODO (milanagm): aus dem loop aussteigen und x_explain direkt unten in samples eintragen
+            else:
+                x_S_star = x_explain[S_idx_known]
 
-            mu_S_known = mean_per_feature[S_idx_known]
-            mu_S_unknown = mean_per_feature[S_idx_unknown]
+                mu_S_known = mean_per_feature[S_idx_known]
+                mu_S_unknown = mean_per_feature[S_idx_unknown]
 
-            cov_S_known_known = cov_mat[np.ix_(S_idx_known, S_idx_known)]
-            cov_S_known_unknown = cov_mat[np.ix_(S_idx_known, S_idx_unknown)]
-            cov_S_unknown_known = cov_mat[np.ix_(S_idx_unknown, S_idx_known)]
-            cov_S_unknown_unknown = cov_mat[np.ix_(S_idx_unknown, S_idx_unknown)]
+                cov_S_known_known = cov_mat[np.ix_(S_idx_known, S_idx_known)]
+                cov_S_known_unknown = cov_mat[np.ix_(S_idx_known, S_idx_unknown)]
+                cov_S_unknown_known = cov_mat[np.ix_(S_idx_unknown, S_idx_known)]
+                cov_S_unknown_unknown = cov_mat[np.ix_(S_idx_unknown, S_idx_unknown)]
 
-            if cov_S_known_known.size > 0:
                 cov_S_known_known_inv = np.linalg.inv(cov_S_known_known)
-                # formula from Paper Aas.2021 et al. for calculating cond_cov_S_unknown_on_S_known & con_mean_S_unknown_on_S_known:
+
+                cond_mean = mu_S_unknown + (cov_S_unknown_known @ cov_S_known_known_inv) @ (
+                    x_S_star - mu_S_known
+                )
                 cond_cov = (
                     cov_S_unknown_unknown
                     - (cov_S_unknown_known @ cov_S_known_known_inv) @ cov_S_known_unknown
                 )
-                cond_mean = mu_S_unknown + (cov_S_unknown_known @ cov_S_known_known_inv) @ (
-                    x_S_star - mu_S_known
-                )
-            else:
-                cond_cov = cov_S_unknown_unknown
-                cond_mean = mu_S_unknown
+                # for sampling from multivariate normal distribution with Cholesky we need to make sure that
+                # cond_cov is symmetric (regardless - Covariances should always be symmetric: Cov(X,Y) = Cov(Y,X))
+                cond_cov = 0.5 * (cond_cov + cond_cov.T)
 
-            # for sampling from multivariate normal distribution with Cholesky we need to make sure that
-            # cond_cov is symmetric (regardless - Covariances should always be symmetric: Cov(X,Y) = Cov(Y,X))
-            cond_cov = 0.5 * (cond_cov + cond_cov.T)
-
-            # MC samples and Cholesky to turn N(0,1) to desired Gaussian distribution
-            if S_idx_unknown.size > 0:
+                # MC samples and Cholesky to turn N(0,1) to desired Gaussian distribution
                 Z = rng.standard_normal((n_mc_samples, len(S_idx_unknown)))
                 samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
-            else:
-                samples_unknown = np.zeros((n_mc_samples, 0))
 
-            # Building imputed data matrix for this coalition and explanation point
-            aux_mat = np.zeros((n_mc_samples, n_features))
-            if S_idx_known.size > 0:
-                aux_mat[:, S_idx_known] = x[S_idx_known]
-            if S_idx_unknown.size > 0:
-                aux_mat[:, S_idx_unknown] = samples_unknown
+                samples = np.tile(x_explain, (n_mc_samples, 1))
+                samples[:, S_idx_unknown] = samples_unknown
 
-            result_cube[S_ind, :, :] = aux_mat
+            result_cube[S_ind] = samples
 
         return np.mean(result_cube, axis=1)
 

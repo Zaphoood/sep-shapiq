@@ -151,10 +151,12 @@ class GaussianCopulaImputer(GaussianImputerBase):
             if len(S_idx_known) == 0:
                 # No conditioning - sample from marginal
                 Z = rng.standard_normal((n_mc_samples, n_features))
-                samples_gaussian = Z @ np.linalg.cholesky(cov_gaussian_copula).T
+                samples_gaussian = (
+                    Z @ np.linalg.cholesky(cov_gaussian_copula).T + mean_gaussian_copula
+                )
             elif len(S_idx_unknown) == 0:
                 # All features known - just repeat the explicand
-                samples_gaussian = np.tile(x_gaussian_copula[0], (n_mc_samples, 1))
+                samples_gaussian = np.tile(x_gaussian_copula, (n_mc_samples, 1))
             else:
                 x_S_star = x_gaussian_copula[S_idx_known]
 
