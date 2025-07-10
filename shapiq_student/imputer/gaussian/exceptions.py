@@ -10,7 +10,7 @@ class CategoricalFeatureError(ValueError):
         """Initializes the error with the categorical feature indices.
 
         Args:
-            feature_indices (list[int]): List of indices of features that are categorical.
+            feature_indices: List of indices of features that are categorical.
         """
         # Convert indices to f1, f2, ...
         feature_names = [f"f{i + 1}" for i in feature_indices]
