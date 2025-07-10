@@ -24,9 +24,9 @@ class KNNExplainer(Explainer):
     """The main KNNExplainer class for a simpler user interface.
 
     shapiq_student.KNNExplainer is a simplified interface to KNN explainers. It detects between
-    :class:`~shapiq_student.explainer.knn.NormalKNNExplainer`,
-    :class:`~shapiq_student.explainer.knn.WKNNExplainer` for (weighted) KNN models and and
-    :class:`~shapiq_student.explainer.knn.TKNNExplainer`.
+    :class:`~shapiq_student.explainer.knn.NormalKNNExplainer` and
+    :class:`~shapiq_student.explainer.knn.WeightedKNNExplainer` for (weighted) k-nearest neighbor models,
+    as well as :class:`~shapiq_student.explainer.knn.ThresholdedNNExplainer` for thresholded nearest neighbor models.
 
     For a detailed description of the different explainers, see the respective classes.
     """
