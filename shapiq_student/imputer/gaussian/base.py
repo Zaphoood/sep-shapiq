@@ -45,17 +45,15 @@ class GaussianImputerBase(Imputer):
         n_mc_samples: int = 1000,
         random_state: int | None = None,
     ) -> None:
-        """Initializes GaussianImputerBase.
+        """Initializes the class.
 
         Args:
-            model (object): The model to explain as a callable function expecting data points as input and
+            model: The model to explain as a callable function expecting data points as input and
                 returning the model's predictions.
-            data (npt.NDArray[np.floating]): The background data to use for the explainer as a 2-dimensional array with shape
-                (n_samples, n_features).
-            x (npt.NDArray[np.floating] | None, optional): The explanation point to use the imputer on either as a 2-dimensional array with
-                shape (1, n_features) or as a vector with shape (n_features,). Defaults to None.
-            n_mc_samples (int, optional): Number of Monte Carlo samples for imputation. Defaults to 1000.
-            random_state (int | None, optional): The random state to use for sampling. Defaults to None.
+            data: The background data to use for the explainer as a ``np.ndarray`` with shape ``(n_samples, n_features)``.
+            x: The explanation point as a ``np.ndarray`` with shape ``(1, n_features)`` or ``(n_features,)``. Defaults to ``None``.
+            n_mc_samples: Number of Monte Carlo samples for imputation. Defaults to 1000.
+            random_state: The random state to use for sampling. Defaults to ``None``.
 
         Raises:
             EmptyDataError: If the provided data is empty.
