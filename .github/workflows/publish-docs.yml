@@ -66,6 +66,7 @@ jobs:
 
       - name: Move docs to PR-specific path
         if: steps.prmeta.outputs.dir != ''
+        shell: bash
         run: |
           mkdir -p docs/build/html/${{ steps.prmeta.outputs.dir }}
           cd docs/build/html
