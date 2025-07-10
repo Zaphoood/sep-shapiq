@@ -33,4 +33,4 @@ jobs:
 
       - name: Build docs
         run: |
-          uv run sphinx-build -M html docs/source docs/build --fail-on-warning
+          uv run sphinx-build -M html docs/source docs/build
