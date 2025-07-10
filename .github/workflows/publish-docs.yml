@@ -68,7 +68,9 @@ jobs:
         if: steps.prmeta.outputs.dir != ''
         run: |
           mkdir -p docs/build/html/${{ steps.prmeta.outputs.dir }}
-          mv docs/build/html/* docs/build/html/${{ steps.prmeta.outputs.dir }}/
+          cd docs/build/html
+          shopt -s dotglob
+          mv !(${{ steps.prmeta.outputs.dir }}) ${{ steps.prmeta.outputs.dir }}/
 
       - name: Upload docs as Pages artifact
         uses: actions/upload-pages-artifact@v3
