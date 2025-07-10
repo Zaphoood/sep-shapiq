@@ -198,9 +198,6 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     * :math:`C` is the number of classes of the training dataset.
 
     Since the parameters :math:`k`, :math:`W` and :math:`C` can be considered constants for most purposes, the effective complexity is :math:`O(N^2)`.
-
-    References:
-        .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024. https://doi.org/10.48550/arXiv.1908.08619
     """
 
     @override

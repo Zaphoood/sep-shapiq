@@ -84,9 +84,6 @@ class ThresholdNNExplainer(KNNExplainer):
 
     Implements the algorithm for efficiently computing exact Shapley Values for threshold nearest-neighbor models proposed by `Wang et. al (2023)` [Wng23]_.
     The algorithm has a runtime complexity of :math:`O(N)` (when explaining a single data point), where :math:`N` is the number of training samples.
-
-    References:
-        .. [Wng23] Wang, Jiachen Tianhao, et al. "A privacy-friendly approach to data valuation." Advances in Neural Information Processing Systems 36 (2023): 60429-60467. https://doi.org/10.48550/arXiv.2308.15709
     """
 
     def __init__(
