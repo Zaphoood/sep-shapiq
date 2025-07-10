@@ -4,6 +4,11 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+  # When opening a PR onto main, the docs will be published to a special URL just for this PR
+  pull_request:
+    branches: ["main"]
+
+  # When pushing to main, the docs will deployed normally
   push:
     branches: ["main"]
 
@@ -13,6 +18,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: write
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -47,6 +53,23 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+
+      # If the workflow is running for a PR, deploy the docs to a subdirectory /pr-123/
+      - name: Determine Deployment Path
+        id: prmeta
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "dir=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "dir=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Move docs to PR-specific path
+        if: steps.prmeta.outputs.dir != ''
+        run: |
+          mkdir -p docs/build/html/${{ steps.prmeta.outputs.dir }}
+          mv docs/build/html/* docs/build/html/${{ steps.prmeta.outputs.dir }}/
+
       - name: Upload docs as Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -55,3 +78,16 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # Post a link to the docs preview if running on a PR
+      - name: Install GitHub CLI
+        if: github.event_name == 'pull_request'
+        run: sudo apt-get install -y gh
+
+      - name: Post comment with preview link
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "Preview the docs here: ${{ steps.deployment.outputs.page_url }}pr-${{ github.event.pull_request.number }}/"
