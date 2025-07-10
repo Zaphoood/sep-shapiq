@@ -5,8 +5,7 @@ on:
   workflow_dispatch:
 
   push:
-    # TODO: Remove all but `main` branch once debugging is done
-    branches: ["main", "setup-github-pipelines"]
+    branches: ["main"]
 
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
