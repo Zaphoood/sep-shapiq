@@ -107,12 +107,12 @@ class GaussianCopulaImputer(GaussianImputerBase):
             msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
             raise RuntimeError(msg)
 
-        # Transforming x_explain to Gaussian space for imputation
+        # Transform x_explain to Gaussian space for imputation
         x_explain = self._transform_x_explain(self.x.flatten(), self.data)
         imputed_data = self.impute(x_explain, coalitions)
 
-        # Inverting transformation back to original feature space
-        n_coalitions, n_mc_samples, n_features = imputed_data.shape
+        # Invert transformation back to original feature space
+        n_coalitions = imputed_data.shape[0]
         imputed_original = np.zeros_like(imputed_data)
         for i in range(n_coalitions):
             imputed_original[i] = self._inverse_transform(imputed_data[i])
