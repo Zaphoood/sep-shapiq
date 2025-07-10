@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from numpy.random import default_rng
 
-from .exceptions import CategoricalFeatureError, EmptyDataError
+from .exceptions import CategoricalFeatureError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -59,7 +59,9 @@ class GaussianImputerBase(Imputer):
             EmptyDataError: If the provided data is empty.
         """
         if data is None or np.size(data) == 0 or (hasattr(data, "shape") and data.shape[0] == 0):
-            raise EmptyDataError
+            msg = "Training data is empty."
+            raise ValueError(msg)
+
         super().__init__(
             model=model,
             data=data,

@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError, EmptyDataError
+from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError
 from shapiq_student.imputer.gaussian.gaussian_imputer import GaussianImputer
 
 
@@ -126,7 +126,7 @@ def test_calculate_mean_per_feature_empty_data() -> None:
     """Test that EmptyDataError is raised when calculating mean with empty data."""
     data = np.empty((0, 3))
     x = np.array([])
-    with pytest.raises(EmptyDataError):
+    with pytest.raises(ValueError, match="data.*empty"):
         GaussianImputer(model=dummy_model, data=data, x=x)
 
 
@@ -150,7 +150,7 @@ def test_calculate_covariance_matrix_empty_data() -> None:
     """Test that EmptyDataError is raised when calculating covariance with empty data."""
     data = np.empty((0, 3))
     x = np.array([])
-    with pytest.raises(EmptyDataError):
+    with pytest.raises(ValueError, match="data.*empty"):
         GaussianImputer(model=dummy_model, data=data, x=x)
 
 
