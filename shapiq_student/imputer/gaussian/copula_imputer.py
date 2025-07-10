@@ -97,18 +97,21 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         return x_original
 
-    def impute(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+    def impute(
+        self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
+    ) -> npt.NDArray[np.floating]:
         """Perform Gaussian Copula imputation for Shapley value calculations.
+
+        Args:
+            x: The data point to impute as an array of shape ``(n_features,)``.
+            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0)
+                for each coalition.
 
         Returns:
             An array of shape ``(n_coalitions, n_features)`` containing the mean imputed values for each coalition in original feature space.
         """
-        if self.x is None:
-            msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
-            raise RuntimeError(msg)
-
         # Transform x_explain to Gaussian space for imputation
-        x_explain = self._transform_x_explain(self.x.flatten(), self.data)
+        x_explain = self._transform_x_explain(x.flatten(), self.data)
         imputed_data = self.sample_monte_carlo(x_explain, coalitions)
 
         # Invert transformation back to original feature space

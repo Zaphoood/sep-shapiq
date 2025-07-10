@@ -209,14 +209,20 @@ class GaussianImputerBase(Imputer):
         return imputed_data
 
     @abstractmethod
-    def impute(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+    def impute(
+        self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
+    ) -> npt.NDArray[np.floating]:
         """Impute missing values for given coalitions. This method must be override by each subclass.
 
         Args:
+            x: The data point to impute as an array of shape ``(n_features,)``.
             coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0) for each coalition.
 
         Returns:
             An array of shape ``(n_coalitions, n_features)`` containing the imputed data points for each coalition.
+
+        Raises:
+            RuntimeError: If no explanation point has been provided, neither in the constructor nor by calling ``fit()``.
         """
         msg = f"The impute() method must be implemented by each subclass of {self.__class__.__name__}."
         raise NotImplementedError(msg)
@@ -236,6 +242,10 @@ class GaussianImputerBase(Imputer):
             An array of shape ``(n_coalitions,)`` with model predictions for each imputed data point.
 
         Raises:
-            RuntimeError: If no explanation has been provided, neither in the constructor nor by calling ``fit()``.
+            RuntimeError: If no explanation point has been provided, neither in the constructor nor by calling ``fit()``.
         """
-        return self.predict(self.impute(coalitions))
+        if self.x is None:
+            msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
+            raise RuntimeError(msg)
+
+        return self.predict(self.impute(self.x, coalitions))
