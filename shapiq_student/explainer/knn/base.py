@@ -41,9 +41,9 @@ class KNNExplainerBase(Explainer):
     """The parameter ``k`` of the model."""
 
     def __init__(self, model: KNeighborsClassifier, class_index: int) -> None:
-        """Initializes the KNNExplainerBase class.
+        """Initializes the class.
 
-        This methods extracts the training data as well as the parameter ``k`` from the provided KNN model and stores it as class attributes.
+        This methods extracts the training data from the provided KNN or TNN model and stores it in class attributes.
 
         Args:
             model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
