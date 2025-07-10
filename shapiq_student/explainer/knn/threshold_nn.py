@@ -37,7 +37,7 @@ class BruteForceTNNExplainer(KNNExplainer):
         # The type of the superclass's `model` attribute is to broad, since it also allows for other KNN explainers
         # To circumvent this, we store the model separately in an attribute with a narrower type
         self.tknn_model = model
-        self.tau = cast("float", model.radius)
+        self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
 
     @property
     @override
@@ -95,7 +95,7 @@ class ThresholdNNExplainer(KNNExplainer):
         super().__init__(model, class_index=class_index)
         self._model = model
 
-        self.tau = cast("float", model.radius)
+        self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
 
     @property
     @override

@@ -35,7 +35,7 @@ class WeightedKNNExplainerBase(CommonKNNExplainer):
     ) -> None:
         super().__init__(model, class_index=class_index)
 
-        model_weights = self.model.weights
+        model_weights = self.knn_model.weights  # type: ignore[attr-defined]
         if model_weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
@@ -53,7 +53,7 @@ class WeightedKNNExplainerBase(CommonKNNExplainer):
                 - ``sortperm`` is a permutation that sorts the training data points by decreasing weight
                 - ``weights`` contains the weights for each training data point, normalized to the interval [0, 1]
         """
-        distances, sortperm = self.model.kneighbors(
+        distances, sortperm = self.knn_model.kneighbors(
             x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0], return_distance=True
         )
         distances = distances[0]
@@ -213,7 +213,7 @@ class WeightedKNNExplainer(WeightedKNNExplainerBase):
             msg = f"Only values of k > 1 are supported, but {self.k=}"
             raise ValueError(msg)
 
-        model_weights = self.model.weights
+        model_weights = self.knn_model.weights  # type: ignore[attr-defined]
         if model_weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
