@@ -216,7 +216,7 @@ class GaussianImputerBase(Imputer):
 
         Args:
             x: The data point to impute as an array of shape ``(n_features,)``.
-            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0) for each coalition.
+            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present or missing for each coalition.
 
         Returns:
             An array of shape ``(n_coalitions, n_features)`` containing the imputed data points for each coalition.
