@@ -187,7 +187,7 @@ def test_gaussian_imputation_first_feature_known() -> None:
         data=x_train,
         x=x_explain[0],
     )
-    imputation_result = imputer.get_imputed_data_gaussian(np.atleast_2d(coalition))
+    imputation_result = imputer.get_imputed_result_data(np.atleast_2d(coalition))
     imputed_features = imputation_result[0, ~coalition]
 
     # The mean should be close to [0.8, 0.5]

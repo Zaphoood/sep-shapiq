@@ -1,6 +1,6 @@
 """Abstract base class for imputation approaches.
 
-This module defines the base class for different Gaussian-based imputation approaches used in SHAP value
+This module defines the base class for different Gaussian-based imputation approaches used in Shapley Value
 calculations. It inherits from shapiq's Imputer base class and provides a common interface that all specific approaches must implement.
 """
 

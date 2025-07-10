@@ -1,6 +1,6 @@
-"""Gaussian approach for imputation in SHAP value calculations.
+"""Gaussian approach for imputation in Shapley Value calculations.
 
-This module implements a Gaussian-based approach for generating samples in SHAP value
+This module implements a Gaussian-based approach for generating samples in Shapley Value
 calculations. It uses multivariate normal distribution for sampling and handles
 continuous features only.
 """
@@ -18,7 +18,7 @@ from .base import GaussianImputerBase
 
 
 class GaussianImputer(GaussianImputerBase):
-    """Implementation of Gaussian-based approach for SHAP value calculations.
+    """Implementation of Gaussian-based approach for Shapley Value calculations.
 
     This approach uses multivariate normal distribution for generating samples.
     It only supports continuous features.
@@ -58,9 +58,7 @@ class GaussianImputer(GaussianImputerBase):
         )
         self._check_categorical_features()
 
-    def get_imputed_data_gaussian(
-        self, coalitions: npt.NDArray[np.bool]
-    ) -> npt.NDArray[np.floating]:
+    def get_imputed_result_data(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Impute missing values for given coalitions using Gaussian MC sampling.
 
         This method performs the imputation without calling the prediction function.
@@ -86,7 +84,7 @@ class GaussianImputer(GaussianImputerBase):
         """Impute missing values and return model predictions for given coalitions.
 
         This method performs imputation and then calls the model's prediction function
-        on the imputed data. This is the main interface expected by SHAP explainers.
+        on the imputed data. This is the main interface expected by Shapley Value explainers.
 
         Args:
             coalitions: Binary array indicating which features are present (1) or missing (0)
@@ -99,4 +97,4 @@ class GaussianImputer(GaussianImputerBase):
         Raises:
             RuntimeError: If the explanation point x is not set.
         """
-        return self.predict(self.get_imputed_data_gaussian(coalitions))
+        return self.predict(self.get_imputed_result_data(coalitions))

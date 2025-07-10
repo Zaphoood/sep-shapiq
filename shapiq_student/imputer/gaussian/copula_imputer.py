@@ -1,4 +1,4 @@
-"""Copula's approach for imputation in SHAP value calculations."""
+"""Copula's approach for imputation in Shapley Value calculations."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from .base import GaussianImputerBase
 
 
 class GaussianCopulaImputer(GaussianImputerBase):
-    """Implements the Gaussian Copula approach for feature imputation in SHAP value calculations."""
+    """Implements the Gaussian Copula approach for feature imputation in Shapley Value calculations."""
 
     def __init__(
         self,
