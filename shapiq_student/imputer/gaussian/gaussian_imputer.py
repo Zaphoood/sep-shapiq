@@ -55,13 +55,9 @@ class GaussianImputer(GaussianImputerBase):
 
         Args:
             x: The data point to impute as an array of shape ``(n_features,)``.
-            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0)
-                for each coalition.
+            coalitions: Boolean array of shape ``(n_coalitions, n_features)`` indicating which features are present or missing for each coalition.
 
         Returns:
             An array of shape ``(n_coalitions, n_features)`` containing the imputed data points for each coalition, averaged over Monte Carlo samples.
-
-        Raises:
-            RuntimeError: If no explanation has been provided, neither in the constructor nor by calling ``fit()``.
         """
         return np.mean(self.sample_monte_carlo(x, coalitions), axis=1)
