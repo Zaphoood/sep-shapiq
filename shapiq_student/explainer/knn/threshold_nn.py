@@ -22,7 +22,7 @@ from .base import KNNExplainer, interaction_values_from_array
 MODE_THRESHOLD = "threshold"
 
 
-class BruteForceTKNNExplainer(KNNExplainer):
+class BruteForceTNNExplainer(KNNExplainer):
     """Brute force approach for explaining TKNN Classifiers.
 
     References:

@@ -2,8 +2,8 @@
 
 from .base import KNNExplainer, interaction_values_from_array, interaction_values_to_array
 from .normal_knn import BruteForceNormalKNNExplainer, NormalKNNExplainer
-from .threshold_knn import (
-    BruteForceTKNNExplainer,
+from .threshold_nn import (
+    BruteForceTNNExplainer,
     ThresholdNNExplainer,
 )
 
@@ -14,5 +14,5 @@ __all__ = [
     "BruteForceNormalKNNExplainer",
     "NormalKNNExplainer",
     "ThresholdNNExplainer",
-    "BruteForceTKNNExplainer",
+    "BruteForceTNNExplainer",
 ]

@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import RadiusNeighborsClassifier
 
 from shapiq_student.explainer.knn.base import interaction_values_to_array
-from shapiq_student.explainer.knn.tknn import BruteForceTKNNExplainer, TKNNExplainer
+from shapiq_student.explainer.knn.threshold_nn import BruteForceTNNExplainer, ThresholdNNExplainer
 
 
 class TestTKNNExplainer:
@@ -26,7 +26,7 @@ class TestTKNNExplainer:
         radius_model = RadiusNeighborsClassifier(radius=tau)
         radius_model.fit(X_train, y_train)
 
-        tknn_explainer = TKNNExplainer(radius_model, class_index=1)
+        tknn_explainer = ThresholdNNExplainer(radius_model, class_index=1)
 
         assert np.allclose(tknn_explainer.X_train, X_train)
         assert np.allclose(tknn_explainer.y_train, y_train)
@@ -41,7 +41,7 @@ class TestTKNNExplainer:
         radius_model = RadiusNeighborsClassifier(radius=tau)
         radius_model.fit(X_train, y_train)
         class_index = 0
-        tknn_explainer = TKNNExplainer(radius_model, class_index=class_index)
+        tknn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
         sv_array_tknn = interaction_values_to_array(tknn_explainer.explain(x_val))
 
         assert np.allclose(sv_array_tknn, 0)
@@ -65,9 +65,9 @@ class TestTKNNExplainer:
         model.fit(X_train, y_train)
 
         for class_index in range(n_classes):
-            brute_explainer = BruteForceTKNNExplainer(model, class_index=class_index)
+            brute_explainer = BruteForceTNNExplainer(model, class_index=class_index)
             brute_iv = interaction_values_to_array(brute_explainer.explain(x_val))
-            tknn_explainer = TKNNExplainer(model, class_index=class_index)
+            tknn_explainer = ThresholdNNExplainer(model, class_index=class_index)
             tknn_iv = interaction_values_to_array(tknn_explainer.explain(x_val))
 
             assert np.allclose(brute_iv, tknn_iv)
