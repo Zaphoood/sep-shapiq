@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 import logging
-from typing import TYPE_CHECKING, Any, assert_never, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 from shapiq import Explainer
@@ -134,7 +134,8 @@ def get_explainer_class(
     if isinstance(model, RadiusNeighborsClassifier):
         return ThresholdNNExplainer
 
-    assert_never(model)
+    msg = "Unreachable: Exhaustive check of model types in get_explainer_class"
+    raise RuntimeError(msg)
 
 
 def interaction_values_from_array(
