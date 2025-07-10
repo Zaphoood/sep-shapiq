@@ -20,7 +20,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
     def __init__(
         self,
-        model: object | Callable[[npt.NDArray[float]], npt.NDArray[float]],
+        model: object | Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]],
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
