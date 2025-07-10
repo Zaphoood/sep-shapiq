@@ -46,7 +46,7 @@ class GaussianImputer(GaussianImputerBase):
         )
         self._check_categorical_features()
 
-    def get_imputed_result_data(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+    def impute(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Impute missing values for given coalitions using Gaussian MC sampling.
 
         This method performs the imputation without calling the prediction function.
@@ -65,4 +65,4 @@ class GaussianImputer(GaussianImputerBase):
             msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
             raise RuntimeError(msg)
 
-        return np.mean(self.impute(self.x, coalitions), axis=1)
+        return np.mean(self.sample_monte_carlo(self.x, coalitions), axis=1)

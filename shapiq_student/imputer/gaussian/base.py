@@ -140,12 +140,12 @@ class GaussianImputerBase(Imputer):
             )
         return cov_mat
 
-    def impute(
+    def sample_monte_carlo(
         self,
         x: npt.NDArray[np.floating],
         coalitions: npt.NDArray[np.bool],
     ) -> npt.NDArray[np.floating]:
-        """Impute missing values for given coalitions using Gaussian Monte Carlo sampling.
+        """GEnerate Gaussian Monte Carlo samples for missing values for given coalitions.
 
         Args:
             coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0)
@@ -209,7 +209,7 @@ class GaussianImputerBase(Imputer):
         return imputed_data
 
     @abstractmethod
-    def get_imputed_result_data(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+    def impute(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Impute missing values for given coalitions. This method must be override by each subclass.
 
         Args:
@@ -218,7 +218,7 @@ class GaussianImputerBase(Imputer):
         Returns:
             An array of shape ``(n_coalitions, n_features)`` containing the imputed data points for each coalition.
         """
-        msg = f"The get_imputed_result_data() method must be implemented by each subclass of {self.__class__.__name__}."
+        msg = f"The impute() method must be implemented by each subclass of {self.__class__.__name__}."
         raise NotImplementedError(msg)
 
     @override
@@ -238,4 +238,4 @@ class GaussianImputerBase(Imputer):
         Raises:
             RuntimeError: If no explanation has been provided, neither in the constructor nor by calling ``fit()``.
         """
-        return self.predict(self.get_imputed_result_data(coalitions))
+        return self.predict(self.impute(coalitions))

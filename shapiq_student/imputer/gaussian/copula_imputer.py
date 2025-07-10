@@ -97,7 +97,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         return x_original
 
-    def get_imputed_result_data(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+    def impute(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Perform Gaussian Copula imputation for Shapley value calculations.
 
         Returns:
@@ -109,7 +109,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         # Transform x_explain to Gaussian space for imputation
         x_explain = self._transform_x_explain(self.x.flatten(), self.data)
-        imputed_data = self.impute(x_explain, coalitions)
+        imputed_data = self.sample_monte_carlo(x_explain, coalitions)
 
         # Invert transformation back to original feature space
         n_coalitions = imputed_data.shape[0]
