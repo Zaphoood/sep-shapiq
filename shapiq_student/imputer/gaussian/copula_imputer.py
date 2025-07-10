@@ -8,6 +8,8 @@ import numpy as np
 from scipy.stats import norm, rankdata
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import numpy.typing as npt
 
 from .base import GaussianImputerBase
@@ -18,7 +20,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
     def __init__(
         self,
-        model: object,
+        model: object | Callable[[npt.NDArray[float]], npt.NDArray[float]],
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
@@ -28,8 +30,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         """Initializes the GaussianCopulaImputer.
 
         Args:
-            model (object): The model to explain as a callable function expecting data points as input and
-                returning the model's predictions.
+            model (object): The model used for predictions or value calculations.
             data: The background data to use for the explainer as a 2-dimensional array with shape.
             x: The explanation point to use the imputer on either as a 2-dimensional array with
                 shape or as a vector with shape. Defaults to None.
