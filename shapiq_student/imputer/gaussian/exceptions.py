@@ -12,7 +12,6 @@ class CategoricalFeatureError(ValueError):
         Args:
             feature_indices: List of indices of features that are categorical.
         """
-        # Convert indices to f1, f2, ...
         feature_names = [f"f{i + 1}" for i in feature_indices]
         message = (
             f"The following are categorical features: {', '.join(feature_names)}. "
