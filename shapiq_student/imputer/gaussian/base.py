@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+from numpy.random import default_rng
 
 from .exceptions import CategoricalFeatureError, EmptyDataError
 
@@ -137,5 +138,73 @@ class GaussianImputerBase(Imputer):
             cov_mat = cov_mat + np.eye(cov_mat.shape[0]) * (
                 min_eigen_value - min_actual_eigen_value
             )
-
         return cov_mat
+
+    def impute(
+        self,
+        x: npt.NDArray[np.floating],
+        coalitions: npt.NDArray[np.bool],
+    ) -> npt.NDArray[np.floating]:
+        """Impute missing values for given coalitions using Gaussian MC sampling.
+
+        Args:
+            coalitions: Binary array indicating which features are present (1) or missing (0)
+                for each coalition. Shape: (n_coalitions, n_features).
+            x: Explanation point to use for imputation. If None, uses self.x.
+
+        Returns:
+            Imputed data points for each coalition.
+            Shape: (n_coalitions, n_mc_samples, n_features)
+        """
+        x_explain = x.flatten()
+        n_coalitions, n_features = coalitions.shape
+        rng = default_rng(self.random_state)
+
+        imputed_data = np.zeros((n_coalitions, self.n_mc_samples, n_features))
+
+        for S_ind, coalition in enumerate(coalitions):
+            S_idx_known = np.where(coalition)[0]
+            S_idx_unknown = np.where(~coalition)[0]
+
+            if len(S_idx_known) == 0:
+                # No conditioning on known features, therefore sample from original data distribution
+                Z = rng.standard_normal((self.n_mc_samples, len(S_idx_unknown)))
+                samples = Z @ np.linalg.cholesky(self.cov_mat).T + self.mean_per_feature
+            elif len(S_idx_unknown) == 0:
+                # all features known, therefore we just return explanation point
+                samples = np.tile(x_explain, (self.n_mc_samples, 1))
+                # TODO (milanagm): aus dem loop aussteigen und x_explain direkt unten in samples eintragen
+            else:
+                x_S_star = x_explain[S_idx_known]
+
+                mu_S_known = self.mean_per_feature[S_idx_known]
+                mu_S_unknown = self.mean_per_feature[S_idx_unknown]
+
+                cov_S_known_known = self.cov_mat[np.ix_(S_idx_known, S_idx_known)]
+                cov_S_known_unknown = self.cov_mat[np.ix_(S_idx_known, S_idx_unknown)]
+                cov_S_unknown_known = self.cov_mat[np.ix_(S_idx_unknown, S_idx_known)]
+                cov_S_unknown_unknown = self.cov_mat[np.ix_(S_idx_unknown, S_idx_unknown)]
+
+                cov_S_known_known_inv = np.linalg.inv(cov_S_known_known)
+
+                cond_mean = mu_S_unknown + (cov_S_unknown_known @ cov_S_known_known_inv) @ (
+                    x_S_star - mu_S_known
+                )
+                cond_cov = (
+                    cov_S_unknown_unknown
+                    - (cov_S_unknown_known @ cov_S_known_known_inv) @ cov_S_known_unknown
+                )
+                # for sampling from multivariate normal distribution with Cholesky we need to make sure that
+                # cond_cov is symmetric (regardless - Covariances should always be symmetric: Cov(X,Y) = Cov(Y,X))
+                cond_cov = 0.5 * (cond_cov + cond_cov.T)
+
+                # MC samples and Cholesky to turn N(0,1) to desired Gaussian distribution
+                Z = rng.standard_normal((self.n_mc_samples, len(S_idx_unknown)))
+                samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
+
+                samples = np.tile(x_explain, (self.n_mc_samples, 1))
+                samples[:, S_idx_unknown] = samples_unknown
+
+            imputed_data[S_ind] = samples
+
+        return imputed_data

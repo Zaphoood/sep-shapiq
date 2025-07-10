@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from numpy.random import default_rng
 from scipy.stats import norm, rankdata
 
 if TYPE_CHECKING:
@@ -46,19 +45,12 @@ class GaussianCopulaImputer(GaussianImputerBase):
             random_state=random_state,
         )
         self._check_categorical_features()
-        self._initialize_copula_parameters()
-
-    def _initialize_copula_parameters(self) -> None:
-        """Transform training data to Gaussian space and compute mean and covariance.
-
-        This method applies a Gaussian (normal) transformation to each feature in the training data
-        and then calculates the mean vector and covariance matrix in the transformed (Gaussian) data set.
-        """
-        self._data_transformed = self._gaussian_transform(self.data)
-        self._mean = np.mean(
-            self._data_transformed, axis=0
+        self.data_transformed = self._gaussian_transform(self.data)
+        # Override: GaussianCopulaImputer uses transformed mean/covariance
+        self._mean_per_feature = np.mean(
+            self.data_transformed, axis=0
         )  # in theory mean should be (nearly) zero
-        self._cov = self._ensure_positive_definite(np.cov(self._data_transformed.T))
+        self._cov_mat = self._ensure_positive_definite(np.cov(self.data_transformed.T))
 
     def _gaussian_transform(self, x: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
         """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
@@ -67,12 +59,12 @@ class GaussianCopulaImputer(GaussianImputerBase):
         distribution (mean 0, std 1), while preserving the rank order of the original data. This is also known as a
         rank-Gaussian or empirical CDF transformation.
         """
-        x_trans = np.zeros_like(x, dtype=float)
+        x_transformed = np.zeros_like(x, dtype=float)
         for i in range(x.shape[1]):
             ranks = rankdata(x[:, i], method="average")
             u = ranks / (len(ranks) + 1)
-            x_trans[:, i] = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
-        return x_trans
+            x_transformed[:, i] = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
+        return x_transformed
 
     def _transform_x_explain(
         self, x_explain: npt.NDArray[np.floating], x_train: npt.NDArray[np.floating]
@@ -119,66 +111,22 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
         -------
         np.ndarray
-            An array of shape (n_MC_samples, n_explain * n_coalitions, n_features)
-            containing all imputed samples in original feature space.
+        An array of shape (n_coalitions, n_features) containing the mean imputed values for each coalition in original feature space.
         """
         if self.x is None:
             msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
             raise RuntimeError(msg)
 
-        x_gaussian_copula = self._transform_x_explain(self.x.flatten(), self.data)
-        n_coalitions, n_features = coalitions.shape
-        n_mc_samples = self.n_mc_samples
-        mean_gaussian_copula = self._mean
-        cov_gaussian_copula = self._cov
-        rng = default_rng(self.random_state)
+        # Transforming x_explain to Gaussian space for imputation
+        x_explain = self._transform_x_explain(self.x.flatten(), self.data)
+        imputed_data = self.impute(x_explain, coalitions)
 
-        result_cube = np.zeros((n_coalitions, n_mc_samples, n_features))
-
-        for S_ind, coalition in enumerate(coalitions):
-            S_idx_known = np.where(coalition)[0]
-            S_idx_unknown = np.where(~coalition)[0]
-
-            if len(S_idx_known) == 0:
-                # No conditioning - sample from marginal
-                Z = rng.standard_normal((n_mc_samples, n_features))
-                samples_gaussian = (
-                    Z @ np.linalg.cholesky(cov_gaussian_copula).T + mean_gaussian_copula
-                )
-            elif len(S_idx_unknown) == 0:
-                # All features known - just repeat the explicand
-                samples_gaussian = np.tile(x_gaussian_copula, (n_mc_samples, 1))
-            else:
-                x_S_star = x_gaussian_copula[S_idx_known]
-
-                mu_S_known = mean_gaussian_copula[S_idx_known]
-                mu_S_unknown = mean_gaussian_copula[S_idx_unknown]
-
-                cov_S_known_known = cov_gaussian_copula[np.ix_(S_idx_known, S_idx_known)]
-                cov_S_known_unknown = cov_gaussian_copula[np.ix_(S_idx_known, S_idx_unknown)]
-                cov_S_unknown_known = cov_gaussian_copula[np.ix_(S_idx_unknown, S_idx_known)]
-                cov_S_unknown_unknown = cov_gaussian_copula[np.ix_(S_idx_unknown, S_idx_unknown)]
-
-                cov_S_known_known_inv = np.linalg.inv(cov_S_known_known)
-
-                cond_mean = mu_S_unknown + (cov_S_unknown_known @ cov_S_known_known_inv) @ (
-                    x_S_star - mu_S_known
-                )
-                cond_cov = (
-                    cov_S_unknown_unknown
-                    - (cov_S_unknown_known @ cov_S_known_known_inv) @ cov_S_known_unknown
-                )
-                cond_cov = 0.5 * (cond_cov + cond_cov.T)  # Ensure symmetry
-
-                Z = rng.standard_normal((n_mc_samples, len(S_idx_unknown)))
-                samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
-
-                samples_gaussian = np.tile(x_gaussian_copula[0], (n_mc_samples, 1))
-                samples_gaussian[:, S_idx_unknown] = samples_unknown
-
-            result_cube[S_ind] = self._inverse_transform(samples_gaussian)
-
-        return np.mean(result_cube, axis=1)
+        # Inverting transformation back to original feature space
+        n_coalitions, n_mc_samples, n_features = imputed_data.shape
+        imputed_original = np.zeros_like(imputed_data)
+        for i in range(n_coalitions):
+            imputed_original[i] = self._inverse_transform(imputed_data[i])
+        return np.mean(imputed_original, axis=1)
 
     def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Compute model predictions for imputed coalitions."""
