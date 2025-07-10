@@ -190,14 +190,14 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     r"""Explainer for weighted KNN models.
 
     Implements the algorithm for efficiently computing exact Shapley Values for weighted KNN models proposed by `Wang et. al (2024)` [Wng24]_.
-    The algorithm achieves a runtime complexity of :math:`O\bigl(\frac{K^2 N^2 W}{C}\bigr)`, where
+    The algorithm achieves a runtime complexity of :math:`O\bigl(\frac{k^2 N^2 W}{C}\bigr)`, where
 
-    * :math:`K` is the defining hyper-parameter of the k-nearest neighbors model,
+    * :math:`k` is the defining hyperparameter of the :math:`k`-nearest neighbors model,
     * :math:`N` is size of the training dataset,
     * :math:`W = 2^b` (where :math:`b` is the number of discretization bits) is the size of the *discretized weights space*,
     * :math:`C` is the number of classes training dataset.
 
-    Since the parameters :math:`K`, :math:`W` and :math:`C` can be considered constants for most purposes, the effective complexity is :math:`O(N^2)`.
+    Since the parameters :math:`k`, :math:`W` and :math:`C` can be considered constants for most purposes, the effective complexity is :math:`O(N^2)`.
 
     References:
         .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024. https://doi.org/10.48550/arXiv.1908.08619
