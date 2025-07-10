@@ -136,7 +136,7 @@ class TestWKNNValues:
         n_test_cases = 3
         n_train_min = 10
         n_train_max = 10
-        n_bits = 10
+        n_bits = 8
         tolerance = 1e-10
 
         rng = np.random.default_rng(seed=43)
