@@ -97,7 +97,7 @@ class ThresholdNNExplainer(KNNExplainer):
         This methods extracts the training data and the threshold :math:`\tau` from the provided model and stores it as class members.
 
         Args:
-            model: The KNN model to explain. The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
+            model: The model to explain. The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
 
             data: This parameter is currently ignored but may be used in future versions.
 
