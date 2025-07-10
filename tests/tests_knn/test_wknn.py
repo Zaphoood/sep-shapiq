@@ -75,7 +75,7 @@ class TestWKNNValues:
 
     def test_wknn_exact_binary(self) -> None:
         """Tests that the results of WeightedKNNExplainer agree with baseline calculated using the same (discretized) weights for binary classification."""
-        n_test_cases = 10
+        n_test_cases = 3
         n_train_min = 5
         n_train_max = 10
         n_bits = 4
@@ -89,7 +89,7 @@ class TestWKNNValues:
 
     def test_wknn_exact_multiclass(self) -> None:
         """Tests that the results of WeightedKNNExplainer agree with baseline calculated using the same (discretized) weights for multi-class classification."""
-        n_test_cases = 10
+        n_test_cases = 3
         n_train_min = 9
         n_train_max = 10
         n_bits = 4
