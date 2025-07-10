@@ -64,11 +64,11 @@ class GaussianCopulaImputer(GaussianImputerBase):
         """Transform a single explanation point to Gaussian space using the training data's ECDF.
 
         Args:
-            x_explain: The explanation point with shape (n_features,)
-            x_train: The training data with shape (n_samples, n_features)
+            x_explain: The explanation point with shape ``(n_features,)``
+            x_train: The training data with shape ``(n_samples, n_features)``
 
         Returns:
-            Transformed explanation point in Gaussian space with shape (n_features,)
+            Transformed explanation point in Gaussian space as an array of shape ``(n_features,)``
         """
         x = x_explain
         x_train = np.asarray(x_train)
@@ -101,9 +101,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         """Perform Gaussian Copula imputation for Shapley value calculations.
 
         Returns:
-        -------
-        np.ndarray
-        An array of shape (n_coalitions, n_features) containing the mean imputed values for each coalition in original feature space.
+            An array of shape ``(n_coalitions, n_features)`` containing the mean imputed values for each coalition in original feature space.
         """
         if self.x is None:
             msg = f"Must call {self.__class__.__name__}.fit() first before imputing"

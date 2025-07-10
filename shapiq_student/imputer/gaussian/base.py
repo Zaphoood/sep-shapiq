@@ -50,8 +50,8 @@ class GaussianImputerBase(Imputer):
         Args:
             model: The model to explain as a callable function expecting data points as input and
                 returning the model's predictions.
-            data: The background data to use for the explainer as a ``np.ndarray`` with shape ``(n_samples, n_features)``.
-            x: The explanation point as a ``np.ndarray`` with shape ``(1, n_features)`` or ``(n_features,)``. Defaults to ``None``.
+            data: The background data to use for the explainer as a ``np.ndarray`` of shape ``(n_samples, n_features)``.
+            x: The explanation point as a ``np.ndarray`` of shape ``(1, n_features)`` or ``(n_features,)``. Defaults to ``None``.
             n_mc_samples: Number of Monte Carlo samples for imputation. Defaults to 1000.
             random_state: The random state to use for sampling. Defaults to ``None``.
 
@@ -97,7 +97,7 @@ class GaussianImputerBase(Imputer):
         """Get the mean values per feature, computing them if not already computed.
 
         Returns:
-            npt.NDArray[np.floating]: The mean value for each feature.
+            An array containing the mean value for each feature.
         """
         if self._mean_per_feature is None:
             self._mean_per_feature = np.mean(self.data, axis=0)
@@ -105,10 +105,10 @@ class GaussianImputerBase(Imputer):
 
     @property
     def cov_mat(self) -> npt.NDArray[np.floating]:
-        """Get the covariance matrix, computing it if not already computed.
+        """Compute the covariance matrix or return a cached value if already computed.
 
         Returns:
-            npt.NDArray[np.floating]: The covariance matrix of the data.
+            The covariance matrix of the data as an array.
         """
         if self._cov_mat is None:
             self._cov_mat = self._ensure_positive_definite(np.cov(self.data.T))
@@ -126,7 +126,7 @@ class GaussianImputerBase(Imputer):
             min_eigen_value: Minimum allowed eigenvalue. Defaults to 1e-06.
 
         Returns:
-            npt.NDArray[np.floating]: Positive definite covariance matrix.
+            The positive definite covariance matrix.
         """
         eigen_values = np.linalg.eigvalsh(cov_mat)
 
@@ -144,16 +144,15 @@ class GaussianImputerBase(Imputer):
         x: npt.NDArray[np.floating],
         coalitions: npt.NDArray[np.bool],
     ) -> npt.NDArray[np.floating]:
-        """Impute missing values for given coalitions using Gaussian MC sampling.
+        """Impute missing values for given coalitions using Gaussian Monte Carlo sampling.
 
         Args:
-            coalitions: Binary array indicating which features are present (1) or missing (0)
-                for each coalition. Shape: (n_coalitions, n_features).
-            x: Explanation point to use for imputation. If None, uses self.x.
+            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0)
+                for each coalition.
+            x: Explanation point to use for imputation. If ``None``, uses ``self.x``.
 
         Returns:
-            Imputed data points for each coalition.
-            Shape: (n_coalitions, n_mc_samples, n_features)
+            Imputed data points for each coalition as an array of shape ``(n_coalitions, n_mc_samples, n_features)``.
         """
         x_explain = x.flatten()
         n_coalitions, n_features = coalitions.shape

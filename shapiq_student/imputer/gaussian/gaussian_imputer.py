@@ -52,15 +52,14 @@ class GaussianImputer(GaussianImputerBase):
         This method performs the imputation without calling the prediction function.
 
         Args:
-            coalitions: Binary array indicating which features are present (1) or missing (0)
-                for each coalition. Shape: (n_coalitions, n_features).
+            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0)
+                for each coalition.
 
         Returns:
-            Imputed data points for each coalition, averaged over Monte Carlo samples.
-            Shape: (n_coalitions, n_features).
+            An array of shape ``(n_coalitions, n_features)`` containing the imputed data points for each coalition, averaged over Monte Carlo samples.
 
         Raises:
-            RuntimeError: If the explanation point x is not set.
+            RuntimeError: If no explanation has been provided, neither in the constructor nor by calling ``fit()``.
         """
         if self.x is None:
             msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
@@ -75,14 +74,13 @@ class GaussianImputer(GaussianImputerBase):
         on the imputed data. This is the main interface expected by Shapley Value explainers.
 
         Args:
-            coalitions: Binary array indicating which features are present (1) or missing (0)
-                for each coalition. Shape: (n_coalitions, n_features).
+            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0)
+                for each coalition.
 
         Returns:
-            Model predictions for each imputed data point.
-                Shape: (n_explain * n_coalitions * n_mc_samples,).
+            An array of shape ``(n_coalitions,)`` with model predictions for each imputed data point.
 
         Raises:
-            RuntimeError: If the explanation point x is not set.
+            RuntimeError: If no explanation has been provided, neither in the constructor nor by calling ``fit()``.
         """
         return self.predict(self.get_imputed_result_data(coalitions))
