@@ -21,9 +21,9 @@ KNNClassifierModel = KNeighborsClassifier | RadiusNeighborsClassifier
 
 
 class KNNExplainer(Explainer):
-    """The main KNNExplainer class for a simpler user interface.
+    """The main interface for KNN explainers.
 
-    shapiq_student.KNNExplainer is a simplified interface to KNN explainers. It detects between
+    Based on the model passed to the constructor, the class automatically detects between
     :class:`~shapiq_student.explainer.knn.NormalKNNExplainer` and
     :class:`~shapiq_student.explainer.knn.WeightedKNNExplainer` for (weighted) k-nearest neighbor models,
     as well as :class:`~shapiq_student.explainer.knn.ThresholdNNExplainer` for thresholded nearest neighbor models.
@@ -33,7 +33,7 @@ class KNNExplainer(Explainer):
 
     # TODO(Zaphoood): The base class allows `model` to be a `Callable`, which we don't allow -- violates Liskov subsitution principle
     model: KNNClassifierModel  # type: ignore[assignment]
-    """The KNN model provided in the constructor."""
+    """The model provided in the constructor."""
 
     X_train: npt.NDArray[np.floating]
     """Training data features extracted from the model."""
