@@ -65,6 +65,7 @@ class NormalKNNExplainer(_CommonKNNExplainer):
     r"""Explainer for unweighted KNN models.
 
     Implements the algorithm proposed by `Jia et al. (2019)` [Jia19]_ to efficiently calculate Shapley Values for unweighted KNN models.
+    The algorithm itself has a linear time complexity, but expects a sorted array of training points as input, resulting in a time complexity of :math:`O(N \log N)` for explaining a single data point.
 
     References:
         .. [Jia19] Jia, Ruoxi, et al. "Efficient task-specific data valuation for nearest neighbor algorithms." arXiv preprint arXiv\:1908.08619 (2019). https://doi.org/10.48550/arXiv.1908.08619/
