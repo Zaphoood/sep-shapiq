@@ -193,18 +193,33 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024.
     """
 
+    @override
     def __init__(
         self,
         model: KNeighborsClassifier,
         class_index: int,
         n_bits: int = 3,
     ) -> None:
-        """Initializes the WKNNExplainer.
+        """Initializes the class.
+
+        This methods extracts the training data as well as the parameter :math:`k` from the provided KNN model and stores them as class members.
 
         Args:
-            model: The KNN model to explain.
-            class_index: The class index of the model to explain.
-            n_bits: The number of bits to use for the discretized weight space.
+            model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
+                The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit()`` must be a 1D vector.
+
+            data: This parameter is currently ignored but may be used in future versions.
+
+            labels: This parameter is currently ignored but may be used in future versions.
+
+            class_index: The class index of the model to explain. Defaults to ``1``.
+
+            n_bits: The number of bits to use for discretizing weights. Must be non-negative.
+
+        Raises:
+            sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
+
+            shapiq_student.explainer.knn.exceptions.MultiOutputKNNError: The constructor was called with a model that uses multi-output classification.
         """
         super().__init__(model, class_index)
 
