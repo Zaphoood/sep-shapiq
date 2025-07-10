@@ -48,7 +48,7 @@ class KNNExplainer(Explainer):
     """Training data labels extracted from the model. This array simply resolves the indirection of looking up class indices from ``y_train_indices`` in ``y_train_classes``."""
 
     k: int
-    """The parameter ``k`` of the model."""
+    """The parameter ``k`` of the k-nearest neighbors model."""
 
     def __init__(
         self,
@@ -65,8 +65,9 @@ class KNNExplainer(Explainer):
             model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
                 The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit()`` must be a 1D vector.
 
-            data: Do not use this parameter; it is only present to satisfy the unit tests present in `tests_grading/`. Any value passed to this parameter will be ignored.
-            labels: Do not use this parameter; it is only present to satisfy the unit tests present in `tests_grading/`. Any value passed to this parameter will be ignored.
+            data: This parameter is currently ignored but may be used in future versions.
+
+            labels: This parameter is currently ignored but may be used in future versions.
 
             class_index: The class index of the model to explain. Defaults to ``1``.
 
