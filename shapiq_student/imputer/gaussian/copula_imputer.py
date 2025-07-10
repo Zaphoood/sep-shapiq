@@ -25,20 +25,17 @@ class GaussianCopulaImputer(GaussianImputerBase):
         *,
         n_mc_samples: int = 1000,
         random_state: int | None = None,
-        verbose: bool = False,
     ) -> None:
         """Initializes the GaussianCopulaImputer.
 
         Args:
             model (object): The model to explain as a callable function expecting data points as input and
                 returning the model's predictions.
-            data (npt.NDArray[np.floating]): The background data to use for the explainer as a 2-dimensional array with shape
-                (n_samples, n_features).
-            x (npt.NDArray[np.floating] | None, optional): The explanation point to use the imputer on either as a 2-dimensional array with
-                shape (1, n_features) or as a vector with shape (n_features,). Defaults to None.
-            n_mc_samples (int, optional): Number of Monte Carlo samples for imputation. Defaults to 1000.
-            random_state (int | None, optional): The random state to use for sampling. Defaults to None.
-            verbose (bool, optional): A flag to enable verbose imputation, which will print a progress bar for model
+            data: The background data to use for the explainer as a 2-dimensional array with shape.
+            x: The explanation point to use the imputer on either as a 2-dimensional array with
+                shape or as a vector with shape. Defaults to None.
+            n_mc_samples: Number of Monte Carlo samples for imputation. Defaults to 1000.
+            random_state: The random state to use for sampling. Defaults to None.
                 evaluation. Note that this can slow down the imputation process. Defaults to False.
         """
         super().__init__(
@@ -47,7 +44,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
             x=x,
             n_mc_samples=n_mc_samples,
             random_state=random_state,
-            verbose=verbose,
         )
         self._check_categorical_features()
         self._initialize_copula_parameters()
@@ -58,13 +54,11 @@ class GaussianCopulaImputer(GaussianImputerBase):
         This method applies a Gaussian (normal) transformation to each feature in the training data
         and then calculates the mean vector and covariance matrix in the transformed (Gaussian) data set.
         """
-        self._data_gaussian_copula = self._gaussian_transform(self.data)
-        self._mean_gaussian_copula = np.mean(
-            self._data_gaussian_copula, axis=0
+        self._data_transformed = self._gaussian_transform(self.data)
+        self._mean = np.mean(
+            self._data_transformed, axis=0
         )  # in theory mean should be (nearly) zero
-        self._cov_gaussian_copula = self._ensure_positive_definite(
-            np.cov(self._data_gaussian_copula.T)
-        )
+        self._cov = self._ensure_positive_definite(np.cov(self._data_transformed.T))
 
     def _gaussian_transform(self, x: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
         """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
@@ -73,10 +67,9 @@ class GaussianCopulaImputer(GaussianImputerBase):
         distribution (mean 0, std 1), while preserving the rank order of the original data. This is also known as a
         rank-Gaussian or empirical CDF transformation.
         """
-        x_train = np.asarray(x)
-        x_trans = np.zeros_like(x_train, dtype=float)
-        for i in range(x_train.shape[1]):
-            ranks = rankdata(x_train[:, i], method="average")
+        x_trans = np.zeros_like(x, dtype=float)
+        for i in range(x.shape[1]):
+            ranks = rankdata(x[:, i], method="average")
             u = ranks / (len(ranks) + 1)
             x_trans[:, i] = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
         return x_trans
@@ -87,13 +80,13 @@ class GaussianCopulaImputer(GaussianImputerBase):
         """Transform a single explanation point to Gaussian space using the training data's ECDF.
 
         Args:
-            x_explain: The explanation point (1D array, shape (n_features,))
-            x_train: The training data (2D array, shape (n_samples, n_features))
+            x_explain: The explanation point with shape (n_features,)
+            x_train: The training data with shape (n_samples, n_features)
 
         Returns:
-            Transformed explanation point in Gaussian space (1D array, shape (n_features,))
+            Transformed explanation point in Gaussian space with shape (n_features,)
         """
-        x = np.asarray(x_explain).flatten()
+        x = x_explain
         x_train = np.asarray(x_train)
         n_features = x.shape[0]
 
@@ -120,26 +113,24 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         return x_original
 
-    def get_imputed_result_data_copula(
-        self, coalitions: npt.NDArray[np.bool]
-    ) -> npt.NDArray[np.floating]:
-        """Perform Gaussian Copula imputation for SHAP value calculations.
+    def get_imputed_result_data(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+        """Perform Gaussian Copula imputation for Shapley value calculations.
 
         Returns:
         -------
         np.ndarray
-            A 3D array of shape (n_MC_samples, n_explain * n_coalitions, n_features)
+            An array of shape (n_MC_samples, n_explain * n_coalitions, n_features)
             containing all imputed samples in original feature space.
         """
         if self.x is None:
-            msg = "Explanation point x must be set first"
+            msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
             raise RuntimeError(msg)
 
         x_gaussian_copula = self._transform_x_explain(self.x.flatten(), self.data)
         n_coalitions, n_features = coalitions.shape
         n_mc_samples = self.n_mc_samples
-        mean_gaussian_copula = self._mean_gaussian_copula
-        cov_gaussian_copula = self._cov_gaussian_copula
+        mean_gaussian_copula = self._mean
+        cov_gaussian_copula = self._cov
         rng = default_rng(self.random_state)
 
         result_cube = np.zeros((n_coalitions, n_mc_samples, n_features))
@@ -191,4 +182,4 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
     def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Compute model predictions for imputed coalitions."""
-        return self.predict(self.get_imputed_result_data_copula(coalitions))
+        return self.predict(self.get_imputed_result_data(coalitions))
