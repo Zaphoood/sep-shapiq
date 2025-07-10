@@ -17,8 +17,6 @@ from .exceptions import MultiOutputKNNError
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-KNNClassifierModel = KNeighborsClassifier | RadiusNeighborsClassifier
-
 
 class KNNExplainer(Explainer):
     """The main interface for KNN explainers.
@@ -32,7 +30,7 @@ class KNNExplainer(Explainer):
     """
 
     # TODO(Zaphoood): The base class allows `model` to be a `Callable`, which we don't allow -- violates Liskov subsitution principle
-    model: KNNClassifierModel  # type: ignore[assignment]
+    model: KNeighborsClassifier | RadiusNeighborsClassifier  # type: ignore[assignment]
     """The model provided in the constructor."""
 
     X_train: npt.NDArray[np.floating]
@@ -52,7 +50,7 @@ class KNNExplainer(Explainer):
 
     def __init__(
         self,
-        model: KNNClassifierModel,
+        model: KNeighborsClassifier | RadiusNeighborsClassifier,
         data: npt.NDArray[Any] | None = None,
         labels: npt.NDArray[Any] | None = None,
         class_index: int | None = None,
@@ -125,7 +123,7 @@ class KNNExplainer(Explainer):
 
 
 def get_explainer_class(
-    model: KNNClassifierModel,
+    model: KNeighborsClassifier | RadiusNeighborsClassifier,
 ) -> type[KNNExplainer]:
     """Returns the appropriate subclass of KNNExplainer for the given model."""
     from ._common_knn import _CommonKNNExplainer
