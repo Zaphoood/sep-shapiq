@@ -7,7 +7,7 @@ continuous features only.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import numpy as np
 
@@ -27,6 +27,7 @@ class GaussianImputer(GaussianImputerBase):
     It only supports continuous features.
     """
 
+    @override
     def __init__(
         self,
         model: object | Game | Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]],
@@ -36,18 +37,6 @@ class GaussianImputer(GaussianImputerBase):
         n_mc_samples: int = 1000,
         random_state: int | None = None,
     ) -> None:
-        """Initializes the GaussianImputer.
-
-        Args:
-            model: The model to explain as a callable function expecting data points as input and
-                returning the model's predictions.
-            data: The background data to use for the explainer as a 2-dimensional array with shape
-                (n_samples, n_features).
-            x: The explanation point to use the imputer on either as a 2-dimensional array with
-                shape (1, n_features) or as a vector with shape (n_features,). Defaults to None.
-            n_mc_samples: Number of Monte Carlo samples for imputation. Defaults to 1000.
-            random_state: The random state to use for sampling. Defaults to None.
-        """
         super().__init__(
             model=model,
             data=data,

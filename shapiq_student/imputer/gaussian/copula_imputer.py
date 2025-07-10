@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import numpy as np
 from scipy.stats import norm, rankdata
@@ -19,6 +19,7 @@ from .base import GaussianImputerBase
 class GaussianCopulaImputer(GaussianImputerBase):
     """Implements the Gaussian Copula approach for feature imputation in Shapley Value calculations."""
 
+    @override
     def __init__(
         self,
         model: object | Game | Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]],
@@ -28,17 +29,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
         n_mc_samples: int = 1000,
         random_state: int | None = None,
     ) -> None:
-        """Initializes the GaussianCopulaImputer.
-
-        Args:
-            model (object): The model used for predictions or value calculations.
-            data: The background data to use for the explainer as a 2-dimensional array with shape.
-            x: The explanation point to use the imputer on either as a 2-dimensional array with
-                shape or as a vector with shape. Defaults to None.
-            n_mc_samples: Number of Monte Carlo samples for imputation. Defaults to 1000.
-            random_state: The random state to use for sampling. Defaults to None.
-                evaluation. Note that this can slow down the imputation process. Defaults to False.
-        """
         super().__init__(
             model=model,
             data=data,
