@@ -247,6 +247,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     @property
     @override
     def mode(self) -> str:
+        """This explainer's mode, which is ``"weighted"``."""
         return MODE_WEIGHTED
 
     @override

@@ -104,4 +104,5 @@ class NormalKNNExplainer(_CommonKNNExplainer):
     @property
     @override
     def mode(self) -> str:
+        """This explainer's mode, which is ``"normal"``."""
         return MODE_NORMAL

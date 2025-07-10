@@ -113,6 +113,7 @@ class ThresholdNNExplainer(KNNExplainer):
     @property
     @override
     def mode(self) -> str:
+        """This explainer's mode, which is ``"treshold"``."""
         return MODE_THRESHOLD
 
     @override
