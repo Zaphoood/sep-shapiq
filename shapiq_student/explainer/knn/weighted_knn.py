@@ -187,10 +187,12 @@ def _greater_or_close(a: np.floating, b: np.floating) -> np.bool:
 
 
 class WeightedKNNExplainer(_WeightedKNNExplainerBase):
-    """Efficient implementation of WKNN according to `Wang et al. (2024)` [Wng24]_.
+    r"""Explainer for weighted KNN models.
+
+    Implements the algorithm for efficient calculation of exact Shapley Values for weighted KNN models proposed by `Wang et. al (2024)` [Wng24]_.
 
     References:
-        .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024.
+        .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024. https://doi.org/10.48550/arXiv.1908.08619
     """
 
     @override
