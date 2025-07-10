@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     import numpy.typing as npt
+    from shapiq import Game
 
 from .base import GaussianImputerBase
 
@@ -20,7 +21,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
     def __init__(
         self,
-        model: object | Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]],
+        model: object | Game | Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]],
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
