@@ -16,7 +16,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.neighbors import KNeighborsClassifier
 
 from shapiq_student.explainer.knn import interaction_values_to_array
-from shapiq_student.explainer.knn.weighted_knn import BruteForceWKNNExplainer, WeightedKNNExplainer
+from shapiq_student.explainer.knn.weighted_knn import WeightedKNNExplainer, _BruteForceWKNNExplainer
 
 
 @dataclass
@@ -120,7 +120,7 @@ class TestWKNNValues:
             iv_wang = explainer_wang.explain(test_case.x_val)
             sv_wang = interaction_values_to_array(iv_wang)
 
-            explainer_brute = BruteForceWKNNExplainer(
+            explainer_brute = _BruteForceWKNNExplainer(
                 model,
                 class_index=class_index,
                 # Discretize weights in brute force explainer
@@ -166,7 +166,7 @@ class TestWKNNValues:
             sv = interaction_values_to_array(iv)
 
             # BruteForceWKNNExplainer will use continuous weights
-            explainer_brute = BruteForceWKNNExplainer(model, class_index=class_index)
+            explainer_brute = _BruteForceWKNNExplainer(model, class_index=class_index)
             iv_brute = explainer_brute.explain_function(test_case.x_val)
             sv_brute = interaction_values_to_array(iv_brute)
 

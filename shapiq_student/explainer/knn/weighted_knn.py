@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast, overload
 from typing_extensions import override
 
-from shapiq_student.explainer.knn.lookup_game import LookupGame
+from shapiq_student.explainer.knn._lookup_game import LookupGame
 from shapiq_student.explainer.knn.util import keep_first_n
 
-from ._common_knn import CommonKNNExplainer
+from ._common_knn import _CommonKNNExplainer
 from .base import interaction_values_from_array, interaction_values_to_array
 
 if TYPE_CHECKING:
@@ -24,7 +24,7 @@ from scipy.special import comb
 MODE_WEIGHTED = "weighted"
 
 
-class WeightedKNNExplainerBase(CommonKNNExplainer):
+class _WeightedKNNExplainerBase(_CommonKNNExplainer):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
 
     @override
@@ -74,7 +74,7 @@ class WeightedKNNExplainerBase(CommonKNNExplainer):
         return MODE_WEIGHTED
 
 
-class BruteForceWKNNExplainer(WeightedKNNExplainerBase):
+class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
     """A brute force implementation of WKNN Shapley Values.
 
     References:
@@ -187,7 +187,7 @@ def _greater_or_close(a: np.floating, b: np.floating) -> np.bool:
     return cast("np.bool", a >= b) or np.isclose(a, b)
 
 
-class WeightedKNNExplainer(WeightedKNNExplainerBase):
+class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     """Efficient implementation of WKNN according to `Wang et al. (2024)` [Wng24]_.
 
     References:

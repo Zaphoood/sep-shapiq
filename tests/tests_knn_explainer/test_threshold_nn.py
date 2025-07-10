@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import RadiusNeighborsClassifier
 
 from shapiq_student.explainer.knn.base import interaction_values_to_array
-from shapiq_student.explainer.knn.threshold_nn import BruteForceTNNExplainer, ThresholdNNExplainer
+from shapiq_student.explainer.knn.threshold_nn import ThresholdNNExplainer, _BruteForceTNNExplainer
 
 
 class TestTKNNExplainer:
@@ -65,7 +65,7 @@ class TestTKNNExplainer:
         model.fit(X_train, y_train)
 
         for class_index in range(n_classes):
-            brute_explainer = BruteForceTNNExplainer(model, class_index=class_index)
+            brute_explainer = _BruteForceTNNExplainer(model, class_index=class_index)
             brute_iv = interaction_values_to_array(brute_explainer.explain(x_val))
             tknn_explainer = ThresholdNNExplainer(model, class_index=class_index)
             tknn_iv = interaction_values_to_array(tknn_explainer.explain(x_val))

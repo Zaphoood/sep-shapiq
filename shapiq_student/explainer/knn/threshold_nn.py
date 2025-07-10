@@ -9,7 +9,7 @@ from typing_extensions import override
 import numpy as np
 from scipy.special import comb
 
-from shapiq_student.explainer.knn.lookup_game import LookupGame
+from shapiq_student.explainer.knn._lookup_game import LookupGame
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -22,7 +22,7 @@ from .base import KNNExplainer, interaction_values_from_array
 MODE_THRESHOLD = "threshold"
 
 
-class BruteForceTNNExplainer(KNNExplainer):
+class _BruteForceTNNExplainer(KNNExplainer):
     """Brute force approach for explaining TKNN Classifiers.
 
     References:

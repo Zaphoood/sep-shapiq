@@ -17,7 +17,7 @@ class SupportedKNNWeights(Enum):
     distance = "distance"
 
 
-class CommonKNNExplainer(KNNExplainer):
+class _CommonKNNExplainer(KNNExplainer):
     """Helper class that performs functionality shared between NormalKNNExplainer and WeightedKNNExplainer."""
 
     @override
@@ -29,7 +29,7 @@ class CommonKNNExplainer(KNNExplainer):
         # If this class is instantiated directly, automagically dispatch between normal and weighted KNN according to
         # the given model's configuration
 
-        if self.__class__ is CommonKNNExplainer:
+        if self.__class__ is _CommonKNNExplainer:
             explainer_class = get_knn_explainer_class(model)
             self.__class__ = explainer_class
             explainer_class.__init__(
@@ -49,7 +49,7 @@ class CommonKNNExplainer(KNNExplainer):
 
 def get_knn_explainer_class(
     model: KNeighborsClassifier,
-) -> type[CommonKNNExplainer]:
+) -> type[_CommonKNNExplainer]:
     """Returns the appropriate subclass of CommonKNNExplainer for the given model."""
     from .normal_knn import NormalKNNExplainer
     from .weighted_knn import WeightedKNNExplainer

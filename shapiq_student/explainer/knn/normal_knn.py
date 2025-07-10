@@ -10,9 +10,9 @@ import numpy as np
 
 from shapiq_student.explainer.knn.util import keep_first_n
 
-from ._common_knn import CommonKNNExplainer
+from ._common_knn import _CommonKNNExplainer
+from ._lookup_game import LookupGame
 from .base import interaction_values_from_array
-from .lookup_game import LookupGame
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 MODE_NORMAL = "normal"
 
 
-class BruteForceNormalKNNExplainer(CommonKNNExplainer):
+class _BruteForceNormalKNNExplainer(_CommonKNNExplainer):
     """Brute force approach to computing Shapley Values for normal (unweighted) KNN models."""
 
     @override
@@ -62,7 +62,7 @@ class BruteForceNormalKNNExplainer(CommonKNNExplainer):
         return MODE_NORMAL
 
 
-class NormalKNNExplainer(CommonKNNExplainer):
+class NormalKNNExplainer(_CommonKNNExplainer):
     """Explainer for normal (unweighted) KNN models.
 
     Efficiently calculates Shapley Values for unweighted k-Nearest-Neighbour models.
