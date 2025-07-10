@@ -68,11 +68,7 @@ class WKNNExplainerBase(ABC, KNNExplainerBase):
 
 
 class BruteForceWKNNExplainer(WKNNExplainerBase):
-    """A brute force implementation of WKNN according to `Wang et. al (2024)` [Wng24]_.
-
-    References:
-        .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024.
-    """
+    """A brute force implementation of WKNN Shapley Values."""
 
     def __init__(
         self,
