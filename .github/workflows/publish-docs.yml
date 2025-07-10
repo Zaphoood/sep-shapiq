@@ -66,12 +66,11 @@ jobs:
 
       - name: Move docs to PR-specific path
         if: steps.prmeta.outputs.dir != ''
-        shell: bash
         run: |
-          mkdir -p docs/build/html/${{ steps.prmeta.outputs.dir }}
-          cd docs/build/html
-          shopt -s dotglob
-          mv !(${{ steps.prmeta.outputs.dir }}) ${{ steps.prmeta.outputs.dir }}/
+          mkdir -p docs/build/tmp/${{ steps.prmeta.outputs.dir }}
+          cp -r docs/build/html/* docs/build/tmp/${{ steps.prmeta.outputs.dir }}/
+          rm -rf docs/build/html
+          mv docs/build/tmp docs/build/html
 
       - name: Upload docs as Pages artifact
         uses: actions/upload-pages-artifact@v3
