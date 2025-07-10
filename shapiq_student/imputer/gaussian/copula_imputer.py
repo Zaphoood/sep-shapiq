@@ -62,8 +62,8 @@ class GaussianCopulaImputer(GaussianImputerBase):
         x_transformed = np.zeros_like(x, dtype=float)
         for i in range(x.shape[1]):
             ranks = rankdata(x[:, i], method="average")
-            u = ranks / (len(ranks) + 1)
-            x_transformed[:, i] = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
+            quantile = ranks / (len(ranks) + 1)
+            x_transformed[:, i] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
         return x_transformed
 
     def _transform_x_explain(
@@ -86,8 +86,8 @@ class GaussianCopulaImputer(GaussianImputerBase):
         for j in range(n_features):
             vals = np.concatenate([[x[j]], x_train[:, j]])
             rank = rankdata(vals, method="average")[0]
-            u = rank / (len(x_train) + 1)
-            x_gaussian_copula[j] = norm.ppf(np.clip(u, 1e-10, 1 - 1e-10))
+            quantile = rank / (len(x_train) + 1)
+            x_gaussian_copula[j] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
         return x_gaussian_copula
 
     def _inverse_transform(self, z_samples: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
@@ -96,8 +96,8 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         for i in range(z_samples.shape[1]):
             sorted_train = np.sort(self.data[:, i])
-            u = norm.cdf(z_samples[:, i])
-            ranks = u * (len(sorted_train) - 1)
+            quantile = norm.cdf(z_samples[:, i])
+            ranks = quantile * (len(sorted_train) - 1)
             idx_low = np.floor(ranks).astype(int)
             idx_high = np.minimum(idx_low + 1, len(sorted_train) - 1)
             frac = ranks - idx_low

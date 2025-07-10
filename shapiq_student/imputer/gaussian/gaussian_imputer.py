@@ -32,7 +32,6 @@ class GaussianImputer(GaussianImputerBase):
         *,
         n_mc_samples: int = 1000,
         random_state: int | None = None,
-        verbose: bool = False,
     ) -> None:
         """Initializes the GaussianImputer.
 
@@ -45,8 +44,6 @@ class GaussianImputer(GaussianImputerBase):
                 shape (1, n_features) or as a vector with shape (n_features,). Defaults to None.
             n_mc_samples: Number of Monte Carlo samples for imputation. Defaults to 1000.
             random_state: The random state to use for sampling. Defaults to None.
-            verbose: A flag to enable verbose imputation, which will print a progress bar for model
-                evaluation. Note that this can slow down the imputation process. Defaults to False.
         """
         super().__init__(
             model=model,
@@ -54,7 +51,6 @@ class GaussianImputer(GaussianImputerBase):
             x=x,
             n_mc_samples=n_mc_samples,
             random_state=random_state,
-            verbose=verbose,
         )
         self._check_categorical_features()
 

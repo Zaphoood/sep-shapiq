@@ -41,7 +41,6 @@ class GaussianImputerBase(Imputer):
         *,
         n_mc_samples: int = 1000,
         random_state: int | None = None,
-        verbose: bool = False,
     ) -> None:
         """Initializes GaussianImputerBase.
 
@@ -54,8 +53,6 @@ class GaussianImputerBase(Imputer):
                 shape (1, n_features) or as a vector with shape (n_features,). Defaults to None.
             n_mc_samples (int, optional): Number of Monte Carlo samples for imputation. Defaults to 1000.
             random_state (int | None, optional): The random state to use for sampling. Defaults to None.
-            verbose (bool, optional): A flag to enable verbose imputation, which will print a progress bar for model
-                evaluation. Note that this can slow down the imputation process. Defaults to False.
 
         Raises:
             EmptyDataError: If the provided data is empty.
@@ -69,7 +66,6 @@ class GaussianImputerBase(Imputer):
             sample_size=n_mc_samples,
             categorical_features=[],
             random_state=random_state,
-            verbose=verbose,
         )
 
         self.n_mc_samples = n_mc_samples
