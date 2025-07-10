@@ -117,7 +117,3 @@ class GaussianCopulaImputer(GaussianImputerBase):
         for i in range(n_coalitions):
             imputed_original[i] = self._inverse_transform(imputed_data[i])
         return np.mean(imputed_original, axis=1)
-
-    @override
-    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
-        return self.predict(self.get_imputed_result_data(coalitions))

@@ -209,6 +209,18 @@ class GaussianImputerBase(Imputer):
         return imputed_data
 
     @abstractmethod
+    def get_imputed_result_data(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
+        """Impute missing values for given coalitions. This method must be override by each subclass.
+
+        Args:
+            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0) for each coalition.
+
+        Returns:
+            An array of shape ``(n_coalitions, n_features)`` containing the imputed data points for each coalition.
+        """
+        msg = f"The get_imputed_result_data() method must be implemented by each subclass of {self.__class__.__name__}."
+        raise NotImplementedError(msg)
+
     @override
     def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
         """Impute missing values and return model predictions for given coalitions.
@@ -226,5 +238,4 @@ class GaussianImputerBase(Imputer):
         Raises:
             RuntimeError: If no explanation has been provided, neither in the constructor nor by calling ``fit()``.
         """
-        msg = f"The value_function() method must be implemented by each subclass of {self.__class__.__name__}."
-        raise NotImplementedError(msg)
+        return self.predict(self.get_imputed_result_data(coalitions))

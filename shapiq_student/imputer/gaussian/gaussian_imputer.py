@@ -66,7 +66,3 @@ class GaussianImputer(GaussianImputerBase):
             raise RuntimeError(msg)
 
         return np.mean(self.impute(self.x, coalitions), axis=1)
-
-    @override
-    def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
-        return self.predict(self.get_imputed_result_data(coalitions))
