@@ -64,7 +64,10 @@ class _BruteForceNormalKNNExplainer(_CommonKNNExplainer):
 class NormalKNNExplainer(_CommonKNNExplainer):
     """Explainer for normal (unweighted) KNN models.
 
-    Efficiently calculates Shapley Values for unweighted k-Nearest-Neighbour models.
+    Implements the algorithm presented by `Jia et al. (2019)` [Jia19]_ to efficiently calculate Shapley Values for unweighted k-nearest neighbour models.
+
+    References:
+        .. [Jia19] Jia, Ruoxi, et al. "Efficient task-specific data valuation for nearest neighbor algorithms." arXiv preprint arXiv:1908.08619 (2019). https://doi.org/10.48550/arXiv.1908.08619/
     """
 
     # TODO(Zaphoood): Explain functionality in class docstring
