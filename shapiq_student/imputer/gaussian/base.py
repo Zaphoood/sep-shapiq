@@ -16,7 +16,10 @@ from numpy.random import default_rng
 from .exceptions import CategoricalFeatureError, EmptyDataError
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import numpy.typing as npt
+    from shapiq import Game
 
 from shapiq.games.imputer.base import Imputer
 
@@ -35,7 +38,7 @@ class GaussianImputerBase(Imputer):
 
     def __init__(
         self,
-        model: object,
+        model: object | Game | Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]],
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
