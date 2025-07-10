@@ -3,8 +3,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, override
 
-from shapiq_student.explainer.knn.base import KNNExplainer
-from shapiq_student.explainer.knn.exceptions import UnsupportedKNNWeightsError
+from .base import KNNExplainer
+from .exceptions import UnsupportedKNNWeightsError
 
 if TYPE_CHECKING:
     from sklearn.neighbors import KNeighborsClassifier

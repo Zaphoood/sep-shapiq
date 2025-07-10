@@ -8,10 +8,9 @@ from typing_extensions import override
 
 import numpy as np
 
-from shapiq_student.explainer.knn._util import keep_first_n
-
 from ._common_knn import _CommonKNNExplainer
 from ._lookup_game import LookupGame
+from ._util import keep_first_n
 from .base import interaction_values_from_array
 
 if TYPE_CHECKING:

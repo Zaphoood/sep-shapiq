@@ -5,10 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast, overload
 from typing_extensions import override
 
-from shapiq_student.explainer.knn._lookup_game import LookupGame
-from shapiq_student.explainer.knn._util import keep_first_n
-
 from ._common_knn import _CommonKNNExplainer
+from ._lookup_game import LookupGame
+from ._util import keep_first_n
 from .base import interaction_values_from_array, interaction_values_to_array
 
 if TYPE_CHECKING:

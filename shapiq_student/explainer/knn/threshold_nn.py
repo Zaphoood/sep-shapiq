@@ -9,7 +9,7 @@ from typing_extensions import override
 import numpy as np
 from scipy.special import comb
 
-from shapiq_student.explainer.knn._lookup_game import LookupGame
+from ._lookup_game import LookupGame
 
 if TYPE_CHECKING:
     import numpy.typing as npt
