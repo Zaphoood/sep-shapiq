@@ -6,6 +6,7 @@ from typing import cast
 
 import numpy as np
 import numpy.typing as npt
+import pytest
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -68,3 +69,17 @@ def test_output_length():
     testoutput = knn_expl.explain_function(x=X_test[5])
 
     assert (len(testoutput)) == (len(y_train))
+
+
+def test_raises_on_invalid_weights():
+    """Tests that instantiating the NormalKNNExplainer directly with an invalid value for weights raises an exception."""
+    model = KNeighborsClassifier()
+    model.fit(np.array([[0]]), np.array([0]))
+
+    invalid_weights_values = ["invalid_weights", "distance"]
+
+    for invalid_weights in invalid_weights_values:
+        model.weights = invalid_weights
+
+        with pytest.raises(ValueError, match=f"weights.*{invalid_weights}"):
+            NormalKNNExplainer(model, class_index=0)

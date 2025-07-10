@@ -8,7 +8,7 @@ from typing_extensions import override
 
 import numpy as np
 
-from ._common_knn import _CommonKNNExplainer
+from ._common_knn import SupportedKNNWeights, _CommonKNNExplainer
 from ._lookup_game import LookupGame
 from ._util import keep_first_n
 from .base import interaction_values_from_array
@@ -77,6 +77,11 @@ class NormalKNNExplainer(_CommonKNNExplainer):
         class_index: int,
     ) -> None:
         super().__init__(model, class_index=class_index)
+
+        model_weights = model.weights  # type: ignore [attr-defined]
+        if model_weights != SupportedKNNWeights.uniform.value:
+            msg = f"Model must have weights '{SupportedKNNWeights.uniform.value}' but got '{model_weights}'"
+            raise ValueError(msg)
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:

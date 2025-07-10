@@ -191,12 +191,17 @@ class TestWKNNSanity:
             WeightedKNNExplainer(model, class_index=0)
 
     def test_raises_on_inadequate_model(self):
-        """Tests that instantiating WeightedKNNExplainer with a model that uses unweighted weights raises an exception."""
+        """Tests that instantiating WeightedKNNExplainer with a model that uses uniform weights or an invalid weights parameter raises an exception."""
         model = KNeighborsClassifier(n_neighbors=3, weights="uniform")
         model.fit(np.array([[0]]), np.array([0]))
 
-        with pytest.raises(ValueError, match="weights"):
-            WeightedKNNExplainer(model, class_index=0)
+        invalid_weights_values = ["invalid_weights", "uniform"]
+
+        for invalid_weights in invalid_weights_values:
+            model.weights = invalid_weights
+
+            with pytest.raises(ValueError, match="weights"):
+                WeightedKNNExplainer(model, class_index=0)
 
     def test_raises_negative_discretization_bits(self):
         """Tests that instantiating WeightedKNNExplainer with a value of n_bits below zero."""
