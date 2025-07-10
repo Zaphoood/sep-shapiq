@@ -11,11 +11,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import MinMaxScaler
 
-from shapiq_student.explainer.knn import (
-    BruteForceNormalKNNExplainer,
-    NormalKNNExplainer,
-    interaction_values_to_array,
-)
+from shapiq_student.explainer.knn import interaction_values_to_array
+from shapiq_student.explainer.knn.normal_knn import BruteForceNormalKNNExplainer, NormalKNNExplainer
 
 
 def test_agrees_with_brute_force():

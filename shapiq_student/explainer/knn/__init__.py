@@ -1,18 +1,15 @@
 """Implementation of KNN Explainers."""
 
 from .base import KNNExplainer, interaction_values_from_array, interaction_values_to_array
-from .normal_knn import BruteForceNormalKNNExplainer, NormalKNNExplainer
-from .threshold_nn import (
-    BruteForceTNNExplainer,
-    ThresholdNNExplainer,
-)
+from .normal_knn import NormalKNNExplainer
+from .threshold_nn import ThresholdNNExplainer
+from .weighted_knn import WeightedKNNExplainer
 
 __all__ = [
     "KNNExplainer",
-    "interaction_values_from_array",
-    "interaction_values_to_array",
-    "BruteForceNormalKNNExplainer",
     "NormalKNNExplainer",
     "ThresholdNNExplainer",
-    "BruteForceTNNExplainer",
+    "WeightedKNNExplainer",
+    "interaction_values_from_array",
+    "interaction_values_to_array",
 ]

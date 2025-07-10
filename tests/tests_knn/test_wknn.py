@@ -15,7 +15,7 @@ import numpy.typing as npt
 from sklearn.exceptions import NotFittedError
 from sklearn.neighbors import KNeighborsClassifier
 
-from shapiq_student.explainer.knn.base import interaction_values_to_array
+from shapiq_student.explainer.knn import interaction_values_to_array
 from shapiq_student.explainer.knn.weighted_knn import BruteForceWKNNExplainer, WeightedKNNExplainer
 
 
