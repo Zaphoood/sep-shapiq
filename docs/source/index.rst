@@ -13,3 +13,5 @@ TODO: Add a package description here.
    :maxdepth: 2
 
    api
+
+   citations

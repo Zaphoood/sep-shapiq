@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from abc import ABC
 from typing import TYPE_CHECKING, cast, overload
 from typing_extensions import override
 
-from shapiq_student.explainer.knn.lookup_game import LookupGame
-from shapiq_student.explainer.knn.util import keep_first_n
-
-from .base import KNNExplainerBase, interaction_values_from_array, interaction_values_to_array
+from ._common_knn import _CommonKNNExplainer
+from ._lookup_game import LookupGame
+from ._util import keep_first_n
+from .base import interaction_values_from_array, interaction_values_to_array
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -21,8 +20,10 @@ from itertools import product
 import numpy as np
 from scipy.special import comb
 
+MODE_WEIGHTED = "weighted"
 
-class WKNNExplainerBase(ABC, KNNExplainerBase):
+
+class _WeightedKNNExplainerBase(_CommonKNNExplainer):
     """Base class for WKNN explainers that provides a utility function for calculating weights of training data points."""
 
     @override
@@ -31,9 +32,9 @@ class WKNNExplainerBase(ABC, KNNExplainerBase):
         model: KNeighborsClassifier,
         class_index: int,
     ) -> None:
-        super().__init__(model, class_index)
+        super().__init__(model, class_index=class_index)
 
-        model_weights = self.model.weights  # type: ignore[attr-defined]
+        model_weights = self.knn_model.weights  # type: ignore[attr-defined]
         if model_weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
@@ -51,7 +52,7 @@ class WKNNExplainerBase(ABC, KNNExplainerBase):
                 - ``sortperm`` is a permutation that sorts the training data points by decreasing weight
                 - ``weights`` contains the weights for each training data point, normalized to the interval [0, 1]
         """
-        distances, sortperm = self.model.kneighbors(
+        distances, sortperm = self.knn_model.kneighbors(
             x_val.reshape(1, -1), n_neighbors=self.X_train.shape[0], return_distance=True
         )
         distances = distances[0]
@@ -66,9 +67,18 @@ class WKNNExplainerBase(ABC, KNNExplainerBase):
 
         return sortperm, weights
 
+    @property
+    @override
+    def mode(self) -> str:
+        return MODE_WEIGHTED
 
-class BruteForceWKNNExplainer(WKNNExplainerBase):
-    """A brute force implementation of WKNN Shapley Values."""
+
+class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
+    """A brute force implementation of WKNN Shapley Values.
+
+    References:
+        .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024.
+    """
 
     def __init__(
         self,
@@ -131,7 +141,9 @@ class BruteForceWKNNExplainer(WKNNExplainerBase):
             An ``np.ndarray`` of Shapley Values for each training data point.
         """
         if self.n_bits is not None:
-            _wang_explainer = WKNNExplainer(self.model, self.class_index, n_bits=self.n_bits)
+            _wang_explainer = WeightedKNNExplainer(
+                self.knn_model, self.class_index, n_bits=self.n_bits
+            )
             weights = _wang_explainer._undiscretize_weight(  # noqa: SLF001
                 _wang_explainer._discretize_weight(weights)  # noqa: SLF001
             )
@@ -174,25 +186,47 @@ def _greater_or_close(a: np.floating, b: np.floating) -> np.bool:
     return cast("np.bool", a >= b) or np.isclose(a, b)
 
 
-class WKNNExplainer(WKNNExplainerBase):
-    """Efficient implementation of WKNN according to `Wang et al. (2024)` [Wng24]_.
+class WeightedKNNExplainer(_WeightedKNNExplainerBase):
+    r"""Explainer for weighted KNN models.
 
-    References:
-        .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024.
+    Implements the algorithm for efficiently computing exact Shapley Values for weighted KNN models proposed by `Wang et. al (2024)` [Wng24]_.
+    The algorithm achieves a runtime complexity of :math:`O\bigl(\frac{k^2 N^2 W}{C}\bigr)`, where
+
+    * :math:`k` is the defining hyperparameter of the :math:`k`-nearest neighbors model,
+    * :math:`N` is size of the training dataset,
+    * :math:`W = 2^b` (where :math:`b` is the number of discretization bits) is the size of the *discretized weights space*,
+    * :math:`C` is the number of classes of the training dataset.
+
+    Since the parameters :math:`k`, :math:`W` and :math:`C` can be considered constants for most purposes, the effective complexity is :math:`O(N^2)`.
     """
 
+    @override
     def __init__(
         self,
         model: KNeighborsClassifier,
         class_index: int,
         n_bits: int = 3,
     ) -> None:
-        """Initializes the WKNNExplainer.
+        """Initializes the class.
+
+        This methods extracts the training data as well as the parameter :math:`k` from the provided KNN model and stores them as class members.
 
         Args:
-            model: The KNN model to explain.
-            class_index: The class index of the model to explain.
-            n_bits: The number of bits to use for the discretized weight space.
+            model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
+                The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit()`` must be a 1D vector.
+
+            data: This parameter is currently ignored but may be used in future versions.
+
+            labels: This parameter is currently ignored but may be used in future versions.
+
+            class_index: The class index of the model to explain. Defaults to ``1``.
+
+            n_bits: The number of bits to use for discretizing weights. Must be non-negative.
+
+        Raises:
+            sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
+
+            shapiq_student.explainer.knn.exceptions.MultiOutputKNNError: The constructor was called with a model that uses multi-output classification.
         """
         super().__init__(model, class_index)
 
@@ -200,7 +234,7 @@ class WKNNExplainer(WKNNExplainerBase):
             msg = f"Only values of k > 1 are supported, but {self.k=}"
             raise ValueError(msg)
 
-        model_weights = self.model.weights  # type: ignore[attr-defined]
+        model_weights = self.knn_model.weights  # type: ignore[attr-defined]
         if model_weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
@@ -216,6 +250,12 @@ class WKNNExplainer(WKNNExplainerBase):
         self.weights_space_zero = self.k * cast("int", 2**n_bits)
 
         self.n_train = self.X_train.shape[0]
+
+    @property
+    @override
+    def mode(self) -> str:
+        """This explainer's mode, which is ``"weighted"``."""
+        return MODE_WEIGHTED
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
@@ -249,6 +289,8 @@ class WKNNExplainer(WKNNExplainerBase):
         # Maps an index from the sorted subgame weights/labels to the sorted multi-class weights/labels
         subgame = np.arange(self.n_train)[subgame_mask]
         weights_subgame = weights[subgame]
+
+        # TODO(Zaphoood): This is extremely slow (> 30 sec for 800 training samples)
 
         sv = np.zeros(self.n_train)
         for i in range(n_subgame):

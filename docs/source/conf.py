@@ -45,6 +45,7 @@ autosummary_generate = True
 autodoc_default_options = {
     "members": True,  # Generate documentation for module members
     "special-members": "__init__",  # Also generate docs for __init__ methods
+    "inherited-members": False,  # Exclude inherited members from documentation
 }
 autodoc_member_order = "bysource"
 autoclass_content = "class"  # Use the class docstring, not the docstring of its __init__ method

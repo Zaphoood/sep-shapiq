@@ -8,33 +8,35 @@ from typing_extensions import override
 
 import numpy as np
 
-from shapiq_student.explainer.knn.util import keep_first_n
-
-from .base import KNNExplainerBase, interaction_values_from_array
-from .lookup_game import LookupGame
+from ._common_knn import SupportedKNNWeights, _CommonKNNExplainer
+from ._lookup_game import LookupGame
+from ._util import keep_first_n
+from .base import interaction_values_from_array
 
 if TYPE_CHECKING:
     import numpy.typing as npt
     from shapiq import InteractionValues
-    import sklearn.neighbors
+    from sklearn.neighbors import KNeighborsClassifier
+
+MODE_NORMAL = "normal"
 
 
-class BruteForceKNNClassifierExplainer(KNNExplainerBase):
-    """Brute force approach to computing Shapley Values for basic KNN models."""
+class _BruteForceNormalKNNExplainer(_CommonKNNExplainer):
+    """Brute force approach to computing Shapley Values for normal (unweighted) KNN models."""
 
     @override
     def __init__(
         self,
-        model: sklearn.neighbors.KNeighborsClassifier,
+        model: KNeighborsClassifier,
         class_index: int,
     ) -> None:
-        super().__init__(model, class_index)
+        super().__init__(model, class_index=class_index)
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
         utilities = {}
 
-        sortperm = self.model.kneighbors(
+        sortperm = self.knn_model.kneighbors(
             x.reshape(1, -1), n_neighbors=self.X_train.shape[0], return_distance=False
         )
         sortperm = sortperm[0]
@@ -49,15 +51,21 @@ class BruteForceKNNClassifierExplainer(KNNExplainerBase):
             utilities[coalition_tuple] = utility
 
         game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)
-        iv = game.exact_values("SII", order=1)
+        iv = game.exact_values("SV", order=1)
 
         return iv
 
+    @property
+    @override
+    def mode(self) -> str:
+        return MODE_NORMAL
 
-class KNNClassifierExplainer(KNNExplainerBase):
-    """KNN Classifier Explainer.
 
-    For calculating exact shapley values for an unweighted KNN Classifier.
+class NormalKNNExplainer(_CommonKNNExplainer):
+    r"""Explainer for unweighted KNN models.
+
+    Implements the algorithm proposed by `Jia et al. (2019)` [Jia19]_ to efficiently calculate Shapley Values for unweighted KNN models.
+    The algorithm itself has a linear time complexity, but expects a sorted array of training points as input, resulting in a time complexity of :math:`O(N \log N)` for explaining a single data point.
     """
 
     # TODO(Zaphoood): Explain functionality in class docstring
@@ -65,17 +73,22 @@ class KNNClassifierExplainer(KNNExplainerBase):
     @override
     def __init__(
         self,
-        model: sklearn.neighbors.KNeighborsClassifier,
+        model: KNeighborsClassifier,
         class_index: int,
     ) -> None:
-        super().__init__(model, class_index)
+        super().__init__(model, class_index=class_index)
+
+        model_weights = model.weights  # type: ignore [attr-defined]
+        if model_weights != SupportedKNNWeights.uniform.value:
+            msg = f"Model must have weights '{SupportedKNNWeights.uniform.value}' but got '{model_weights}'"
+            raise ValueError(msg)
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
         n = len(self.X_train)
         sv = np.zeros(n)
 
-        sortperm = self.model.kneighbors(x.reshape(1, -1), n_neighbors=n, return_distance=False)
+        sortperm = self.knn_model.kneighbors(x.reshape(1, -1), n_neighbors=n, return_distance=False)
         sortperm = sortperm[0]
 
         y_train_indices_sorted = self.y_train_indices[sortperm]
@@ -93,3 +106,9 @@ class KNNClassifierExplainer(KNNExplainerBase):
         inv_sortperm[sortperm] = np.arange(sortperm.shape[0])
 
         return interaction_values_from_array(sv[inv_sortperm])
+
+    @property
+    @override
+    def mode(self) -> str:
+        """This explainer's mode, which is ``"normal"``."""
+        return MODE_NORMAL

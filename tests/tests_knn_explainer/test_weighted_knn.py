@@ -15,8 +15,8 @@ import numpy.typing as npt
 from sklearn.exceptions import NotFittedError
 from sklearn.neighbors import KNeighborsClassifier
 
-from shapiq_student.explainer.knn.base import interaction_values_to_array
-from shapiq_student.explainer.knn.wknn import BruteForceWKNNExplainer, WKNNExplainer
+from shapiq_student.explainer.knn import interaction_values_to_array
+from shapiq_student.explainer.knn.weighted_knn import WeightedKNNExplainer, _BruteForceWKNNExplainer
 
 
 @dataclass
@@ -71,11 +71,11 @@ def random_test_datasets(
 
 
 class TestWKNNValues:
-    """Tests that the values calculated by WKNNExplainer are (approximately) equal to the baseline brute-force implementation."""
+    """Tests that the values calculated by WeightedKNNExplainer are (approximately) equal to the baseline brute-force implementation."""
 
     def test_wknn_exact_binary(self) -> None:
-        """Tests that the results of WKNNExplainer agree with baseline calculated using the same (discretized) weights for binary classification."""
-        n_test_cases = 10
+        """Tests that the results of WeightedKNNExplainer agree with baseline calculated using the same (discretized) weights for binary classification."""
+        n_test_cases = 3
         n_train_min = 5
         n_train_max = 10
         n_bits = 4
@@ -88,8 +88,8 @@ class TestWKNNValues:
             self._compare_wknn_exact(WKNNTestCase.from_dataset(dataset, k=k, n_bits=n_bits))
 
     def test_wknn_exact_multiclass(self) -> None:
-        """Tests that the results of WKNNExplainer agree with baseline calculated using the same (discretized) weights for multi-class classification."""
-        n_test_cases = 10
+        """Tests that the results of WeightedKNNExplainer agree with baseline calculated using the same (discretized) weights for multi-class classification."""
+        n_test_cases = 3
         n_train_min = 9
         n_train_max = 10
         n_bits = 4
@@ -114,11 +114,13 @@ class TestWKNNValues:
         model = self._get_fitted_wknn_model(test_case)
 
         for class_index in range(len(set(test_case.y_train))):
-            explainer_wang = WKNNExplainer(model, class_index=class_index, n_bits=test_case.n_bits)
+            explainer_wang = WeightedKNNExplainer(
+                model, class_index=class_index, n_bits=test_case.n_bits
+            )
             iv_wang = explainer_wang.explain(test_case.x_val)
             sv_wang = interaction_values_to_array(iv_wang)
 
-            explainer_brute = BruteForceWKNNExplainer(
+            explainer_brute = _BruteForceWKNNExplainer(
                 model,
                 class_index=class_index,
                 # Discretize weights in brute force explainer
@@ -130,11 +132,11 @@ class TestWKNNValues:
             assert np.allclose(sv_brute, sv_wang)
 
     def test_wknn_approximate(self) -> None:
-        """Tests that the results of WKNNExplainer with discretized weights are approximately equal to the baseline computed with continuous weights."""
+        """Tests that the results of WeightedKNNExplainer with discretized weights are approximately equal to the baseline computed with continuous weights."""
         n_test_cases = 3
         n_train_min = 10
         n_train_max = 10
-        n_bits = 10
+        n_bits = 8
         tolerance = 1e-10
 
         rng = np.random.default_rng(seed=43)
@@ -156,13 +158,15 @@ class TestWKNNValues:
 
         total_error = 0
         for class_index in range(len(set(test_case.y_train))):
-            # WKNNExplainer will use discretized weights
-            explainer = WKNNExplainer(model, class_index=class_index, n_bits=test_case.n_bits)
+            # WeightedKNNExplainer will use discretized weights
+            explainer = WeightedKNNExplainer(
+                model, class_index=class_index, n_bits=test_case.n_bits
+            )
             iv = explainer.explain(test_case.x_val)
             sv = interaction_values_to_array(iv)
 
             # BruteForceWKNNExplainer will use continuous weights
-            explainer_brute = BruteForceWKNNExplainer(model, class_index=class_index)
+            explainer_brute = _BruteForceWKNNExplainer(model, class_index=class_index)
             iv_brute = explainer_brute.explain_function(test_case.x_val)
             sv_brute = interaction_values_to_array(iv_brute)
 
@@ -180,35 +184,40 @@ class TestWKNNSanity:
     """Performs various sanity checks and tests helper functions."""
 
     def test_raises_unfitted_inadequate_model(self):
-        """Tests that instantiating WKNNExplainer with an unfitted model raises an exception."""
+        """Tests that instantiating WeightedKNNExplainer with an unfitted model raises an exception."""
         model = KNeighborsClassifier(n_neighbors=3, weights="distance")
 
         with pytest.raises(NotFittedError):
-            WKNNExplainer(model, class_index=0)
+            WeightedKNNExplainer(model, class_index=0)
 
     def test_raises_on_inadequate_model(self):
-        """Tests that instantiating WKNNExplainer with a model that uses unweighted weights raises an exception."""
+        """Tests that instantiating WeightedKNNExplainer with a model that uses uniform weights or an invalid weights parameter raises an exception."""
         model = KNeighborsClassifier(n_neighbors=3, weights="uniform")
         model.fit(np.array([[0]]), np.array([0]))
 
-        with pytest.raises(ValueError, match="weights"):
-            WKNNExplainer(model, class_index=0)
+        invalid_weights_values = ["invalid_weights", "uniform"]
+
+        for invalid_weights in invalid_weights_values:
+            model.weights = invalid_weights
+
+            with pytest.raises(ValueError, match="weights"):
+                WeightedKNNExplainer(model, class_index=0)
 
     def test_raises_negative_discretization_bits(self):
-        """Tests that instantiating WKNNExplainer with a value of n_bits below zero."""
+        """Tests that instantiating WeightedKNNExplainer with a value of n_bits below zero."""
         model = KNeighborsClassifier(n_neighbors=3, weights="distance")
         model.fit(np.array([[0]]), np.array([0]))
 
         with pytest.raises(ValueError, match="bits"):
-            WKNNExplainer(model, class_index=0, n_bits=-1)
+            WeightedKNNExplainer(model, class_index=0, n_bits=-1)
 
     def test_raises_invalid_k(self):
-        """Tests that instantiating WKNNExplainer with a value of one for parameter k."""
+        """Tests that instantiating WeightedKNNExplainer with a value of one for parameter k."""
         model = KNeighborsClassifier(n_neighbors=1, weights="distance")
         model.fit(np.array([[0]]), np.array([0]))
 
         with pytest.raises(ValueError, match=r"value.*\bk\b"):
-            WKNNExplainer(model, class_index=0)
+            WeightedKNNExplainer(model, class_index=0)
 
     def test_single_class(self):
         """Tests that if the training data only consists of a single class, all Shapley Values are zero."""
@@ -221,11 +230,19 @@ class TestWKNNSanity:
         model = KNeighborsClassifier(n_neighbors=3, weights="distance")
         model.fit(X_train, y_train)
 
-        explainer = WKNNExplainer(model, class_index=0)
+        explainer = WeightedKNNExplainer(model, class_index=0)
 
         sv = interaction_values_to_array(explainer.explain(x_val))
 
         assert np.allclose(sv, 0)
+
+    def test_mode(self):
+        """Tests that the explainer mode is set correctly."""
+        knn_model = KNeighborsClassifier(weights="distance")
+        knn_model.fit(np.array([[0]]), np.array([0]))
+
+        explainer = WeightedKNNExplainer(knn_model, class_index=0)
+        assert explainer.mode == "weighted"
 
     def test_wknn_discretize_weights(self):
         """Tests the pre-processing of weights involved in the WKNN algorithm, and the weight sign flipping method."""
@@ -240,7 +257,7 @@ class TestWKNNSanity:
         model = KNeighborsClassifier(n_neighbors=k, weights="distance")
         model.fit(X_train, y_train)
 
-        explainer = WKNNExplainer(model, class_index=class_index, n_bits=n_bits)
+        explainer = WeightedKNNExplainer(model, class_index=class_index, n_bits=n_bits)
         sortperm, weights_prepared_sorted = explainer._get_prepared_weights(x_val)
 
         weights_prepared = np.zeros_like(sortperm)

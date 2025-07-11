@@ -6,15 +6,16 @@ from typing import cast
 
 import numpy as np
 import numpy.typing as npt
+import pytest
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import MinMaxScaler
 
-from shapiq_student.explainer.knn import (
-    BruteForceKNNClassifierExplainer,
-    KNNClassifierExplainer,
-    interaction_values_to_array,
+from shapiq_student.explainer.knn import interaction_values_to_array
+from shapiq_student.explainer.knn.normal_knn import (
+    NormalKNNExplainer,
+    _BruteForceNormalKNNExplainer,
 )
 
 
@@ -40,10 +41,10 @@ def test_agrees_with_brute_force():
     model.fit(X_train, y_train)
 
     for class_index in range(n_classes):
-        brute_explainer = BruteForceKNNClassifierExplainer(model, class_index=class_index)
+        brute_explainer = _BruteForceNormalKNNExplainer(model, class_index=class_index)
         iv_brute = interaction_values_to_array(brute_explainer.explain(x_val))
 
-        jia_explainer = KNNClassifierExplainer(model, class_index=class_index)
+        jia_explainer = NormalKNNExplainer(model, class_index=class_index)
         iv_jia = interaction_values_to_array(jia_explainer.explain_function(x_val))
 
         assert np.allclose(iv_brute, iv_jia)
@@ -63,8 +64,31 @@ def test_output_length():
     probierModel = KNeighborsClassifier(n_neighbors=20)
     probierModel.fit(X_train, y_train)
 
-    knn_expl = KNNClassifierExplainer(model=probierModel, class_index=y_test[5])
+    knn_expl = NormalKNNExplainer(model=probierModel, class_index=y_test[5])
 
     testoutput = knn_expl.explain_function(x=X_test[5])
 
     assert (len(testoutput)) == (len(y_train))
+
+
+def test_raises_on_invalid_weights():
+    """Tests that instantiating the NormalKNNExplainer directly with an invalid value for weights raises an exception."""
+    model = KNeighborsClassifier()
+    model.fit(np.array([[0]]), np.array([0]))
+
+    invalid_weights_values = ["invalid_weights", "distance"]
+
+    for invalid_weights in invalid_weights_values:
+        model.weights = invalid_weights
+
+        with pytest.raises(ValueError, match=f"weights.*{invalid_weights}"):
+            NormalKNNExplainer(model, class_index=0)
+
+
+def test_mode():
+    """Tests that the explainer mode is set correctly."""
+    knn_model = KNeighborsClassifier()
+    knn_model.fit(np.array([[0]]), np.array([0]))
+
+    explainer = NormalKNNExplainer(knn_model, class_index=0)
+    assert explainer.mode == "normal"

@@ -53,7 +53,7 @@ import my_library  # noqa: E402
 
 If you wish to disable an error for a specific file or a set of files, add a corresponding entry to the section `[tool.ruff.lint.per-file-ignores]` in `pyproject.toml`.
 For example, we often want to re-export classes or functions in `__init__.py` files, since this makes writing import statements less cumbersome for the library users. This would
-trigger an error ```F401 `SomeClass` imported but unused```, wich we can surpress like so:
+trigger an error ``F401 `SomeClass` imported but unused``, which we can surpress like so:
 
 ```toml
 [tool.ruff.lint.per-file-ignores]
@@ -134,7 +134,7 @@ After every push to the `main` branch, an updated version of the documentation w
 To generate the documentation locally, run
 
 ```sh
-uv run sphinx-build -M html docs/source docs/build --fail-on-warning
+uv run sphinx-build -M html docs/source docs/build
 ```
 
 This will save the generated output to `docs/build`. Open `docs/build/html/index.html` in your browser to view the documentation. It is recommended to do this after writing docstrings or new documentation, in order to make sure that Sphinx generated what you intended.

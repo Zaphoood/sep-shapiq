@@ -9,45 +9,52 @@ from typing_extensions import override
 import numpy as np
 from scipy.special import comb
 
-from shapiq_student.explainer.knn.lookup_game import LookupGame
+from ._lookup_game import LookupGame
 
 if TYPE_CHECKING:
     import numpy.typing as npt
     from shapiq import InteractionValues
     import sklearn.neighbors
+    from sklearn.neighbors import RadiusNeighborsClassifier
 
 
-from .base import KNNExplainerBase, interaction_values_from_array
+from .base import KNNExplainer, interaction_values_from_array
+
+MODE_THRESHOLD = "threshold"
 
 
-class BruteForceTKNNExplainer(KNNExplainerBase):
+class _BruteForceTNNExplainer(KNNExplainer):
     """Brute force approach for explaining TKNN Classifiers.
 
     References:
         Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
     """
 
-    @override
-    def __init__(
-        self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
-    ) -> None:
-        super().__init__(model, class_index)  # type: ignore[arg-type]
-        self._model = model
+    def __init__(self, model: RadiusNeighborsClassifier, class_index: int) -> None:
+        super().__init__(model, class_index=class_index)
+        # The type of the superclass's `model` attribute is too broad, since it also allows for other KNN explainers
+        # To circumvent this, we store the model separately in an attribute with a narrower type
+        self.tknn_model = model
         self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
+
+    @property
+    @override
+    def mode(self) -> str:
+        return MODE_THRESHOLD
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
         n_train = self.X_train.shape[0]
         n_classes = len(self.y_train_indices)
 
-        neighbor_indices = self._model.radius_neighbors(x.reshape(1, -1), return_distance=False)
+        neighbor_indices = self.tknn_model.radius_neighbors(x.reshape(1, -1), return_distance=False)
         neighbor_indices = neighbor_indices[0]
         in_neighborhood = np.zeros((n_train,), dtype=bool)
         in_neighborhood[neighbor_indices] = True
 
         y_train_is_class_index = self.y_train_indices == self.class_index
 
-        utilities = {}
+        utilities: dict[tuple[int, ...], float] = {}
 
         for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
             coalition = np.array(list(coalition_generator))
@@ -63,32 +70,51 @@ class BruteForceTKNNExplainer(KNNExplainerBase):
             else:
                 utility = np.sum(coal_nhood_with_class_index) / n_coal_nhood
 
-            coal_tuple = tuple(np.where(coalition)[0])
+            coal_tuple = tuple(map(int, np.where(coalition)[0]))
             utilities[coal_tuple] = utility
 
-        game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)  # type: ignore[arg-type]
+        game = LookupGame(n_players=self.X_train.shape[0], utilities=utilities)
         sv = game.exact_values("SV", order=1)
 
         return sv
 
 
-class TKNNExplainer(KNNExplainerBase):
-    """TKNN Classifier Explainer.
+class ThresholdNNExplainer(KNNExplainer):
+    r"""Explainer for threshold nearest-neighbour models.
 
-    For calculating exact shapley values for a thresholded KNN Classifier.
-
-    References:
-        Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
+    Implements the algorithm for efficiently computing exact Shapley Values for threshold nearest-neighbor models proposed by `Wang et. al (2023)` [Wng23]_.
+    The algorithm has a runtime complexity of :math:`O(N)` (when explaining a single data point), where :math:`N` is the number of training samples.
     """
 
-    @override
     def __init__(
         self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
     ) -> None:
-        super().__init__(model, class_index)  # type: ignore[arg-type]
+        r"""Initializes the class.
+
+        This methods extracts the training data and the threshold :math:`\tau` from the provided model and stores it as class members.
+
+        Args:
+            model: The model to explain. The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
+
+            data: This parameter is currently ignored but may be used in future versions.
+
+            labels: This parameter is currently ignored but may be used in future versions.
+
+            class_index: The class index of the model to explain. Defaults to ``1``.
+
+        Raises:
+            sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
+        """
+        super().__init__(model, class_index=class_index)
         self._model = model
 
         self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
+
+    @property
+    @override
+    def mode(self) -> str:
+        """This explainer's mode, which is ``"treshold"``."""
+        return MODE_THRESHOLD
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:

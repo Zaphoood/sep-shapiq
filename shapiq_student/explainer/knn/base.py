@@ -2,28 +2,36 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from abc import abstractmethod
+import logging
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 from shapiq import Explainer
 from shapiq.interaction_values import InteractionValues
+from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 from sklearn.utils.validation import check_is_fitted
 
-from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
+from .exceptions import MultiOutputKNNError
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from sklearn.neighbors import KNeighborsClassifier
 
 
-class KNNExplainerBase(Explainer):
-    """Base class for KNN explainers."""
+class KNNExplainer(Explainer):
+    """The main interface for KNN explainers.
 
-    # The model attribute of the Explainer is defined in a non-optimal way,
-    # using a type variable `Model`, which has no meaning. This is why we need
-    # to supress a type error here.
-    model: KNeighborsClassifier  # type: ignore[assignment]
-    """The KNN model provided in the constructor."""
+    Based on the model passed to the constructor, the class automatically detects between
+    :class:`~shapiq_student.explainer.knn.NormalKNNExplainer` and
+    :class:`~shapiq_student.explainer.knn.WeightedKNNExplainer` for (weighted) k-nearest neighbor models,
+    as well as :class:`~shapiq_student.explainer.knn.ThresholdNNExplainer` for thresholded nearest neighbor models.
+
+    For a detailed description of the different explainers, see the respective classes.
+    """
+
+    # TODO(Zaphoood): The base class allows `model` to be a `Callable`, which we don't allow -- violates Liskov subsitution principle
+    model: KNeighborsClassifier | RadiusNeighborsClassifier  # type: ignore[assignment]
+    """The model provided in the constructor."""
 
     X_train: npt.NDArray[np.floating]
     """Training data features extracted from the model."""
@@ -38,42 +46,96 @@ class KNNExplainerBase(Explainer):
     """Training data labels extracted from the model. This array simply resolves the indirection of looking up class indices from ``y_train_indices`` in ``y_train_classes``."""
 
     k: int
-    """The parameter ``k`` of the model."""
+    """The parameter ``k`` of the k-nearest neighbors model."""
 
-    def __init__(self, model: KNeighborsClassifier, class_index: int) -> None:
+    def __init__(
+        self,
+        model: KNeighborsClassifier | RadiusNeighborsClassifier,
+        data: npt.NDArray[Any] | None = None,
+        labels: npt.NDArray[Any] | None = None,
+        class_index: int | None = None,
+    ) -> None:
         """Initializes the class.
 
-        This methods extracts the training data from the provided KNN or TNN model and stores it in class attributes.
+        This method extracts the training data from the provided model and stores it in a class member.
 
         Args:
-            model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
-                The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit()`` must be a 1D vector.
+            model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier`` or ``sklearn.neighbors.RadiusNeighborsClassifier``.
+                The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
 
-            class_index: The class index of the model to explain. Note that, as opposed to the parent class ``shapiq.explainer.Explainer``, the parameter is not optional here.
+            data: This parameter is currently ignored but may be used in future versions.
+
+            labels: This parameter is currently ignored but may be used in future versions.
+
+            class_index: The class index of the model to explain. Defaults to ``1``.
 
         Raises:
             sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
 
             shapiq_student.explainer.knn.exceptions.MultiOutputKNNError: The constructor was called with a model that uses multi-output classification.
         """
+        # If this class is instantiated directly, automagically dispatch to the appropriate explainer for the given model
+
+        if self.__class__ is KNNExplainer:
+            explainer_class = get_explainer_class(model)
+            self.__class__ = explainer_class
+            explainer_class.__init__(
+                self,
+                model=model,
+                class_index=class_index,
+            )
+            return
+
         check_is_fitted(model)
+
+        ignored_parameter_names = ["data", "labels"]
+        for param in ignored_parameter_names:
+            if locals()[param] is not None:
+                logger = logging.getLogger("shapiq_student")
+                logger.warning(
+                    "In the constructor of %s, a non-None value was passed to parameter `%s`, which will be ignored.",
+                    self.__class__.__name__,
+                    param,
+                )
 
         super().__init__(model, data=None, class_index=class_index, index="SV", max_order=1)
 
         self.model = model
-        self.k = self.model.n_neighbors  # type: ignore[attr-defined]
 
-        self.X_train = model._fit_X  # type: ignore[attr-defined] # noqa: SLF001
-
-        self.y_train_indices = cast("npt.NDArray[np.integer]", model._y)  # type: ignore[attr-defined] # noqa: SLF001
-        self.y_train_classes = cast("npt.NDArray[np.object_]", model.classes_)
-
+        self.X_train = model._fit_X  # type: ignore[union-attr] # noqa: SLF001
+        self.y_train_indices = cast("npt.NDArray[np.integer]", model._y)  # type: ignore[union-attr] # noqa: SLF001
         if self.y_train_indices.ndim != 1:
             raise MultiOutputKNNError
-
+        self.y_train_classes = cast("npt.NDArray[np.object_]", model.classes_)
         self.y_train = self.y_train_classes[self.y_train_indices]
 
+        # This is highly sketchy. We are relying on `shapiq` to handle `class_index == None` analogously, but there is no way to check, since they don't set `class_index` as an attribute of `shapiq.Explainer`
+        if class_index is None:
+            class_index = 1
         self.class_index = class_index
+
+    @property
+    @abstractmethod
+    def mode(self) -> str:
+        """The mode in which the Explainer operates."""
+        msg = "Each specific KNNExplainer subclass must implement the mode() property. ʕノ•ᴥ•ʔノ ︵ ┻━┻"  # noqa: RUF001
+        raise NotImplementedError(msg)
+
+
+def get_explainer_class(
+    model: KNeighborsClassifier | RadiusNeighborsClassifier,
+) -> type[KNNExplainer]:
+    """Returns the appropriate subclass of KNNExplainer for the given model."""
+    from ._common_knn import _CommonKNNExplainer
+    from .threshold_nn import ThresholdNNExplainer
+
+    if isinstance(model, KNeighborsClassifier):
+        return _CommonKNNExplainer
+    if isinstance(model, RadiusNeighborsClassifier):
+        return ThresholdNNExplainer
+
+    msg = "Unreachable: Exhaustive check of model types in get_explainer_class"
+    raise RuntimeError(msg)
 
 
 def interaction_values_from_array(
@@ -82,7 +144,7 @@ def interaction_values_from_array(
     """Convert an array of Shapley Values to a ``shapiq.interaction_values.InteractionValues`` object.
 
     Args:
-        shapley_values: A ``np.ndarray`` containing the Shapley Value of the ith training point at index i.
+        shapley_values: An ``np.ndarray`` containing the Shapley Value of the ith training point at index i.
 
     Returns:
         An ``InteractionValues`` object containing the provided Shapley Values with an appropriate ``interaction_lookup`` dict and with ``min_order == max_order == 1`` set.
