@@ -1,4 +1,4 @@
-"""KNN Classifier Explainer."""
+"""Utility function for the NormalKNNExplainer and the WeightedKNNExplainer."""
 
 from __future__ import annotations
 
