@@ -8,12 +8,13 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 import time
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, TypedDict, TypeVar
 
 from sklearn.datasets import make_classification
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 
 from shapiq_student import KNNExplainer
+from shapiq_student.explainer.knn import WeightedKNNExplainer
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -34,13 +35,14 @@ def explain_timed(explainer: KNNExplainer, x_explain: npt.NDArray[np.floating]) 
 Model = KNeighborsClassifier | RadiusNeighborsClassifier
 
 if TYPE_CHECKING:
+    T = TypeVar("T", bound=Model)
     # A function that accepts training data and returns a model trained on that data
     ModelFactory = Callable[
         [npt.NDArray[np.floating], npt.NDArray[np.object_ | np.number]],
-        Model,
+        T,
     ]
     # A function that accepts a trained model an returns a KNN explainer of that model
-    ExplainerFactory = Callable[[Model], KNNExplainer]
+    ExplainerFactory = Callable[[T], KNNExplainer]
 
 
 def explain_timed_many_sizes(
@@ -48,8 +50,8 @@ def explain_timed_many_sizes(
     y_train: npt.NDArray[np.object_ | np.number],
     x_explain: npt.NDArray[np.floating],
     train_sizes: list[int],
-    fit_model: ModelFactory,
-    get_explainer: ExplainerFactory,
+    fit_model: ModelFactory[T],
+    get_explainer: ExplainerFactory[T],
     *,
     verbose: bool = False,
 ) -> dict[int, float]:
@@ -71,13 +73,14 @@ def explain_timed_many_sizes(
         timing = explain_timed(explainer, x_explain)
         if verbose:
             print(f"{timing:.3f}s")
+
         timings[train_size] = timing
 
     return timings
 
 
-def get_normal_knn_factory(k: int) -> ModelFactory:
-    """Returns a 'model factory', i. e. a function that will train a normal KNN classifier on some training data."""
+def get_normal_knn_factory(k: int) -> ModelFactory[KNeighborsClassifier]:
+    """Returns a 'model factory' for normal KNN models, i. e. a function that will train a normal KNN classifier on some training data."""
 
     def fit_knn_model(
         X_train: npt.NDArray[np.floating], y_train: npt.NDArray[np.object_ | np.number]
@@ -89,30 +92,45 @@ def get_normal_knn_factory(k: int) -> ModelFactory:
     return fit_knn_model
 
 
-class StressTestConfig(TypedDict):
+def get_weighted_knn_factory(k: int) -> ModelFactory[KNeighborsClassifier]:
+    """Returns a 'model factory' for weighted KNN models, i. e. a function that will train a weighted KNN classifier on some training data."""
+
+    def fit_wknn_model(
+        X_train: npt.NDArray[np.floating], y_train: npt.NDArray[np.object_ | np.number]
+    ) -> KNeighborsClassifier:
+        model = KNeighborsClassifier(n_neighbors=k, weights="distance")
+        model.fit(X_train, y_train)
+        return model
+
+    return fit_wknn_model
+
+
+class StressTestConfig[T](TypedDict):
     """Configuration of a stress test for an explainer."""
 
     name: str
     train_sizes: list[int]
-    fit_model: ModelFactory
-    get_explainer: ExplainerFactory
+    fit_model: ModelFactory[T]
+    get_explainer: ExplainerFactory[T]
 
 
 def save_timings_as_csv(timings: dict[int, float], path: str) -> None:
     """Saves the given timings in CSV format at the given path."""
     with Path(path).open("w", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["train_size", "timing"])
+        writer.writerow(["train_size", "time_explain"])
         for key, value in timings.items():
             writer.writerow([key, value])
 
 
-def stress_test_model(config: StressTestConfig, *, save_as_csv: bool = False) -> None:
+def stress_test_model(
+    config: StressTestConfig, *, save_as_csv: bool = False, results_dir: Path | None = None
+) -> None:
     """Run a stress test with the given configuration.
 
     This will call the explainer on a single explanation point, each time for a model trained on a differently sized dataset.
     """
-    print(f"Running stress test: {config['name']}")
+    print(f"=== Running stress test: {config['name']} ===")
 
     max_train_size = config["train_sizes"][-1]
     n_samples = max_train_size + 1
@@ -141,24 +159,37 @@ def stress_test_model(config: StressTestConfig, *, save_as_csv: bool = False) ->
     )
 
     if save_as_csv:
-        filename = f"{config['name']}_{time.time()}.csv"
-        print(f"Saving timings to '{filename}'")
-        save_timings_as_csv(timings, filename)
+        if results_dir is None:
+            print("No results directory provided, defaulting to current directory")
+            results_dir = Path()
+        filename = Path(f"{config['name']}_{int(time.time())}.csv")
+        path = str(results_dir / filename)
+
+        print(f"Saving timings to '{path}'")
+        save_timings_as_csv(timings, path)
 
 
 def main() -> None:
     """The main entry point of the script."""
-    stress_tests: list[StressTestConfig] = [
-        {
-            "name": "normal_knn",
-            "train_sizes": list(range(100_000, 1_000_001, 100_000)),
-            "fit_model": get_normal_knn_factory(k=7),
-            "get_explainer": KNNExplainer,
-        }
-    ]
+    results_dir = Path("results")
+    results_dir.mkdir(exist_ok=True)
+
+    normal_knn_config: StressTestConfig = {
+        "name": "normal_knn",
+        "train_sizes": list(range(100_000, 1_000_001, 100_000)),
+        "fit_model": get_normal_knn_factory(k=7),
+        "get_explainer": KNNExplainer,
+    }
+    weighted_knn_config: StressTestConfig = {
+        "name": "weighted_knn",
+        "train_sizes": list(range(50, 101, 50)),
+        "fit_model": get_weighted_knn_factory(k=5),
+        "get_explainer": lambda model: WeightedKNNExplainer(model, class_index=0, n_bits=3),
+    }
+    stress_tests = [normal_knn_config, weighted_knn_config]
 
     for stress_test in stress_tests:
-        stress_test_model(stress_test, save_as_csv=True)
+        stress_test_model(stress_test, save_as_csv=True, results_dir=results_dir)
 
 
 if __name__ == "__main__":
