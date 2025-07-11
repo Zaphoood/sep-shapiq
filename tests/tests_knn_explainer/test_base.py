@@ -12,7 +12,6 @@ from shapiq_student.explainer.knn import (
     interaction_values_from_array,
 )
 from shapiq_student.explainer.knn._common_knn import _CommonKNNExplainer
-from shapiq_student.explainer.knn.base import get_explainer_class
 from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
 from shapiq_student.explainer.knn.threshold_nn import ThresholdNNExplainer
 
@@ -66,16 +65,17 @@ def test_class_index_none():
     assert explainer.class_index == 1
 
 
-def test_get_explainer_class():
-    """Tests that the utility function get_explainer_class selects the right explainer for a given model."""
+def test_select_explainer_class():
+    """Tests KNNExplainer automagically selects the right explainer for a given model."""
     test_cases = [
         (KNeighborsClassifier(), _CommonKNNExplainer),
         (RadiusNeighborsClassifier(), ThresholdNNExplainer),
     ]
 
     for model, expected_explainer_class in test_cases:
-        explainer_class = get_explainer_class(model)
-        assert issubclass(explainer_class, expected_explainer_class)
+        model.fit(np.array([[0]]), np.array([0]))
+        explainer = KNNExplainer(model)
+        assert isinstance(explainer, expected_explainer_class)
 
 
 SHAPLEY_VALUES_INDEX = "SV"
