@@ -49,13 +49,18 @@ class TestThresholdNNExplainer:
     def test_compare_with_brute_force_on_iris(self):
         """Tests the correctness of the TNN explainer by comparing its results to the baseline brute force implementation.
 
-        The model used for testing is trained on the real-world, classic "Iris dataset".
+        The model used for testing is trained on a small part of the "Iris" dataset.
         """
         iris = load_iris()
         X = cast("npt.NDArray[np.floating]", iris.data)
         y = cast("npt.NDArray[np.floating]", iris.target)
 
+        # Limit the training data set because the brute force algorithm is really slow
+        n_train_max = 12
         X_train, X_test, y_train, _ = train_test_split(X, y, test_size=0.9, random_state=42)
+        X_train = X_train[:n_train_max]
+        y_train = y_train[:n_train_max]
+        print(f"{X_train.shape=}")
 
         x_val = X_test[0]
         n_classes = len(set(y))
