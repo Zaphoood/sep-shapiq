@@ -53,7 +53,7 @@ import my_library  # noqa: E402
 
 If you wish to disable an error for a specific file or a set of files, add a corresponding entry to the section `[tool.ruff.lint.per-file-ignores]` in `pyproject.toml`.
 For example, we often want to re-export classes or functions in `__init__.py` files, since this makes writing import statements less cumbersome for the library users. This would
-trigger an error ``F401 `SomeClass` imported but unused``, wich we can surpress like so:
+trigger an error ``F401 `SomeClass` imported but unused``, which we can surpress like so:
 
 ```toml
 [tool.ruff.lint.per-file-ignores]
