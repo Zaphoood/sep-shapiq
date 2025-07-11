@@ -19,16 +19,18 @@ def test_extract_training_data_from_model():
     X_train = np.array([[1, 2, 3], [4, 5, 6]])
     y_train = np.array([0, 1])
     k = 11
+    class_index = 0
 
     knn_model = KNeighborsClassifier(n_neighbors=k)
     knn_model.fit(X_train, y_train)
 
-    knn_explainer = KNNExplainer(knn_model, class_index=0)
+    knn_explainer = KNNExplainer(knn_model, class_index=class_index)
 
     assert np.allclose(knn_explainer.X_train, X_train)
     assert np.allclose(knn_explainer.y_train, y_train)
-    assert knn_explainer.k == k
     assert set(knn_explainer.y_train_classes) == set(y_train)
+    assert knn_explainer.k == k
+    assert knn_explainer.class_index == class_index
 
 
 def test_raises_on_unfitted_model():
@@ -50,6 +52,15 @@ def test_raises_on_multi_output_model():
 
     with pytest.raises(MultiOutputKNNError):
         KNNExplainer(knn_model, class_index=0)
+
+
+def test_class_index_none():
+    """Tests that setting ``class_index=0`` in the constructor is handled correctly."""
+    knn_model = KNeighborsClassifier()
+    knn_model.fit(np.array([[0]]), np.array([0]))
+
+    explainer = KNNExplainer(knn_model, class_index=None)
+    assert explainer.class_index == 1
 
 
 SHAPLEY_VALUES_INDEX = "SV"
