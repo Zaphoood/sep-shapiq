@@ -57,7 +57,7 @@ class KNNExplainer(Explainer):
     ) -> None:
         """Initializes the class.
 
-        This methods extracts the training data from the provided model and stores it in a class member.
+        This method extracts the training data from the provided model and stores it in a class member.
 
         Args:
             model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier`` or ``sklearn.neighbors.RadiusNeighborsClassifier``.
