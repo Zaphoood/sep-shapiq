@@ -5,13 +5,16 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from sklearn.exceptions import NotFittedError
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 
 from shapiq_student.explainer.knn import (
     KNNExplainer,
     interaction_values_from_array,
 )
+from shapiq_student.explainer.knn._common_knn import _CommonKNNExplainer
+from shapiq_student.explainer.knn.base import get_explainer_class
 from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
+from shapiq_student.explainer.knn.threshold_nn import ThresholdNNExplainer
 
 
 def test_extract_training_data_from_model():
@@ -61,6 +64,18 @@ def test_class_index_none():
 
     explainer = KNNExplainer(knn_model, class_index=None)
     assert explainer.class_index == 1
+
+
+def test_get_explainer_class():
+    """Tests that the utility function get_explainer_class selects the right explainer for a given model."""
+    test_cases = [
+        (KNeighborsClassifier(), _CommonKNNExplainer),
+        (RadiusNeighborsClassifier(), ThresholdNNExplainer),
+    ]
+
+    for model, expected_explainer_class in test_cases:
+        explainer_class = get_explainer_class(model)
+        assert issubclass(explainer_class, expected_explainer_class)
 
 
 SHAPLEY_VALUES_INDEX = "SV"
