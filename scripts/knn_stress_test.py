@@ -202,7 +202,7 @@ def main() -> None:
     }
     weighted_knn_config: StressTestConfig = {
         "name": "weighted_knn",
-        "train_sizes": list(range(50, 101, 50)),
+        "train_sizes": list(range(50, 501, 50)),
         "fit_model": get_weighted_knn_factory(k=5),
         "get_explainer": lambda model: WeightedKNNExplainer(model, class_index=0, n_bits=3),
     }
