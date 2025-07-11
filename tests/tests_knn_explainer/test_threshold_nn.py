@@ -1,4 +1,4 @@
-"""Test to compare all TKNN implementations."""
+"""Tests for the threshold nearest-neighbor explainer."""
 
 from __future__ import annotations
 
@@ -14,11 +14,11 @@ from shapiq_student.explainer.knn.base import interaction_values_to_array
 from shapiq_student.explainer.knn.threshold_nn import ThresholdNNExplainer, _BruteForceTNNExplainer
 
 
-class TestTKNNExplainer:
-    """Tests for the TKNNExplainer class."""
+class TestThresholdNNExplainer:
+    """Tests for the ThresholdNNExplainer class."""
 
     def test_extract_parameters_from_radius_model(self):
-        """Tests that the TKNNExplainer succesfully extracts parameters from RadiusNeighborsClassifier model."""
+        """Tests parameters are successfully extracted from RadiusNeighborsClassifier model."""
         X_train = np.array([[1, 2, 3], [1, 2, 3]])
         y_train = np.array([0, 1])
         tau = 1
@@ -26,14 +26,14 @@ class TestTKNNExplainer:
         radius_model = RadiusNeighborsClassifier(radius=tau)
         radius_model.fit(X_train, y_train)
 
-        tknn_explainer = ThresholdNNExplainer(radius_model, class_index=1)
+        tnn_explainer = ThresholdNNExplainer(radius_model, class_index=1)
 
-        assert np.allclose(tknn_explainer.X_train, X_train)
-        assert np.allclose(tknn_explainer.y_train, y_train)
-        assert tknn_explainer.tau == tau
+        assert np.allclose(tnn_explainer.X_train, X_train)
+        assert np.allclose(tnn_explainer.y_train, y_train)
+        assert tnn_explainer.tau == tau
 
     def test_no_neighbors_in_threshold(self):
-        """Tests TKNNExplainer behavior when no neighbors are within threshold tau. All shapley values should be zero."""
+        """Tests behavior when no neighbors are within threshold tau. All shapley values should be zero."""
         X_train = np.array([[10, 10, 10], [11, 11, 11]])
         y_train = np.array([0, 1])
         tau = 1
@@ -41,15 +41,15 @@ class TestTKNNExplainer:
         radius_model = RadiusNeighborsClassifier(radius=tau)
         radius_model.fit(X_train, y_train)
         class_index = 0
-        tknn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
-        sv_array_tknn = interaction_values_to_array(tknn_explainer.explain(x_val))
+        tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
+        sv_array_tnn = interaction_values_to_array(tnn_explainer.explain(x_val))
 
-        assert np.allclose(sv_array_tknn, 0)
+        assert np.allclose(sv_array_tnn, 0)
 
     def test_compare_with_brute_force_on_iris(self):
-        """Tests the correctness of the TKNN explainer by comparing its results to the baseline brute force implementation.
+        """Tests the correctness of the TNN explainer by comparing its results to the baseline brute force implementation.
 
-        The model (RadiusNeighborsClassifier) is trained on the real-world, classic "Iris dataset".
+        The model used for testing is trained on the real-world, classic "Iris dataset".
         """
         iris = load_iris()
         X = cast("npt.NDArray[np.floating]", iris.data)
@@ -67,7 +67,7 @@ class TestTKNNExplainer:
         for class_index in range(n_classes):
             brute_explainer = _BruteForceTNNExplainer(model, class_index=class_index)
             brute_iv = interaction_values_to_array(brute_explainer.explain(x_val))
-            tknn_explainer = ThresholdNNExplainer(model, class_index=class_index)
-            tknn_iv = interaction_values_to_array(tknn_explainer.explain(x_val))
+            tnn_explainer = ThresholdNNExplainer(model, class_index=class_index)
+            tnn_iv = interaction_values_to_array(tnn_explainer.explain(x_val))
 
-            assert np.allclose(brute_iv, tknn_iv)
+            assert np.allclose(brute_iv, tnn_iv)
