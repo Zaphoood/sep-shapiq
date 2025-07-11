@@ -13,8 +13,12 @@ from typing import TYPE_CHECKING, TypedDict, TypeVar
 from sklearn.datasets import make_classification
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 
-from shapiq_student import KNNExplainer
-from shapiq_student.explainer.knn import WeightedKNNExplainer
+from shapiq_student import (
+    KNNExplainer,
+    NormalKNNExplainer,
+    ThresholdNNExplainer,
+    WeightedKNNExplainer,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -105,6 +109,22 @@ def get_weighted_knn_factory(k: int) -> ModelFactory[KNeighborsClassifier]:
     return fit_wknn_model
 
 
+def get_threshold_nn_factory(tau: float) -> ModelFactory[RadiusNeighborsClassifier]:
+    """Returns a 'model factory' for threshold NN models, i. e. a function that will train a threshold NN classifier on some training data."""
+
+    def fit_tnn_model(
+        X_train: npt.NDArray[np.floating], y_train: npt.NDArray[np.object_ | np.number]
+    ) -> RadiusNeighborsClassifier:
+        model = RadiusNeighborsClassifier(radius=tau)
+        model.fit(X_train, y_train)
+        return model
+
+    return fit_tnn_model
+
+
+T = TypeVar("T", bound=Model)
+
+
 class StressTestConfig[T](TypedDict):
     """Configuration of a stress test for an explainer."""
 
@@ -178,7 +198,7 @@ def main() -> None:
         "name": "normal_knn",
         "train_sizes": list(range(100_000, 1_000_001, 100_000)),
         "fit_model": get_normal_knn_factory(k=7),
-        "get_explainer": KNNExplainer,
+        "get_explainer": lambda model: NormalKNNExplainer(model, class_index=0),
     }
     weighted_knn_config: StressTestConfig = {
         "name": "weighted_knn",
@@ -186,7 +206,13 @@ def main() -> None:
         "fit_model": get_weighted_knn_factory(k=5),
         "get_explainer": lambda model: WeightedKNNExplainer(model, class_index=0, n_bits=3),
     }
-    stress_tests = [normal_knn_config, weighted_knn_config]
+    threshold_nn_config: StressTestConfig = {
+        "name": "threshold_knn",
+        "train_sizes": list(range(100_000, 1_000_001, 100_000)),
+        "fit_model": get_threshold_nn_factory(tau=1),
+        "get_explainer": lambda model: ThresholdNNExplainer(model, class_index=0),
+    }
+    stress_tests = [normal_knn_config, weighted_knn_config, threshold_nn_config]
 
     for stress_test in stress_tests:
         stress_test_model(stress_test, save_as_csv=True, results_dir=results_dir)
