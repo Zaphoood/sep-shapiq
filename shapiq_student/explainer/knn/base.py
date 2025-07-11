@@ -144,7 +144,7 @@ def interaction_values_from_array(
     """Convert an array of Shapley Values to a ``shapiq.interaction_values.InteractionValues`` object.
 
     Args:
-        shapley_values: A ``np.ndarray`` containing the Shapley Value of the ith training point at index i.
+        shapley_values: An ``np.ndarray`` containing the Shapley Value of the ith training point at index i.
 
     Returns:
         An ``InteractionValues`` object containing the provided Shapley Values with an appropriate ``interaction_lookup`` dict and with ``min_order == max_order == 1`` set.
