@@ -75,7 +75,7 @@ class TestNormalKNNExplainer:
 
         assert len(sv) == len(X_train)
         assert np.sum(sv) == 1
-        assert np.allclose(sv, 1 / len(y_train))
+        assert np.allclose(sv, 1 / len(X_train))
 
     def test_all_diffent_label_neighbors(self):
         """Tests NormalKNNExplainer behavior when a model is trained on only same label neighbors and k is equal to amount of training points.
