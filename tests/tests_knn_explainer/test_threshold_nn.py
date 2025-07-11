@@ -76,3 +76,11 @@ class TestThresholdNNExplainer:
             tnn_iv = interaction_values_to_array(tnn_explainer.explain(x_val))
 
             assert np.allclose(brute_iv, tnn_iv)
+
+    def test_mode(self):
+        """Tests that the explainer mode is set correctly."""
+        nn_model = RadiusNeighborsClassifier()
+        nn_model.fit(np.array([[0]]), np.array([0]))
+
+        explainer = ThresholdNNExplainer(nn_model, class_index=0)
+        assert explainer.mode == "threshold"

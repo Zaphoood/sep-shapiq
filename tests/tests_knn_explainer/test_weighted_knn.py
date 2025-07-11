@@ -236,6 +236,14 @@ class TestWKNNSanity:
 
         assert np.allclose(sv, 0)
 
+    def test_mode(self):
+        """Tests that the explainer mode is set correctly."""
+        knn_model = KNeighborsClassifier(weights="distance")
+        knn_model.fit(np.array([[0]]), np.array([0]))
+
+        explainer = WeightedKNNExplainer(knn_model, class_index=0)
+        assert explainer.mode == "weighted"
+
     def test_wknn_discretize_weights(self):
         """Tests the pre-processing of weights involved in the WKNN algorithm, and the weight sign flipping method."""
         # Distances are [1, 0, 1, 4, 4] -> normalized weights are [3/4, 4/4, 3/4, 0, 0]
