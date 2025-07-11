@@ -155,3 +155,31 @@ def test_interaction_values_to_array():
 
     sv_reconstructed = interaction_values_to_array(iv)
     assert np.allclose(sv_reconstructed, sv)
+
+
+def test_interaction_values_to_array_invalid_max_order():
+    """Tests that interaction_values_to_array raises an exception if called with an invalid max_order."""
+    ivs = [
+        InteractionValues(
+            np.array([0]),
+            index="SV",
+            max_order=0,
+            min_order=0,
+            n_players=1,
+            baseline_value=0,
+            interaction_lookup={(): 0},
+        ),
+        InteractionValues(
+            np.array([0]),
+            index="SV",
+            max_order=2,
+            min_order=0,
+            n_players=1,
+            baseline_value=0,
+            interaction_lookup={(1, 2): 0},
+        ),
+    ]
+
+    for iv in ivs:
+        with pytest.raises(ValueError, match="[Mm]ax order"):
+            interaction_values_to_array(iv)
