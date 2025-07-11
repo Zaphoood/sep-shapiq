@@ -83,3 +83,12 @@ def test_raises_on_invalid_weights():
 
         with pytest.raises(ValueError, match=f"weights.*{invalid_weights}"):
             NormalKNNExplainer(model, class_index=0)
+
+
+def test_mode():
+    """Tests that the explainer mode is set correctly."""
+    knn_model = KNeighborsClassifier()
+    knn_model.fit(np.array([[0]]), np.array([0]))
+
+    explainer = NormalKNNExplainer(knn_model, class_index=0)
+    assert explainer.mode == "normal"

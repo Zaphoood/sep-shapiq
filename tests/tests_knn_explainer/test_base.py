@@ -17,7 +17,6 @@ from shapiq_student.explainer.knn import (
 from shapiq_student.explainer.knn._common_knn import _CommonKNNExplainer
 from shapiq_student.explainer.knn.base import interaction_values_to_array
 from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
-from shapiq_student.explainer.knn.normal_knn import NormalKNNExplainer
 from shapiq_student.explainer.knn.threshold_nn import ThresholdNNExplainer
 
 
@@ -46,15 +45,6 @@ def test_raises_on_unfitted_model():
 
     with pytest.raises(NotFittedError):
         KNNExplainer(knn_model, class_index=0)
-
-
-def test_mode():
-    """Tests that the explainer mode is set correctly."""
-    knn_model = KNeighborsClassifier()
-    knn_model.fit(np.array([[0]]), np.array([0]))
-
-    explainer = NormalKNNExplainer(knn_model, class_index=0)
-    assert explainer.mode == "normal"
 
 
 def test_raises_on_multi_output_model():
