@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 import pytest
+from shapiq import InteractionValues
 from sklearn.exceptions import NotFittedError
 from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 
@@ -12,6 +15,7 @@ from shapiq_student.explainer.knn import (
     interaction_values_from_array,
 )
 from shapiq_student.explainer.knn._common_knn import _CommonKNNExplainer
+from shapiq_student.explainer.knn.base import interaction_values_to_array
 from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
 from shapiq_student.explainer.knn.threshold_nn import ThresholdNNExplainer
 
@@ -81,8 +85,8 @@ def test_select_explainer_class():
 SHAPLEY_VALUES_INDEX = "SV"
 
 
-def test_interaction_lookup_from_knn_shapley_values():
-    """Tests that the values passed to interaction_lookup_from_knn_shapley_values are correct and parameters are adequately set."""
+def test_interaction_values_from_array():
+    """Tests that the values passed to interaction_values_from_array are correct and parameters are adequately set."""
     sv = np.array(
         [
             -0.60893233,
@@ -112,8 +116,8 @@ def test_interaction_lookup_from_knn_shapley_values():
     assert iv.baseline_value == 0
 
 
-def test_interaction_lookup_from_knn_shapley_values_emtpy():
-    """Tests interaction_lookup_from_knn_shapley_values can handle empty arrays."""
+def test_interaction_values_from_array_empty():
+    """Tests that interaction_values_from_array can handle empty arrays."""
     sv = np.array([])
 
     iv = interaction_values_from_array(sv)
@@ -126,3 +130,28 @@ def test_interaction_lookup_from_knn_shapley_values_emtpy():
     assert iv.index == SHAPLEY_VALUES_INDEX
     assert iv.interaction_lookup == {}
     assert iv.baseline_value == 0
+
+
+def test_interaction_values_to_array():
+    """Tests that interaction_values_to_array succesfully transforms InteractionValues back to an ordered array."""
+    n_players = 10
+    rng = np.random.default_rng(seed=123)
+    sv = rng.normal(size=(n_players,))
+    permutation = rng.permutation(n_players)
+    sv_permuted = np.zeros_like(sv)
+    sv_permuted[permutation] = sv
+
+    lookup = {(i,): cast("int", i_unperm) for i, i_unperm in enumerate(permutation)}
+
+    iv = InteractionValues(
+        sv_permuted,
+        index="SV",
+        max_order=1,
+        min_order=1,
+        n_players=n_players,
+        baseline_value=0,
+        interaction_lookup=lookup,
+    )
+
+    sv_reconstructed = interaction_values_to_array(iv)
+    assert np.allclose(sv_reconstructed, sv)
