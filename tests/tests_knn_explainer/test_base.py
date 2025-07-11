@@ -28,6 +28,7 @@ def test_extract_training_data_from_model():
     assert np.allclose(knn_explainer.X_train, X_train)
     assert np.allclose(knn_explainer.y_train, y_train)
     assert knn_explainer.k == k
+    assert set(knn_explainer.y_train_classes) == set(y_train)
 
 
 def test_raises_on_unfitted_model():
