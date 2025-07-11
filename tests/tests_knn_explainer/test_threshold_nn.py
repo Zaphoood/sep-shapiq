@@ -25,12 +25,46 @@ class TestThresholdNNExplainer:
 
         radius_model = RadiusNeighborsClassifier(radius=tau)
         radius_model.fit(X_train, y_train)
-
-        tnn_explainer = ThresholdNNExplainer(radius_model, class_index=1)
+        class_index = 1
+        tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
 
         assert np.allclose(tnn_explainer.X_train, X_train)
         assert np.allclose(tnn_explainer.y_train, y_train)
         assert tnn_explainer.tau == tau
+        assert set(tnn_explainer.y_train_classes) == set(y_train)
+        assert tnn_explainer.class_index == class_index
+
+    def test_zero_radius_model(self):
+        """Tests behavior when calling RadiusNeighborsClassifier with radius=zero. Should return all shapley values zero."""
+        X_train = np.array([[1, 2, 3], [4, 5, 6]])
+        y_train = np.array([0, 1])
+        x_val = np.array([10, 10, 10])
+        tau = 0
+        radius_model = RadiusNeighborsClassifier(radius=tau)
+        radius_model.fit(X_train, y_train)
+        tnn_explainer = ThresholdNNExplainer(radius_model, class_index=1)
+        sv = interaction_values_to_array(tnn_explainer.explain(x_val))
+
+        assert np.allclose(sv, 0)
+
+    def test_one_same_label_neighbor_in_threshold(self):
+        """Tests ThresholdNNExplainer behavior when one neighbor is within threshold tau and of same label.
+
+        Not all shapley values should be zero.
+
+        Result should be 0.5. Reference: Formula (7) in Wang et. al arXiv:2308.15709v2.
+        """
+        X_train = np.array([[1, 1, 1], [11, 11, 11]])
+        y_train = np.array([0, 1])
+        tau = 2
+        x_val = np.array([2, 1, 1])
+        radius_model = RadiusNeighborsClassifier(radius=tau)
+        radius_model.fit(X_train, y_train)
+        class_index = 0
+        tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
+        sv = interaction_values_to_array(tnn_explainer.explain(x_val))
+        assert np.any(sv != 0)
+        assert np.isclose(np.sum(sv), 0.5, atol=1e-6)
 
     def test_no_neighbors_in_threshold(self):
         """Tests behavior when no neighbors are within threshold tau. All shapley values should be zero."""
@@ -46,8 +80,73 @@ class TestThresholdNNExplainer:
 
         assert np.allclose(sv_array_tnn, 0)
 
+    def test_two_same_labels_have_same_sv(self):
+        """Tests that two training points with same shapley values have same label."""
+        X_train = np.array([[1, 2, 3], [4, 5, 6], [2, 3, 4], [5, 1, 6]])
+        y_train = np.array([0, 0, 1, 1])
+        tau = 10
+        radius_model = RadiusNeighborsClassifier(radius=tau)
+        radius_model.fit(X_train, y_train)
+        x_val = np.array([1, 1, 1])
+
+        for i in range(len(set(y_train))):
+            tnn_explainer = ThresholdNNExplainer(radius_model, class_index=i)
+            tknn_sv = interaction_values_to_array(tnn_explainer.explain(x_val))
+            assert np.isclose(tknn_sv[0], tknn_sv[1])
+            assert np.isclose(tknn_sv[2], tknn_sv[3])
+
+    def test_one_different_label_neighbor_in_threshold(self):
+        """Tests ThresholdNNExplainer behavior when one neighbor is within threshold tau and of different label.
+
+        Not all shapley values should be zero.
+
+        Result should be -0.5. Reference: Formula (7) in Wang et. al arXiv:2308.15709v2.
+        """
+        X_train = np.array([[1, 1, 1], [11, 11, 11]])
+        y_train = np.array([0, 1])
+        tau = 2
+        x_val = np.array([2, 1, 1])
+        radius_model = RadiusNeighborsClassifier(radius=tau)
+        radius_model.fit(X_train, y_train)
+        class_index = 1
+        tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
+        sv = interaction_values_to_array(tnn_explainer.explain(x_val))
+        assert np.any(sv != 0)
+        assert np.isclose(np.sum(sv), -0.5, atol=1e-6)
+
+    def test_point_on_threshold(self):
+        """Tests that training point located exactly on threshold will be included and return non-zero shapley values."""
+        test_cases = 6
+        for i in (number + 1 for number in range(test_cases)):
+            tau = i
+            x_val = np.array([0, 0, 0])
+            X_train = np.array([[tau, 0, 0], [0, tau, 0], [0, 0, tau]])
+            y_train = [0, 0, 0]
+            radius_model = RadiusNeighborsClassifier(radius=tau)
+            radius_model.fit(X_train, y_train)
+            class_index = 0
+            tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
+            sv = interaction_values_to_array(tnn_explainer.explain(x_val))
+            assert np.any(sv != 0)
+
+    def test_point_slightly_outside_threshold(self):
+        """Tests that training points slightly outside of the threshold will not be included and return zero shapley values."""
+        test_cases = 6
+        for i in (number + 1 for number in range(test_cases)):
+            tau = i
+            offset = 0.1
+            x_val = np.array([0, 0, 0])
+            X_train = np.array([[tau + offset, 0, 0], [0, tau + offset, 0], [0, 0, tau + offset]])
+            y_train = [0, 0, 0]
+            radius_model = RadiusNeighborsClassifier(radius=tau)
+            radius_model.fit(X_train, y_train)
+            class_index = 0
+            tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
+            sv = interaction_values_to_array(tnn_explainer.explain(x_val))
+            assert np.allclose(sv, 0)
+
     def test_compare_with_brute_force_on_iris(self):
-        """Tests the correctness of the TNN explainer by comparing its results to the baseline brute force implementation.
+        """Tests the correctness of the ThresholdNNExplainer by comparing its results to the baseline brute force implementation.
 
         The model used for testing is trained on a small part of the "Iris" dataset.
         """
