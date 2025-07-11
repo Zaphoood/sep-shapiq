@@ -50,6 +50,11 @@ class GaussianCopulaImputer(GaussianImputerBase):
         For each feature (column), this method applies a transformation so that the values follow a standard normal
         distribution (mean 0, std 1), while preserving the rank order of the original data. This is also known as a
         rank-Gaussian or empirical CDF transformation.
+
+        Args:
+            x: Input data with shape (n_samples, n_features) to be transformed
+        Returns:
+            Transformed data in Gaussian space with shape (n_samples, n_features)
         """
         x_transformed = np.zeros_like(x, dtype=float)
         for i in range(x.shape[1]):
@@ -64,11 +69,11 @@ class GaussianCopulaImputer(GaussianImputerBase):
         """Transform a single explanation point to Gaussian space using the training data's ECDF.
 
         Args:
-            x_explain: The explanation point with shape ``(n_features,)``
-            x_train: The training data with shape ``(n_samples, n_features)``
+            x_explain: The explanation point with shape (n_features,)
+            x_train: The training data with shape (n_samples, n_features)
 
         Returns:
-            Transformed explanation point in Gaussian space as an array of shape ``(n_features,)``
+            Transformed explanation point in Gaussian space as an array of shape (n_features,)
         """
         x = x_explain
         x_train = np.asarray(x_train)
@@ -83,7 +88,14 @@ class GaussianCopulaImputer(GaussianImputerBase):
         return x_gaussian_copula
 
     def _inverse_transform(self, z_samples: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
-        """Transform Gaussian samples back to original space."""
+        """Transform Gaussian samples back to original space.
+
+        Args:
+            z_samples: Samples in Gaussian space with shape (n_samples, n_features)
+
+        Returns:
+            Samples mapped back to the original space, same shape as input.
+        """
         x_original = np.zeros_like(z_samples)
 
         for i in range(z_samples.shape[1]):
@@ -102,12 +114,18 @@ class GaussianCopulaImputer(GaussianImputerBase):
     ) -> npt.NDArray[np.floating]:
         """Perform Gaussian Copula imputation for Shapley value calculations.
 
+        Each coalition represents a subset of known/missing features. The method imputes
+        the missing features by sampling in Gaussian space, then transforming back to the
+        original space.
+
         Args:
-            x: The data point to impute as an array of shape ``(n_features,)``.
-            coalitions: Boolean array of shape ``(n_coalitions, n_features)`` indicating which features are present or missing for each coalition.
+            x: The data point to impute as an array of shape (n_features,).
+            coalitions: Boolean array of shape (n_coalitions, n_features) indicating which features are present
+            or missing for each coalition.
 
         Returns:
-            An array of shape ``(n_coalitions, n_features)`` containing the mean imputed values for each coalition in original feature space.
+            An array of shape (n_coalitions, n_features) containing the mean imputed values for each coalition
+            in original feature space.
         """
         # Transform x_explain to Gaussian space for imputation
         x_explain = self._transform_x_explain(x.flatten(), self.data)
