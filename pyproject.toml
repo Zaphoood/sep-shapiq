@@ -132,6 +132,7 @@ exclude = [
     "T20",  # Notebooks can have print statements
     "D",  # docstrings are not required in notebooks
     "ANN001",  # type annotations are not required in notebooks
+    "I002",  # we don't need to import required imports in notebooks
 ]
 
 
