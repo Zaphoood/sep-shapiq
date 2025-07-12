@@ -127,6 +127,13 @@ exclude = [
     "INP001",  # implicit package is okay here
     "T201",  # print is okay in scripts
 ]
+"docs/source/notebooks/**/*.ipynb" = [
+    "E402",  # Module level import not at top of file
+    "T20",  # Notebooks can have print statements
+    "D",  # docstrings are not required in notebooks
+    "ANN001",  # type annotations are not required in notebooks
+]
+
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

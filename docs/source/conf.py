@@ -35,6 +35,8 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",  # Insert links to the source code to classes, methods etc.
     "sphinx.ext.napoleon",  # Enable parsing of Google-style docstrings
+    # Note: This requires 'pandoc' to be installed on the system
+    "nbsphinx",  # Include Jupyter Notebooks
 ]
 
 templates_path = ["_templates"]
