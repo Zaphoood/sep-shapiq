@@ -91,7 +91,7 @@ class TestThresholdNNExplainer:
         assert np.allclose(sv_array_tnn, 0)
 
     def test_two_same_labels_have_same_sv(self):
-        """Tests that two training points with same shapley values have same label."""
+        """Tests that two same label training points within threshold have the same Shapley Value."""
         X_train = np.array([[1, 2, 3], [4, 5, 6], [2, 3, 4], [5, 1, 6]])
         y_train = np.array([0, 0, 1, 1])
         tau = 10
@@ -108,7 +108,7 @@ class TestThresholdNNExplainer:
     def test_one_different_label_neighbor_in_threshold(self):
         """Tests ThresholdNNExplainer behavior when one neighbor is within threshold tau and of different label.
 
-        Not all shapley values should be zero.
+        Not all Shapley Values should be zero.
 
         Result should be -0.5. Reference: Formula (7) in Wang et. al arXiv:2308.15709v2.
         """
@@ -121,8 +121,9 @@ class TestThresholdNNExplainer:
         class_index = 1
         tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
         sv = interaction_values_to_array(tnn_explainer.explain(x_val))
-        assert np.any(sv != 0)
-        assert np.isclose(np.sum(sv), -0.5, atol=1e-6)
+
+        assert np.sum(np.isclose(sv, 0, atol=1e-6)) == 1
+        assert np.sum(np.isclose(sv, -0.5, atol=1e-6)) == 1
 
     def test_point_on_threshold(self):
         """Tests that training point located exactly on threshold will be included and return non-zero shapley values."""
@@ -140,7 +141,7 @@ class TestThresholdNNExplainer:
             assert np.any(sv != 0)
 
     def test_point_slightly_outside_threshold(self):
-        """Tests that training points slightly outside of the threshold will not be included and return zero shapley values."""
+        """Tests that training points slightly outside of the threshold will not be included and return zero Shapley Values."""
         test_cases = 6
         for i in (number + 1 for number in range(test_cases)):
             tau = i
