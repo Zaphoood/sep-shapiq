@@ -38,7 +38,7 @@ class TestNormalKNNExplainer:
         sv = interaction_values_to_array(explainer.explain(x_val))
 
         assert len(sv) == 1
-        assert np.sum(sv) == 1
+        assert np.isclose(sv[0], 1)
 
     def test_single_different_label_training_point(self):
         """Tests NormalKNNExplainer behavior when model is trained on one single neighbor of different label.
@@ -56,7 +56,7 @@ class TestNormalKNNExplainer:
         sv = interaction_values_to_array(explainer.explain(x_val))
 
         assert len(sv) == 1
-        assert np.sum(sv) == 0
+        assert np.isclose(sv[0], 0)
 
     def test_all_same_label_neighbors(self):
         """Tests NormalKNNExplainer behavior when a model is trained on only same label neighbors and k is equal to amount of training points.
@@ -74,7 +74,6 @@ class TestNormalKNNExplainer:
         sv = interaction_values_to_array(explainer.explain(x_val))
 
         assert len(sv) == len(X_train)
-        assert np.sum(sv) == 1
         assert np.allclose(sv, 1 / len(X_train))
 
     def test_all_diffent_label_neighbors(self):
@@ -93,7 +92,6 @@ class TestNormalKNNExplainer:
         sv = interaction_values_to_array(explainer.explain(x_val))
 
         assert len(sv) == len(X_train)
-        assert np.sum(sv) == 0
         assert np.allclose(sv, 0)
 
     def test_agrees_with_brute_force(self):
