@@ -1,0 +1,222 @@
+"""Stress tests for Explainers.
+
+Tests the performance of the Explainers on large datasets.
+"""
+
+from __future__ import annotations
+
+import csv
+from pathlib import Path
+import time
+from typing import TYPE_CHECKING, TypedDict, TypeVar
+
+from sklearn.datasets import make_classification
+from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
+
+from shapiq_student import (
+    KNNExplainer,
+    NormalKNNExplainer,
+    ThresholdNNExplainer,
+    WeightedKNNExplainer,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    import numpy as np
+    import numpy.typing as npt
+
+
+def explain_timed(explainer: KNNExplainer, x_explain: npt.NDArray[np.floating]) -> float:
+    """Measure the time required to time the given datapoint with the given explainer."""
+    t_start = time.time()
+    explainer.explain(x_explain)
+    t_end = time.time()
+
+    return t_end - t_start
+
+
+Model = KNeighborsClassifier | RadiusNeighborsClassifier
+
+if TYPE_CHECKING:
+    T = TypeVar("T", bound=Model)
+    # A function that accepts training data and returns a model trained on that data
+    ModelFactory = Callable[
+        [npt.NDArray[np.floating], npt.NDArray[np.object_ | np.number]],
+        T,
+    ]
+    # A function that accepts a trained model an returns a KNN explainer of that model
+    ExplainerFactory = Callable[[T], KNNExplainer]
+
+
+def explain_timed_many_sizes(
+    X_train: npt.NDArray[np.floating],
+    y_train: npt.NDArray[np.object_ | np.number],
+    x_explain: npt.NDArray[np.floating],
+    train_sizes: list[int],
+    fit_model: ModelFactory[T],
+    get_explainer: ExplainerFactory[T],
+    *,
+    verbose: bool = False,
+) -> dict[int, float]:
+    """Measure the time required for explaining for multiple different training datasets."""
+    timings: dict[int, float] = {}
+
+    for train_size in train_sizes:
+        if verbose:
+            print(f"{train_size=}")
+        if train_size > X_train.shape[0]:
+            print(
+                f"WARNING: Training set size limit ({train_size}) is larger than actual training set ({X_train.shape[0]})"
+            )
+        X_train_current = X_train[:train_size]
+        y_train_current = y_train[:train_size]
+        model = fit_model(X_train_current, y_train_current)
+        explainer = get_explainer(model)
+
+        timing = explain_timed(explainer, x_explain)
+        if verbose:
+            print(f"{timing:.3f}s")
+
+        timings[train_size] = timing
+
+    return timings
+
+
+def get_normal_knn_factory(k: int) -> ModelFactory[KNeighborsClassifier]:
+    """Returns a 'model factory' for normal KNN models, i. e. a function that will train a normal KNN classifier on some training data."""
+
+    def fit_knn_model(
+        X_train: npt.NDArray[np.floating], y_train: npt.NDArray[np.object_ | np.number]
+    ) -> KNeighborsClassifier:
+        model = KNeighborsClassifier(n_neighbors=k)
+        model.fit(X_train, y_train)
+        return model
+
+    return fit_knn_model
+
+
+def get_weighted_knn_factory(k: int) -> ModelFactory[KNeighborsClassifier]:
+    """Returns a 'model factory' for weighted KNN models, i. e. a function that will train a weighted KNN classifier on some training data."""
+
+    def fit_wknn_model(
+        X_train: npt.NDArray[np.floating], y_train: npt.NDArray[np.object_ | np.number]
+    ) -> KNeighborsClassifier:
+        model = KNeighborsClassifier(n_neighbors=k, weights="distance")
+        model.fit(X_train, y_train)
+        return model
+
+    return fit_wknn_model
+
+
+def get_threshold_nn_factory(tau: float) -> ModelFactory[RadiusNeighborsClassifier]:
+    """Returns a 'model factory' for threshold NN models, i. e. a function that will train a threshold NN classifier on some training data."""
+
+    def fit_tnn_model(
+        X_train: npt.NDArray[np.floating], y_train: npt.NDArray[np.object_ | np.number]
+    ) -> RadiusNeighborsClassifier:
+        model = RadiusNeighborsClassifier(radius=tau)
+        model.fit(X_train, y_train)
+        return model
+
+    return fit_tnn_model
+
+
+T = TypeVar("T", bound=Model)
+
+
+class StressTestConfig[T](TypedDict):
+    """Configuration of a stress test for an explainer."""
+
+    name: str
+    train_sizes: list[int]
+    fit_model: ModelFactory[T]
+    get_explainer: ExplainerFactory[T]
+
+
+def save_timings_as_csv(timings: dict[int, float], path: str) -> None:
+    """Saves the given timings in CSV format at the given path."""
+    with Path(path).open("w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["train_size", "time_explain"])
+        for key, value in timings.items():
+            writer.writerow([key, value])
+
+
+def stress_test_model(
+    config: StressTestConfig, *, save_as_csv: bool = False, results_dir: Path | None = None
+) -> None:
+    """Run a stress test with the given configuration.
+
+    This will call the explainer on a single explanation point, each time for a model trained on a differently sized dataset.
+    """
+    print(f"=== Running stress test: {config['name']} ===")
+
+    max_train_size = config["train_sizes"][-1]
+    n_samples = max_train_size + 1
+
+    print(f"Generating dataset with {n_samples} samples...", end="")
+    X, y = make_classification(
+        n_samples=n_samples, n_features=12, n_informative=10, n_classes=5, random_state=42
+    )
+    print("done.")
+
+    X_train = X[:max_train_size]
+    y_train = y[:max_train_size]
+    x_explain = X[max_train_size]
+
+    print(
+        f"Will run the explainer on test sets of sizes: {', '.join(map(str, config['train_sizes']))}"
+    )
+    timings = explain_timed_many_sizes(
+        X_train,
+        y_train,
+        x_explain,
+        train_sizes=config["train_sizes"],
+        fit_model=config["fit_model"],
+        get_explainer=config["get_explainer"],
+        verbose=True,
+    )
+
+    if save_as_csv:
+        if results_dir is None:
+            print("No results directory provided, defaulting to current directory")
+            results_dir = Path()
+        filename = Path(f"{config['name']}_{int(time.time())}.csv")
+        path = str(results_dir / filename)
+
+        print(f"Saving timings to '{path}'")
+        save_timings_as_csv(timings, path)
+
+
+def main() -> None:
+    """The main entry point of the script."""
+    results_dir = Path("results")
+    results_dir.mkdir(exist_ok=True)
+
+    normal_knn_config: StressTestConfig = {
+        "name": "normal_knn",
+        "train_sizes": list(range(100_000, 1_000_001, 100_000)),
+        "fit_model": get_normal_knn_factory(k=7),
+        "get_explainer": lambda model: NormalKNNExplainer(model, class_index=0),
+    }
+    weighted_knn_config: StressTestConfig = {
+        "name": "weighted_knn",
+        "train_sizes": list(range(50, 501, 50)),
+        "fit_model": get_weighted_knn_factory(k=5),
+        "get_explainer": lambda model: WeightedKNNExplainer(model, class_index=0, n_bits=3),
+    }
+    threshold_nn_config: StressTestConfig = {
+        "name": "threshold_knn",
+        "train_sizes": list(range(100_000, 1_000_001, 100_000)),
+        "fit_model": get_threshold_nn_factory(tau=1),
+        "get_explainer": lambda model: ThresholdNNExplainer(model, class_index=0),
+    }
+    stress_tests = [normal_knn_config, weighted_knn_config, threshold_nn_config]
+
+    for stress_test in stress_tests:
+        stress_test_model(stress_test, save_as_csv=True, results_dir=results_dir)
+
+
+if __name__ == "__main__":
+    main()

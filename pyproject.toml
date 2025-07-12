@@ -122,9 +122,9 @@ exclude = [
     "A001",  # some conf.py variables shadow builtins which is okay here
     "INP001"  # implicit package is okay here
 ]
-".github/scripts/*.py" = [
+"**/scripts/*.py" = [
     "INP001",  # implicit package is okay here
-    "T201",  # it's a script, it should be allowed to print stuff
+    "T201",  # print is okay in scripts
 ]
 
 [tool.ruff.lint.pydocstyle]
