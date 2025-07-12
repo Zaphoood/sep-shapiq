@@ -143,10 +143,9 @@ class ThresholdNNExplainer(KNNExplainer):
         c_plus_z_tau = c_plus_z_tau_D - (in_neighborhood & y_train_is_class_index)
 
         a1 = np.zeros((n_train,), dtype=np.float64)
-        a1[in_neighborhood] = y_train_is_class_index[in_neighborhood] / c_x_tau[
-            in_neighborhood
-        ] - c_plus_z_tau[in_neighborhood] / (
-            c_x_tau[in_neighborhood] * (c_x_tau[in_neighborhood] - 1)
+        mask = in_neighborhood & (c_x_tau >= 2)  # noqa: PLR2004
+        a1[mask] = y_train_is_class_index[mask] / c_x_tau[mask] - c_plus_z_tau[mask] / (
+            c_x_tau[mask] * (c_x_tau[mask] - 1)
         )
 
         a2 = np.zeros((n_train,), dtype=np.float64)

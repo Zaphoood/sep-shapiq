@@ -12,12 +12,14 @@ from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 
 from shapiq_student.explainer.knn import (
     KNNExplainer,
+    NormalKNNExplainer,
+    ThresholdNNExplainer,
+    WeightedKNNExplainer,
     interaction_values_from_array,
 )
 from shapiq_student.explainer.knn._common_knn import _CommonKNNExplainer
 from shapiq_student.explainer.knn.base import interaction_values_to_array
 from shapiq_student.explainer.knn.exceptions import MultiOutputKNNError
-from shapiq_student.explainer.knn.threshold_nn import ThresholdNNExplainer
 
 
 def test_extract_training_data_from_model():
@@ -71,15 +73,23 @@ def test_class_index_none():
 
 def test_select_explainer_class():
     """Tests KNNExplainer automagically selects the right explainer for a given model."""
+    # Tuples (explainer, expected class, non-expected classes)
     test_cases = [
-        (KNeighborsClassifier(), _CommonKNNExplainer),
-        (RadiusNeighborsClassifier(), ThresholdNNExplainer),
+        (KNeighborsClassifier(), _CommonKNNExplainer, [ThresholdNNExplainer]),
+        (
+            RadiusNeighborsClassifier(),
+            ThresholdNNExplainer,
+            [NormalKNNExplainer, WeightedKNNExplainer],
+        ),
     ]
 
-    for model, expected_explainer_class in test_cases:
+    for model, expected_explainer_class, non_expected_explainer_classes in test_cases:
         model.fit(np.array([[0]]), np.array([0]))
         explainer = KNNExplainer(model)
         assert isinstance(explainer, expected_explainer_class)
+
+        for non_expected_explainer_class in non_expected_explainer_classes:
+            assert not isinstance(explainer, non_expected_explainer_class)
 
 
 SHAPLEY_VALUES_INDEX = "SV"
