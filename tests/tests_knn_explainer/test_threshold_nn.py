@@ -44,7 +44,7 @@ class TestThresholdNNExplainer:
             ThresholdNNExplainer(model, class_index=0)
 
     def test_zero_radius_model(self):
-        """Tests behavior when calling RadiusNeighborsClassifier with radius=zero. Should return all shapley values zero."""
+        """Tests behavior when calling RadiusNeighborsClassifier with radius zero. Should return all shapley values zero."""
         X_train = np.array([[1, 2, 3], [4, 5, 6]])
         y_train = np.array([0, 1])
         x_val = np.array([10, 10, 10])
@@ -61,7 +61,7 @@ class TestThresholdNNExplainer:
 
         Not all shapley values should be zero.
 
-        Result should be 0.5. Reference: Formula (7) in Wang et. al arXiv:2308.15709v2.
+        Result should be 0.5. Reference: Formula (7) in Wang et al. [Wng23]_.
         """
         X_train = np.array([[1, 1, 1], [11, 11, 11]])
         y_train = np.array([0, 1])
