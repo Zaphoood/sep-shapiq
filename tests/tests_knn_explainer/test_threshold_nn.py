@@ -6,12 +6,16 @@ from typing import cast
 
 import numpy as np
 import numpy.typing as npt
+import pytest
+from shapiq import Explainer
 from sklearn.datasets import load_iris
+from sklearn.exceptions import NotFittedError
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import RadiusNeighborsClassifier
 
-from shapiq_student.explainer.knn.base import interaction_values_to_array
+from shapiq_student.explainer.knn.base import KNNExplainer, interaction_values_to_array
 from shapiq_student.explainer.knn.threshold_nn import ThresholdNNExplainer, _BruteForceTNNExplainer
+from shapiq_student.explainer.knn.weighted_knn import WeightedKNNExplainer
 
 
 class TestThresholdNNExplainer:
@@ -33,6 +37,28 @@ class TestThresholdNNExplainer:
         assert tnn_explainer.tau == tau
         assert set(tnn_explainer.y_train_classes) == set(y_train)
         assert tnn_explainer.class_index == class_index
+
+    def test_raises_unfitted_model(self):
+        """Tests that instantiating ThresholdNNExplainer with an unfitted model raises an exception."""
+        model = RadiusNeighborsClassifier(radius=1)
+
+        with pytest.raises(NotFittedError):
+            ThresholdNNExplainer(model, class_index=0)
+
+    def test_base_knn_chooses_correct_subclass(self):
+        """Tests that instantiating KNNExplainer with a RadiusNeighborsClassifier will do its automagic."""
+        model = RadiusNeighborsClassifier(radius=1)
+        X_train = np.array([[1, 2, 3], [1, 2, 3]])
+        y_train = np.array([0, 1])
+        model.fit(X_train, y_train)
+        class_index = 1
+        explainer = KNNExplainer(model, class_index=class_index)
+        assert issubclass(ThresholdNNExplainer, Explainer)
+        assert issubclass(ThresholdNNExplainer, KNNExplainer)
+        assert isinstance(explainer, Explainer)
+        assert isinstance(explainer, KNNExplainer)
+        assert isinstance(explainer, ThresholdNNExplainer)
+        assert not isinstance(explainer, WeightedKNNExplainer)
 
     def test_zero_radius_model(self):
         """Tests behavior when calling RadiusNeighborsClassifier with radius=zero. Should return all shapley values zero."""
