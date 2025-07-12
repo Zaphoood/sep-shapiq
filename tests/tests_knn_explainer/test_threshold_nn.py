@@ -61,7 +61,7 @@ class TestThresholdNNExplainer:
 
         Not all shapley values should be zero.
 
-        Result should be 0.5. Reference: Formula (7) in Wang et al. [Wng23]_.
+        Result should be 0.5 for exactly one Shapley Value. Reference: Formula (7) in Wang et al. [Wng23]_.
         """
         X_train = np.array([[1, 1, 1], [11, 11, 11]])
         y_train = np.array([0, 1])
@@ -72,8 +72,9 @@ class TestThresholdNNExplainer:
         class_index = 0
         tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
         sv = interaction_values_to_array(tnn_explainer.explain(x_val))
-        assert np.any(sv != 0)
-        assert np.isclose(np.sum(sv), 0.5, atol=1e-6)
+
+        assert np.sum(np.isclose(sv, 0, atol=1e-6)) == 1
+        assert np.sum(np.isclose(sv, 0.5, atol=1e-6)) == 1
 
     def test_no_neighbors_in_threshold(self):
         """Tests behavior when no neighbors are within threshold tau. All shapley values should be zero."""
