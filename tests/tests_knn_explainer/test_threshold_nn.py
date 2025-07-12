@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import RadiusNeighborsClassifier
 
 from shapiq_student.explainer.knn.base import KNNExplainer, interaction_values_to_array
+from shapiq_student.explainer.knn.normal_knn import NormalKNNExplainer
 from shapiq_student.explainer.knn.threshold_nn import ThresholdNNExplainer, _BruteForceTNNExplainer
 from shapiq_student.explainer.knn.weighted_knn import WeightedKNNExplainer
 
@@ -59,6 +60,7 @@ class TestThresholdNNExplainer:
         assert isinstance(explainer, KNNExplainer)
         assert isinstance(explainer, ThresholdNNExplainer)
         assert not isinstance(explainer, WeightedKNNExplainer)
+        assert not isinstance(explainer, NormalKNNExplainer)
 
     def test_zero_radius_model(self):
         """Tests behavior when calling RadiusNeighborsClassifier with radius=zero. Should return all shapley values zero."""
