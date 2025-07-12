@@ -95,11 +95,8 @@ class ThresholdNNExplainer(KNNExplainer):
 
         Args:
             model: The model to explain. The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
-
             data: This parameter is currently ignored but may be used in future versions.
-
             labels: This parameter is currently ignored but may be used in future versions.
-
             class_index: The class index of the model to explain. Defaults to ``1``.
 
         Raises:
