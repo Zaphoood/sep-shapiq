@@ -30,6 +30,7 @@ jobs:
       - name: Install documentation build tools
         run: |
           uv sync --only-group docs
+          sudo apt install pandoc
 
       - name: Build docs
         run: |
