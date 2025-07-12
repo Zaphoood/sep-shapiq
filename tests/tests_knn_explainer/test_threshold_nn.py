@@ -170,7 +170,6 @@ class TestThresholdNNExplainer:
         X_train, X_test, y_train, _ = train_test_split(X, y, test_size=0.9, random_state=42)
         X_train = X_train[:n_train_max]
         y_train = y_train[:n_train_max]
-        print(f"{X_train.shape=}")
 
         x_val = X_test[0]
         n_classes = len(set(y))
