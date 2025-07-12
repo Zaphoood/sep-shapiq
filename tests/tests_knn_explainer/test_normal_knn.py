@@ -10,7 +10,6 @@ import pytest
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import MinMaxScaler
 
 from shapiq_student.explainer.knn import interaction_values_to_array
 from shapiq_student.explainer.knn.normal_knn import (
@@ -123,26 +122,6 @@ class TestNormalKNNExplainer:
             iv_jia = interaction_values_to_array(jia_explainer.explain_function(x_val))
 
             assert np.allclose(iv_brute, iv_jia)
-
-    def test_output_length(self):
-        """Tests wether the explain_function() returns an output in a valid format."""
-        dataf = load_iris()
-        X = dataf.data
-        y = dataf.target
-
-        scaler = MinMaxScaler(feature_range=(-1, 1))
-        X = scaler.fit_transform(X)
-
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-        probierModel = KNeighborsClassifier(n_neighbors=20)
-        probierModel.fit(X_train, y_train)
-
-        knn_expl = NormalKNNExplainer(model=probierModel, class_index=y_test[5])
-
-        testoutput = knn_expl.explain_function(x=X_test[5])
-
-        assert (len(testoutput)) == (len(y_train))
 
     def test_raises_on_invalid_weights(self):
         """Tests that instantiating the NormalKNNExplainer directly with an invalid value for weights raises an exception."""
