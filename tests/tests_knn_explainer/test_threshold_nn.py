@@ -61,7 +61,7 @@ class TestThresholdNNExplainer:
 
         Not all shapley values should be zero.
 
-        Result should be 0.5 for exactly one Shapley Value. Reference: Formula (7) in Wang et al. [Wng23]_.
+        The resulting Shapley Values should be 0.5 for exactly one player and zero for the other. Reference: Formula (7) in Wang et al. [Wng23]_.
         """
         X_train = np.array([[1, 1, 1], [11, 11, 11]])
         y_train = np.array([0, 1])
