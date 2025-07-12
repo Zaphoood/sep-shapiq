@@ -28,7 +28,7 @@ class _BruteForceNormalKNNExplainer(_CommonKNNExplainer):
     def __init__(
         self,
         model: KNeighborsClassifier,
-        class_index: int,
+        class_index: int | None = None,
     ) -> None:
         super().__init__(model, class_index=class_index)
 
@@ -74,7 +74,7 @@ class NormalKNNExplainer(_CommonKNNExplainer):
     def __init__(
         self,
         model: KNeighborsClassifier,
-        class_index: int,
+        class_index: int | None = None,
     ) -> None:
         super().__init__(model, class_index=class_index)
 

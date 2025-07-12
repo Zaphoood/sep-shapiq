@@ -30,7 +30,7 @@ class _WeightedKNNExplainerBase(_CommonKNNExplainer):
     def __init__(
         self,
         model: KNeighborsClassifier,
-        class_index: int,
+        class_index: int | None = None,
     ) -> None:
         super().__init__(model, class_index=class_index)
 
@@ -83,7 +83,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
     def __init__(
         self,
         model: KNeighborsClassifier,
-        class_index: int,
+        class_index: int | None = None,
         n_bits: int | None = None,
     ) -> None:
         """Initializes the BruteForceWKNNExplainer.
@@ -204,7 +204,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     def __init__(
         self,
         model: KNeighborsClassifier,
-        class_index: int,
+        class_index: int | None = None,
         n_bits: int = 3,
     ) -> None:
         """Initializes the class.
@@ -214,18 +214,13 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         Args:
             model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
                 The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit()`` must be a 1D vector.
-
             data: This parameter is currently ignored but may be used in future versions.
-
             labels: This parameter is currently ignored but may be used in future versions.
-
             class_index: The class index of the model to explain. Defaults to ``1``.
-
             n_bits: The number of bits to use for discretizing weights. Must be non-negative.
 
         Raises:
             sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
-
             shapiq_student.explainer.knn.exceptions.MultiOutputKNNError: The constructor was called with a model that uses multi-output classification.
         """
         super().__init__(model, class_index)

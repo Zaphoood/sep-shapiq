@@ -62,16 +62,12 @@ class KNNExplainer(Explainer):
         Args:
             model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier`` or ``sklearn.neighbors.RadiusNeighborsClassifier``.
                 The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
-
             data: This parameter is currently ignored but may be used in future versions.
-
             labels: This parameter is currently ignored but may be used in future versions.
-
             class_index: The class index of the model to explain. Defaults to ``1``.
 
         Raises:
             sklearn.exceptions.NotFittedError: The constructor was called with a model that hasn't been fitted.
-
             shapiq_student.explainer.knn.exceptions.MultiOutputKNNError: The constructor was called with a model that uses multi-output classification.
         """
         # If this class is instantiated directly, automagically dispatch to the appropriate explainer for the given model

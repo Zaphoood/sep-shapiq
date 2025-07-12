@@ -30,7 +30,7 @@ class _BruteForceTNNExplainer(KNNExplainer):
         Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
     """
 
-    def __init__(self, model: RadiusNeighborsClassifier, class_index: int) -> None:
+    def __init__(self, model: RadiusNeighborsClassifier, class_index: int | None = None) -> None:
         super().__init__(model, class_index=class_index)
         # The type of the superclass's `model` attribute is too broad, since it also allows for other KNN explainers
         # To circumvent this, we store the model separately in an attribute with a narrower type
@@ -87,7 +87,7 @@ class ThresholdNNExplainer(KNNExplainer):
     """
 
     def __init__(
-        self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int
+        self, model: sklearn.neighbors.RadiusNeighborsClassifier, class_index: int | None = None
     ) -> None:
         r"""Initializes the class.
 
@@ -95,11 +95,8 @@ class ThresholdNNExplainer(KNNExplainer):
 
         Args:
             model: The model to explain. The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
-
             data: This parameter is currently ignored but may be used in future versions.
-
             labels: This parameter is currently ignored but may be used in future versions.
-
             class_index: The class index of the model to explain. Defaults to ``1``.
 
         Raises:
