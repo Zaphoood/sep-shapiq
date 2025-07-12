@@ -23,7 +23,7 @@ class _CommonKNNExplainer(KNNExplainer):
     def __init__(
         self,
         model: KNeighborsClassifier,
-        class_index: int | None,
+        class_index: int | None = None,
     ) -> None:
         """Initializes the class.
 

@@ -30,7 +30,7 @@ class _WeightedKNNExplainerBase(_CommonKNNExplainer):
     def __init__(
         self,
         model: KNeighborsClassifier,
-        class_index: int | None,
+        class_index: int | None = None,
     ) -> None:
         super().__init__(model, class_index=class_index)
 
@@ -83,7 +83,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
     def __init__(
         self,
         model: KNeighborsClassifier,
-        class_index: int | None,
+        class_index: int | None = None,
         n_bits: int | None = None,
     ) -> None:
         """Initializes the BruteForceWKNNExplainer.
@@ -204,7 +204,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     def __init__(
         self,
         model: KNeighborsClassifier,
-        class_index: int | None,
+        class_index: int | None = None,
         n_bits: int = 3,
     ) -> None:
         """Initializes the class.
