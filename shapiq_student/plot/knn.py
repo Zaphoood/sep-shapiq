@@ -23,7 +23,7 @@ def plot_knn_shapley_2d(
     classes: npt.NDArray[np.integer],
     x_test: npt.NDArray[np.floating],
     *,
-    k: int | None = None,
+    title: str | None = None,
     scale: float = 1,
 ) -> None:
     """Plot a 2D KNN Shapley explanation using matplotlib.
@@ -42,7 +42,7 @@ def plot_knn_shapley_2d(
                         corresponding to each training point.
         classes: A sequence of unique class labels (must not exceed the number of matplotlib colors available).
         x_test: A array of shape (2,) representing the test datat point being explained.
-        k: The number of neighbors used in the KNN model (optional; shown in the plot title if provided).
+        title: The title to set on the plot.
         scale: Scaling factor for Shapley marker sizes (default is 3).
 
     Raises:
@@ -79,6 +79,14 @@ def plot_knn_shapley_2d(
             label=str(class_),
             facecolors=color,
         )
+    plt.scatter(
+        X_train[:, 0],
+        X_train[:, 1],
+        s=scale * BASE_SCALE,
+        marker="o",
+        edgecolors="black",
+        facecolors="none",
+    )
 
     plt.scatter(
         x_test[:, 0],
@@ -89,9 +97,9 @@ def plot_knn_shapley_2d(
         linewidths=1.5,
     )
 
-    lims = _calculate_axis_lims(np.vstack([X_train, x_test]))
-    plt.xlim(lims)
-    plt.ylim(lims)
+    x_lims, y_lims = _axis_lims_center_mean(np.vstack([X_train, x_test]))
+    plt.xlim(x_lims)
+    plt.ylim(y_lims)
 
     plt.gca().set_aspect("equal")
     plt.legend(
@@ -112,8 +120,8 @@ def plot_knn_shapley_2d(
         )
     )
 
-    title = f"KNN Shapley ({k=})" if k is not None else "KNN Shapley"
-    plt.title(title)
+    if title is not None:
+        plt.title(title)
 
 
 def _make_legend_handles(
@@ -146,11 +154,27 @@ def _make_legend_handles(
     return handles
 
 
-def _calculate_axis_lims(
+def _axis_lims_center_origin(
     points: npt.NDArray[np.floating], padding_percent: float = 0.2
-) -> tuple[int, int]:
-    """Calculate the x and y limits to fit all points onto a plot."""
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Calculate the x and y limits such that the plot is square and centered around the origin."""
     max_extent = np.abs(points).max()
     limits = max_extent * (1 + padding_percent)
 
-    return -limits, limits
+    return (-limits, limits), (-limits, limits)
+
+
+def _axis_lims_center_mean(
+    points: npt.NDArray[np.floating], padding_percent: float = 0.2
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Calcualte the x and y limits such that the plot is square and centered around the mean of the points."""
+    x_min, y_min = np.min(points, axis=0)
+    x_max, y_max = np.max(points, axis=0)
+    x_center = (x_min + x_max) / 2
+    y_center = (y_min + y_max) / 2
+    half_range = max(x_max - x_min, y_max - y_min) / 2
+    padding_scale = 1 + padding_percent
+    x_lims = (x_center - padding_scale * half_range, x_center + padding_scale * half_range)
+    y_lims = (y_center - padding_scale * half_range, y_center + padding_scale * half_range)
+
+    return x_lims, y_lims
