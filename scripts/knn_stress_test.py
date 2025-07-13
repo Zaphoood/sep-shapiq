@@ -125,7 +125,7 @@ def get_threshold_nn_factory(tau: float) -> ModelFactory[RadiusNeighborsClassifi
 T = TypeVar("T", bound=Model)
 
 
-class StressTestConfig[T](TypedDict):
+class StressTestConfig(TypedDict):
     """Configuration of a stress test for an explainer."""
 
     name: str
