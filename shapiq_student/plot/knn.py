@@ -21,7 +21,7 @@ def plot_knn_shapley_2d(
     y_train: npt.NDArray[np.integer],
     shapley_values: npt.NDArray[np.floating],
     classes: npt.NDArray[np.integer],
-    x_test: npt.NDArray[np.floating],
+    x_test: npt.NDArray[np.floating] | None = None,
     *,
     title: str | None = None,
     scale: float = 1,
@@ -49,7 +49,9 @@ def plot_knn_shapley_2d(
         ValueError: If all Shapley values are zero.
         RuntimeError: If the number of classes exceeds the number of available default colors.
     """
-    x_test = np.atleast_2d(x_test)
+    if x_test is not None:
+        x_test = np.atleast_2d(x_test)
+
     # TODO(Zaphoood): this linter error is so stupid. Like, 2 is just not a magic value!!
     two = 2
     if X_train.ndim != two or X_train.shape[1] != two:
@@ -88,16 +90,19 @@ def plot_knn_shapley_2d(
         facecolors="none",
     )
 
-    plt.scatter(
-        x_test[:, 0],
-        x_test[:, 1],
-        marker="x",
-        facecolors="black",
-        s=0.5 * scale * BASE_SCALE,
-        linewidths=1.5,
-    )
+    if x_test is not None:
+        plt.scatter(
+            x_test[:, 0],
+            x_test[:, 1],
+            marker="x",
+            facecolors="black",
+            s=0.5 * scale * BASE_SCALE,
+            linewidths=1.5,
+        )
 
-    x_lims, y_lims = _axis_lims_center_mean(np.vstack([X_train, x_test]))
+    x_lims, y_lims = _axis_lims_center_mean(
+        np.vstack([X_train, x_test]) if x_test is not None else X_train
+    )
     plt.xlim(x_lims)
     plt.ylim(y_lims)
 
