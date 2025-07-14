@@ -27,14 +27,24 @@ def plot_knn_shapley_2d(
     *,
     title: str | None = None,
     scale: float = 1,
+    min_val: float | None = None,
     min_size: float = 1,
 ) -> None:
     """Plot a 2D KNN Shapley explanation using matplotlib.
 
-    This function visualizes the training data, a validation point, and
-    the associated Shapley values computed for a KNN explanation.
-    Each training point is shown with a marker size proportional to the
-    absolute Shapley value. Around each marker, a black circle is show, representing the zero value.
+    This function visualizes the training data, a validation point, and the
+    associated Shapley values computed for a KNN explanation.  Each training
+    point is shown with a marker size proportional to the absolute Shapley
+    value. Around each marker, a black circle is show, representing the zero
+    value.
+
+    The sizes of the markers is calculated as follows: The minimum Shapley Value
+    is assigned to size 0, and a Shapley Value of 0 to the value of the `scale`
+    parameter; all other values are interpolated linearly.
+    Finally all sizes are multiplied with a base scale of 100. If you wish to
+    compare Shapley Values across two different plots, it is advisable to
+    compute `min_val` over all Shapley Values of all plots and pass it as a
+    function parameter. This will ensure all markers all scaled equivalently.
 
     Args:
         ax: The matplotlib Axes to plot onto.
@@ -46,6 +56,7 @@ def plot_knn_shapley_2d(
         x_test: A array of shape (2,) representing the test datat point being explained.
         title: The title to set on the plot.
         scale: Scaling factor for Shapley marker sizes (default is 3).
+        min_val: Allows orverriding the minimum value used for calculating the marker sizes. Defaults to ``np.min(shapley_values)``.
         min_size: The minimum size of the scaled markers. It's recommended to set this to a small positive value
             to prevent the smallest Shapley Values from becoming zero-size dots.
 
@@ -62,12 +73,13 @@ def plot_knn_shapley_2d(
         msg = f"X_train must be 2D matrix with shape (n, 2), but got {X_train.shape}"
         raise ValueError(msg)
 
-    min_val = -np.min(shapley_values)
+    if min_val is None:
+        min_val = np.min(shapley_values)
     if np.isclose(min_val, 0):
         max_val = np.max(shapley_values)
         sizes = shapley_values / max_val * 2
     else:
-        sizes = (shapley_values + min_val) / min_val
+        sizes = (shapley_values - min_val) / (-min_val)
         sizes = sizes * scale * BASE_SCALE + min_size
 
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
