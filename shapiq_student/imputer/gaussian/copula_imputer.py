@@ -164,8 +164,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
                 are present or missing for each coalition.
 
         Returns:
-            An array of shape (n_coalitions, n_features) containing the mean imputed values for each
-            coalition in original feature space.
+            An array of shape (n_coalitions,) containing the mean model prediction for each coalition.
         """
         NULL_POINT_MSG = "Explanation point x cannot be None"
         if x is None:
@@ -176,14 +175,16 @@ class GaussianCopulaImputer(GaussianImputerBase):
         # Generate Monte Carlo samples in Gaussian space
         gaussian_samples = self.sample_monte_carlo(x_gaussian_copula, coalitions)
 
-        # Transform all samples back to original space and take mean
+        # For each coalition, transform samples and get predictions
         n_coalitions = coalitions.shape[0]
-        imputed_means = np.zeros((n_coalitions, self.data.shape[1]))
+        coalition_values = np.zeros(n_coalitions)
 
         for i in range(n_coalitions):
-            # Transform samples for this coalition back to original space
+            # Transform samples back to original space
             original_samples = self._transform_to_original(gaussian_samples[i])
-            # Take mean across Monte Carlo samples
-            imputed_means[i] = np.mean(original_samples, axis=0)
+            # Get model predictions
+            predictions = self.model(original_samples)
+            # Take mean prediction for this coalition
+            coalition_values[i] = np.mean(predictions)
 
-        return imputed_means
+        return coalition_values
