@@ -127,28 +127,18 @@ class GaussianCopulaImputer(GaussianImputerBase):
         n_samples, n_features = gaussian_samples.shape
         x_original = np.zeros_like(gaussian_samples)
 
-        for i in range(gaussian_samples.shape[1]):
-            # get sorted original data for this feature
-            sorted_train = np.sort(self.data[:, i])
-            n_ref = len(sorted_train)
+        for i in range(n_features):
+            # Get uniform values from Gaussian samples
+            uni_values = norm.cdf(gaussian_samples[:, i])
 
-            uni_value = norm.cdf(gaussian_samples[:, i])
+            # Use quantile function approach with sorted data
+            n_ref = self._sorted_data.shape[0]
 
-            # Map uniform values to original space using linear interpolation
-            # uniform_values * (n_ref - 1) gives us the continuous index
-            continuous_indices = uni_value * (n_ref - 1)
+            # Convert uniform values to indices in sorted data
+            indices = uni_values * (n_ref - 1)
 
-            # Get lower and upper indices for interpolation
-            lower_indices = np.floor(continuous_indices).astype(int)
-            upper_indices = np.minimum(lower_indices + 1, n_ref - 1)
-
-            # Linear interpolation weights
-            weights = continuous_indices - lower_indices
-
-            # Interpolate between sorted values
-            x_original[:, i] = (1 - weights) * sorted_train[lower_indices] + weights * sorted_train[
-                upper_indices
-            ]
+            # Use numpy's interp for better interpolation
+            x_original[:, i] = np.interp(indices, np.arange(n_ref), self._sorted_data[:, i])
 
         return x_original
 
