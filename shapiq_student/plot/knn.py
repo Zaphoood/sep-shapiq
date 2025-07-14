@@ -143,7 +143,7 @@ def _make_legend_handles(
             [0],
             [0],
             markersize=np.sqrt(legend_size),  # markersize is in points (approx sqrt of s)
-            label=f"class {class_}",
+            label=f"Class {class_}",
             markerfacecolor=color,
             **marker_kwargs,
         )
