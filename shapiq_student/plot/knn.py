@@ -12,11 +12,13 @@ import numpy.typing as npt
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+    from matplotlib.axes import Axes
 
 BASE_SCALE = 100
 
 
 def plot_knn_shapley_2d(
+    ax: Axes,
     X_train: npt.NDArray[np.floating],
     y_train: npt.NDArray[np.integer],
     shapley_values: npt.NDArray[np.floating],
@@ -35,6 +37,7 @@ def plot_knn_shapley_2d(
     absolute Shapley value. Around each marker, a black circle is show, representing the zero value.
 
     Args:
+        ax: The matplotlib Axes to plot onto.
         X_train: A 2D array of shape (n_samples, 2) with the training points.
         y_train: A 1D array of shape (n_samples,) with class labels for each training point.
         shapley_values: A sequence of Shapley values (or similar interaction scores)
@@ -67,8 +70,6 @@ def plot_knn_shapley_2d(
         sizes = (shapley_values + min_val) / min_val
         sizes = sizes * scale * BASE_SCALE + min_size
 
-    plt.figure(figsize=(8, 8))
-
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     if len(classes) > len(colors):
         msg = f"Sorry, too many classes ({len(classes)}) and not enough colors ({len(colors)})!"
@@ -76,14 +77,14 @@ def plot_knn_shapley_2d(
 
     for color, class_ in zip(colors, classes, strict=False):
         mask = y_train == class_
-        plt.scatter(
+        ax.scatter(
             X_train[mask, 0],
             X_train[mask, 1],
             sizes[mask],
             label=str(class_),
             facecolors=color,
         )
-    plt.scatter(
+    ax.scatter(
         X_train[:, 0],
         X_train[:, 1],
         s=scale * BASE_SCALE,
@@ -93,7 +94,7 @@ def plot_knn_shapley_2d(
     )
 
     if x_test is not None:
-        plt.scatter(
+        ax.scatter(
             x_test[:, 0],
             x_test[:, 1],
             marker="x",
@@ -105,11 +106,11 @@ def plot_knn_shapley_2d(
     x_lims, y_lims = _axis_lims_center_mean(
         np.vstack([X_train, x_test]) if x_test is not None else X_train
     )
-    plt.xlim(x_lims)
-    plt.ylim(y_lims)
+    ax.set_xlim(x_lims)
+    ax.set_ylim(y_lims)
 
-    plt.gca().set_aspect("equal")
-    plt.legend(
+    ax.set_aspect("equal")
+    ax.legend(
         handles=_make_legend_handles(
             colors,
             classes,
@@ -128,7 +129,7 @@ def plot_knn_shapley_2d(
     )
 
     if title is not None:
-        plt.title(title)
+        ax.title.set_text(title)
 
 
 def _make_legend_handles(
