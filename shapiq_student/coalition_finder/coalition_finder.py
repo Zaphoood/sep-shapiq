@@ -66,18 +66,16 @@ def get_explanation_more_features(
 
 def subset_finding(
     interaction_values: InteractionValues, coalition_size: int, max_order: int | None = None
-) -> tuple[np.ndarray, float]:
+) -> tuple[np.ndarray, float, np.ndarray, float]:
     r"""Searches all S ⊆ N with |S|=coalition_size.
 
-    and returns the coalition that maximizes \hat v_e(S),
-    along with its value.
+    Returns the coalition that maximizes \hat v_e(S) and the one that minimizes it,
+    along with their values.
     """
-    # Bestimme Anzahl der Player - but not sure if even needed
     n_players = interaction_values.n_players
     if max_order is None:
         max_order = n_players
 
-    # Baue die Baseline e0 (falls in interaction_lookup vorhanden)
     e0 = 0.0
     if () in interaction_values.interaction_lookup:
         idx0 = interaction_values.interaction_lookup[()]
@@ -85,25 +83,26 @@ def subset_finding(
 
     best_val = -np.inf
     best_coal: np.ndarray | None = None
+    min_val = np.inf
+    min_coal: np.ndarray | None = None
 
-    # Alle Koalitionen erzeugen und filtern
     for coalition in get_coalitions(n_players):
         if coalition.sum() != coalition_size:
             continue
 
-        # 1) Einzelne Player
         v1 = get_explanation_one_feature(coalition, interaction_values)
-        # 2) Zweier-Interaktionen
         v2 = get_explanation_two_features(coalition, interaction_values)
-        # 3) Höhere Ordnungen
         v3 = get_explanation_more_features(coalition, interaction_values, max_order)
 
         total = e0 + v1 + v2 + v3
         if total > best_val:
             best_val = total
             best_coal = coalition.copy()
+        if total < min_val:
+            min_val = total
+            min_coal = coalition.copy()
 
-    if best_coal is None:
+    if best_coal is None or min_coal is None:
         error_msg = "keine Koalition gefunden!"
         raise ValueError(error_msg)
-    return best_coal, best_val
+    return best_coal, best_val, min_coal, min_val
