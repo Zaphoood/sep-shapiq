@@ -123,6 +123,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         n_samples, n_features = gaussian_samples.shape
         x_original = np.zeros_like(gaussian_samples)
 
+        # TODO (milanagm): is the re-transformation correct?
         for i in range(n_features):
             # Get uniform values from Gaussian samples
             uni_values = norm.cdf(gaussian_samples[:, i])
@@ -153,13 +154,10 @@ class GaussianCopulaImputer(GaussianImputerBase):
         x_gaussian = self.transform_point_to_gaussian(x.flatten(), self.data)
         imputed_gaussian = self.sample_monte_carlo(x_gaussian, coalitions)
 
-        n_coalitions = coalitions.shape[0]  # TODO (milanagm): oder: imputed_gaussian.shape[0]
-        imputed_original = np.zeros(
-            n_coalitions
-        )  # TODO (milanagm): or np.zeros(imputed_gaussian) ?
+        n_imputed_gaussian = imputed_gaussian.shape[0]
+        imputed_original = np.zeros(n_imputed_gaussian)
 
-        # TODO (milanagm): is the re-transformation correct?
-        for i in range(n_coalitions):
+        for i in range(n_imputed_gaussian):
             imputed_original[i] = self.transform_to_original(imputed_gaussian[i])
 
         imputed_original = np.mean(imputed_original, axis=1)
