@@ -120,6 +120,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
             Samples in original feature space (n_samples, n_features).
         """
         gaussian_samples = np.asarray(gaussian_samples)
+        # TODO (milanagm): get n_features via guassian samples to avoid unused variables
         n_samples, n_features = gaussian_samples.shape
         x_original = np.zeros_like(gaussian_samples)
 
