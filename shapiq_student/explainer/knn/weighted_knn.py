@@ -264,7 +264,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
 
         n_classes = len(self.y_train_classes)
         if n_classes == 1:
-            return interaction_values_from_array(np.zeros(n_players))
+            return interaction_values_from_array(np.full(n_players, 1 / n_players))
 
         sortperm, weights = self._get_prepared_weights(x)
 
