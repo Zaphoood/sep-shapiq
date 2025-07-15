@@ -149,12 +149,16 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
             )
 
         n_players = self.X_train.shape[0]
-        utilities: dict[tuple[int, ...], float] = {}
+        utilities: dict[tuple[int, ...], float] = {(): 0}
 
         y_train_sorted = self.y_train_indices[sortperm]
         y_val_mask = y_train_sorted == y_val
         y_other_mask = y_train_sorted == y_other
-        for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
+
+        coalitions_iterator = product([False, True], repeat=self.X_train.shape[0])
+        # Skip emtpy coalition
+        next(coalitions_iterator)
+        for coalition_generator in coalitions_iterator:
             coalition = np.array(list(coalition_generator))
 
             # Utility function according to equation (15) in Wang et al. (2024)
@@ -372,7 +376,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         weights: npt.NDArray[np.integer],
     ) -> npt.NDArray[np.floating]:
         g_i = np.zeros((self.k,))
-        g_i[0] = 1 if self._is_weight_negative(weights[i]) else 0
+        g_i[0] = 0 if self._is_weight_negative(weights[i]) else 1
         for l in range(1, self.k):  # noqa: E741
             if y_i == y_val:
                 weight_range_begin = self._flip_weight_sign(weights[i])
@@ -395,7 +399,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         g_i: npt.NDArray[np.floating],
         weights: npt.NDArray[np.integer],
     ) -> float:
-        weight_sign = self._weight_sign(weights[i])
+        modified_weight_sign = self._modified_weight_sign(weights[i])
         first_summand = cast(
             "float",
             sum(g_i[l] / comb(n - 1, l) for l in range(min(self.k, n))) / n,  # noqa: E741
@@ -407,7 +411,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
             ),
         )
 
-        return weight_sign * (first_summand + second_summand)
+        return modified_weight_sign * (first_summand + second_summand)
 
     @overload
     def _discretize_weight(self, weight: float) -> int: ...
@@ -492,14 +496,12 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         """
         return weight_discrete < self.weights_space_zero
 
-    def _weight_sign(self, weight_discrete: np.integer) -> int:
-        """Implements the sign function for discretized weights.
+    def _modified_weight_sign(self, weight_discrete: np.integer) -> int:
+        """Implements a modified sign function for discretized weights.
 
-        Given some discretized weight index ``w^disc``, returns 1 if ``w > 0``, -1 if ``w < 0``, and 0 if ``w == 0```
+        It acts like a normal sign function but maps 0 to 1: Given some discretized weight index ``w^disc``, returns 1 if ``w >= 0`` and -1 if ``w < 0``.
         """
-        if weight_discrete > self.weights_space_zero:
+        if weight_discrete >= self.weights_space_zero:
             return 1
-        if weight_discrete < self.weights_space_zero:
-            return -1
 
-        return 0
+        return -1
