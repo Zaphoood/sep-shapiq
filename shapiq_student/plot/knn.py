@@ -87,6 +87,9 @@ def plot_knn_shapley_2d(
         msg = f"Sorry, too many classes ({len(classes)}) and not enough colors ({len(colors)})!"
         raise RuntimeError(msg)
 
+    positive = shapley_values > 0
+    sizes[positive] = scale * BASE_SCALE + (sizes[positive] - scale * BASE_SCALE) * 2
+
     for color, class_ in zip(colors, classes, strict=False):
         mask = y_train == class_
         ax.scatter(
