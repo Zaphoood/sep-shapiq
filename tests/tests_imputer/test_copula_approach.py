@@ -81,6 +81,8 @@ def test_check_categorical_features_string() -> None:
 # Tests for Transformation Methods          #
 ##############################################
 
+# TODO (milanagm): method to check if after two transformations identity function is reached
+
 
 def test_rank_gaussian_transform() -> None:
     """Test the rank-Gaussian transformation preserves ranks and produces standard normal."""
