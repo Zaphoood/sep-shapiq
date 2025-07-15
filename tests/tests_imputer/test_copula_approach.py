@@ -16,8 +16,6 @@ import pytest
 from shapiq_student.imputer.gaussian.copula_imputer import GaussianCopulaImputer
 from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError
 
-MIN_REASONABLE_VALUE = -5
-MAX_REASONABLE_VALUE = 5
 DATA_MIN = 1
 DATA_MAX = 9
 LOWER_BOUND = 0.5
@@ -98,7 +96,7 @@ def test_rank_gaussian_transform() -> None:
     rng = np.random.default_rng(42)
     data = rng.uniform(0, 10, size=(100, 3))
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-    transformed = imputer.rank_gaussian_transform(data)
+    transformed = imputer.gaussian_transform(data)
 
     # Check shape
     assert transformed.shape == data.shape

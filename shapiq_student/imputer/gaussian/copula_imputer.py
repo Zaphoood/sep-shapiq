@@ -50,7 +50,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         self._check_categorical_features()
 
         # Transform data to Gaussian space using empirical CDF (rank-Gaussian)
-        self.data_transformed = self._gaussian_transform(self.data)
+        self.data_transformed = self.gaussian_transform(self.data)
 
         # Override: GaussianCopulaImputer uses transformed mean/covariance
         self._mean_per_feature = np.mean(
@@ -62,7 +62,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         )  # TODO (milanagm): we are NOT does not preserve the coalitions here - check if this is okay
         # before:  sorted_train = np.sort(self.data[:, i]) (this was in inverse transform)
 
-    def _gaussian_transform(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
+    def gaussian_transform(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
         """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
 
         For each feature (column), this method applies a transformation so that the values follow a standard normal
