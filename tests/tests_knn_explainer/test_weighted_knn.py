@@ -194,21 +194,23 @@ class TestWKNNValues:
 
         This means that the sum of all Shapley values is equal to the utility of the grand coalition.
         """
-        rng = np.random.default_rng(seed=30)
-        dataset = random_test_dataset(rng, n_train=12, n_classes=2)
-        model = KNeighborsClassifier(n_neighbors=5, weights="distance")
-        model.fit(dataset.X_train, dataset.y_train)
+        for seed in range(10):
+            rng = np.random.default_rng(seed=seed)
+            dataset = random_test_dataset(rng, n_train=12, n_classes=2)
+            model = KNeighborsClassifier(n_neighbors=5, weights="distance")
+            model.fit(dataset.X_train, dataset.y_train)
 
-        y_pred = model.predict(dataset.x_val.reshape(1, -1))[0]
+            for class_index in range(2):
+                explainer = WeightedKNNExplainer(model, class_index=class_index, n_bits=8)
+                sv = interaction_values_to_array(explainer.explain(dataset.x_val))
+                sv_sum = np.sum(sv)
 
-        for class_index in range(2):
-            explainer = WeightedKNNExplainer(model, class_index=class_index)
-            sv = interaction_values_to_array(explainer.explain(dataset.x_val))
-            sv_sum = np.sum(sv)
-            # The WKNN explainer uses a binary utility function which is 1 for correct and 0 for incorrect prediction
-            grand_coal_utilty = 1 if y_pred == class_index else 0
+                _, weights_discrete = explainer._get_prepared_weights(dataset.x_val)
+                weights = explainer._undiscretize_weight(weights_discrete)
+                grand_coal_weights = np.sum(weights[: explainer.k])
+                grand_coal_utilty = int(grand_coal_weights >= 0)
 
-            assert np.isclose(sv_sum, grand_coal_utilty)
+                assert np.isclose(sv_sum, grand_coal_utilty)
 
 
 class TestWKNNSanity:
