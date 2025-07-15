@@ -59,7 +59,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         self._cov_mat = self._ensure_positive_definite(np.cov(self.data_transformed.T))
         self._sorted_data = np.sort(self.data, axis=0)
 
-    def rank_gaussian_transform(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
+    def _gaussian_transform(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
         """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
 
         For each feature (column), this method applies a transformation so that the values follow a standard normal
