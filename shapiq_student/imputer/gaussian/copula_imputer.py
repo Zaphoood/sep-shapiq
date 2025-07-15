@@ -94,7 +94,9 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             Transformed point in Gaussian space (n_features,).
         """
-        # TODO (milanagm): add error if x_point shorter than x_train
+        if x_point.shape[0] < x_train.shape[1]:
+            msg = "x_point must have at least as many features as x_train."
+            raise ValueError(msg)
 
         n_features = x_point.shape[0]
         x_gaussian = np.zeros_like(x_point, dtype=float)
