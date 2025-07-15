@@ -1,8 +1,4 @@
-"""Gaussian Copula-based imputer for Shapley value estimation.
-
-This module implements an imputation method using the Gaussian copula approach
-for estimating the value function in Shapley-based explainability.
-"""
+"""Copula's approach for imputation in Shapley Value calculations."""
 
 from __future__ import annotations
 
@@ -11,38 +7,28 @@ from typing import TYPE_CHECKING, override
 import numpy as np
 from scipy.stats import norm, rankdata
 
-from .base import GaussianImputerBase
-
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import numpy.typing as npt
+    from shapiq import Game
+
+from .base import GaussianImputerBase
 
 
 class GaussianCopulaImputer(GaussianImputerBase):
-    """Copula-based Gaussian imputer using rank transformations.
-
-    This imputer transforms data to Gaussian space using empirical CDF (rank-Gaussian transformation),
-    performs imputation in the Gaussian space, and then transforms back to the original space.
-    """
+    """Implements the Gaussian Copula approach for feature imputation in Shapley Value calculations."""
 
     @override
     def __init__(
         self,
-        model: object,
+        model: object | Game | Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]],
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
         n_mc_samples: int = 1000,
         random_state: int | None = None,
     ) -> None:
-        """Initializes the Gaussian Copula imputer.
-
-        Args:
-            model: The model to explain as a callable function.
-            data: Background data for the explainer (n_samples, n_features).
-            x: Explanation point (1, n_features) or (n_features,). Defaults to None.
-            n_mc_samples: Number of Monte Carlo samples. Defaults to 1000.
-            random_state: Random state for reproducibility. Defaults to None.
-        """
         super().__init__(
             model=model,
             data=data,
@@ -50,140 +36,104 @@ class GaussianCopulaImputer(GaussianImputerBase):
             n_mc_samples=n_mc_samples,
             random_state=random_state,
         )
-
         self._check_categorical_features()
-
-        # Transform data to Gaussian space using empirical CDF (rank-Gaussian)
-        self.data_transformed = self._rank_gaussian_transform(self.data)
-
+        self.data_transformed = self._gaussian_transform(self.data)
         # Override: GaussianCopulaImputer uses transformed mean/covariance
         self._mean_per_feature = np.mean(
             self.data_transformed, axis=0
         )  # in theory mean should be (nearly) zero
         self._cov_mat = self._ensure_positive_definite(np.cov(self.data_transformed.T))
 
-    def _rank_gaussian_transform(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
+    def _gaussian_transform(self, x: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
         """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
 
+        For each feature (column), this method applies a transformation so that the values follow a standard normal
+        distribution (mean 0, std 1), while preserving the rank order of the original data. This is also known as a
+        rank-Gaussian or empirical CDF transformation.
+
         Args:
-            data: Input data array of shape (n_samples, n_features) to transform.
-
+            x: Input data with shape (n_samples, n_features) to be transformed
         Returns:
-            Transformed data in Gaussian space with shape (n_samples, n_features).
+            Transformed data in Gaussian space with shape (n_samples, n_features)
         """
-        data = np.asarray(data)
-        n_samples, n_features = data.shape
-        transformed_data = np.zeros_like(data, dtype=float)
+        x_transformed = np.zeros_like(x, dtype=float)
+        for i in range(x.shape[1]):
+            ranks = rankdata(x[:, i], method="average")
+            quantile = ranks / (len(ranks) + 1)
+            x_transformed[:, i] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
+        return x_transformed
 
-        for i in range(n_features):
-            # Use rankdata with average method to handle ties consistently
-            ranks = rankdata(data[:, i], method="average")
-            # Transform to uniform [0,1] using (rank - 0.5) / n to avoid extreme values
-            uniform_values = (ranks - 0.5) / n_samples
-            # Apply inverse normal CDF to get standard normal values
-            transformed_data[:, i] = norm.ppf(np.clip(uniform_values, 1e-10, 1 - 1e-10))
-        return transformed_data
-
-    def _transform_point_to_gaussian(
-        self, x_point: npt.NDArray[np.floating], x_train: npt.NDArray[np.floating]
+    def _transform_x_explain(
+        self, x_explain: npt.NDArray[np.floating], x_train: npt.NDArray[np.floating]
     ) -> npt.NDArray[np.floating]:
-        """Transform explanation point to Gaussian space using training data's ECDF.
+        """Transform a single explanation point to Gaussian space using the training data's ECDF.
 
         Args:
-            x_point: Explanation point to transform (n_features,).
-            x_train: Training data used for ECDF (n_samples, n_features).
+            x_explain: The explanation point with shape (n_features,)
+            x_train: The training data with shape (n_samples, n_features)
 
         Returns:
-            Transformed point in Gaussian space (n_features,).
+            Transformed explanation point in Gaussian space as an array of shape (n_features,)
         """
-        x_point = np.asarray(x_point).flatten()
+        x = x_explain
         x_train = np.asarray(x_train)
-        n_features = x_point.shape[0]
-        n_samples = x_train.shape[0]
+        n_features = x.shape[0]
 
-        x_gaussian_copula = np.zeros_like(x_point, dtype=float)
-
+        x_gaussian_copula = np.zeros_like(x, dtype=float)
         for j in range(n_features):
-            # Combine the point with reference data to get consistent ranking
-            comb_value = np.concatenate([x_train[:, j], [x_point[j]]])
-            rank = rankdata(comb_value, method="average")
-            # Get the rank of our point (last element)
-            uni_value = (rank[-1] - 0.5) / (n_samples + 1)
-            x_gaussian_copula[j] = norm.ppf(np.clip(uni_value, 1e-10, 1 - 1e-10))
+            vals = np.concatenate([[x[j]], x_train[:, j]])
+            rank = rankdata(vals, method="average")[0]
+            quantile = rank / (len(x_train) + 1)
+            x_gaussian_copula[j] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
         return x_gaussian_copula
 
-    def _transform_to_original(
-        self, gaussian_samples: npt.NDArray[np.floating]
-    ) -> npt.NDArray[np.floating]:
-        """Transform Gaussian samples back to original feature space.
+    def _inverse_transform(self, z_samples: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
+        """Transform Gaussian samples back to original space.
 
         Args:
-            gaussian_samples: Samples in Gaussian space (n_samples, n_features).
+            z_samples: Samples in Gaussian space with shape (n_samples, n_features)
 
         Returns:
-            Samples in original feature space (n_samples, n_features).
+            Samples mapped back to the original space, same shape as input.
         """
-        gaussian_samples = np.asarray(gaussian_samples)
-        n_samples, n_features = gaussian_samples.shape
-        x_original = np.zeros_like(gaussian_samples)
+        x_original = np.zeros_like(z_samples)
 
-        for i in range(gaussian_samples.shape[1]):
-            # get sorted original data for this feature
+        for i in range(z_samples.shape[1]):
             sorted_train = np.sort(self.data[:, i])
-            n_ref = len(sorted_train)
-
-            uni_value = norm.cdf(gaussian_samples[:, i])
-
-            # Map uniform values to original space using linear interpolation
-            # uniform_values * (n_ref - 1) gives us the continuous index
-            continuous_indices = uni_value * (n_ref - 1)
-
-            # Get lower and upper indices for interpolation
-            lower_indices = np.floor(continuous_indices).astype(int)
-            upper_indices = np.minimum(lower_indices + 1, n_ref - 1)
-
-            # Linear interpolation weights
-            weights = continuous_indices - lower_indices
-
-            # Interpolate between sorted values
-            x_original[:, i] = (1 - weights) * sorted_train[lower_indices] + weights * sorted_train[
-                upper_indices
-            ]
+            quantile = norm.cdf(z_samples[:, i])
+            ranks = quantile * (len(sorted_train) - 1)
+            idx_low = np.floor(ranks).astype(int)
+            idx_high = np.minimum(idx_low + 1, len(sorted_train) - 1)
+            frac = ranks - idx_low
+            x_original[:, i] = (1 - frac) * sorted_train[idx_low] + frac * sorted_train[idx_high]
 
         return x_original
 
-    @override
     def impute(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
     ) -> npt.NDArray[np.floating]:
         """Perform Gaussian Copula imputation for Shapley value calculations.
 
+        Each coalition represents a subset of known/missing features. The method imputes
+        the missing features by sampling in Gaussian space, then transforming back to the
+        original space.
+
         Args:
             x: The data point to impute as an array of shape (n_features,).
-            coalitions: Boolean array of shape (n_coalitions, n_features) indicating which features
-                are present or missing for each coalition.
+            coalitions: Boolean array of shape (n_coalitions, n_features) indicating which features are present
+            or missing for each coalition.
 
         Returns:
-            An array of shape (n_coalitions, n_features) containing the mean imputed values for each
-            coalition in original feature space.
+            An array of shape (n_coalitions, n_features) containing the mean imputed values for each coalition
+            in original feature space.
         """
-        NULL_POINT_MSG = "Explanation point x cannot be None"
-        if x is None:
-            raise ValueError(NULL_POINT_MSG)
+        # Transform x_explain to Gaussian space for imputation
+        x_explain = self._transform_x_explain(x.flatten(), self.data)
+        imputed_data = self.sample_monte_carlo(x_explain, coalitions)
 
-        # Transform explanation point to Gaussian space
-        x_gaussian_copula = self._transform_point_to_gaussian(x.flatten(), self.data)
-        # Generate Monte Carlo samples in Gaussian space
-        gaussian_samples = self.sample_monte_carlo(x_gaussian_copula, coalitions)
-
-        # Transform all samples back to original space and take mean
-        n_coalitions = coalitions.shape[0]
-        imputed_means = np.zeros((n_coalitions, self.data.shape[1]))
-
+        # Invert transformation back to original feature space
+        n_coalitions = imputed_data.shape[0]
+        imputed_original = np.zeros_like(imputed_data)
         for i in range(n_coalitions):
-            # Transform samples for this coalition back to original space
-            original_samples = self._transform_to_original(gaussian_samples[i])
-            # Take mean across Monte Carlo samples
-            imputed_means[i] = np.mean(original_samples, axis=0)
-
-        return imputed_means
+            imputed_original[i] = self._inverse_transform(imputed_data[i])
+        return np.mean(imputed_original, axis=1)
