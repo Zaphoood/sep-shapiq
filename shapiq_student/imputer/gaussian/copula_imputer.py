@@ -75,7 +75,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             Transformed data in Gaussian space (n_samples, n_features).
         """
-        data = np.asarray(data)  # TODO (milanagm): do we need to do this?
         transformed = np.zeros_like(data, dtype=float)
         for i in range(data.shape[1]):
             ranks = rankdata(data[:, i], method="average")
@@ -95,7 +94,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             Transformed point in Gaussian space (n_features,).
         """
-        x_point = np.asarray(x_point).flatten()  # TODO (milanagm): do we need to flatten?
         x_train = np.asarray(x_train)
         n_features = x_point.shape[0]
 
