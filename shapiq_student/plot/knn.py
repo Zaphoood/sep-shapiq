@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 BASE_SCALE = 100
 
 
-def plot_knn_shapley_2d(
+def plot_knn_shapley_2d(  # noqa: C901
     ax: Axes,
     X_train: npt.NDArray[np.floating],
     y_train: npt.NDArray[np.integer],
@@ -87,14 +87,6 @@ def plot_knn_shapley_2d(
             label=str(class_),
             facecolors=color,
         )
-        ax.scatter(
-            X_train[class_mask & ~positive_mask, 0],
-            X_train[class_mask & ~positive_mask, 1],
-            sizes[class_mask & ~positive_mask],
-            label=str(class_),
-            edgecolors=color,
-            facecolors="none",
-        )
     if show_max:
         ax.scatter(
             X_train[:, 0],
@@ -102,6 +94,16 @@ def plot_knn_shapley_2d(
             s=scale * BASE_SCALE,
             marker="o",
             edgecolors="black",
+            facecolors="none",
+        )
+    for color, class_ in zip(colors, classes, strict=False):
+        class_mask = y_train == class_
+        ax.scatter(
+            X_train[class_mask & ~positive_mask, 0],
+            X_train[class_mask & ~positive_mask, 1],
+            sizes[class_mask & ~positive_mask],
+            label=str(class_),
+            edgecolors=color,
             facecolors="none",
         )
 
