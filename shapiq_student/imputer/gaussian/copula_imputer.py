@@ -108,7 +108,9 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
     def transform_to_original(
         self, gaussian_samples: npt.NDArray[np.floating]
-    ) -> npt.NDArray[np.floating]:
+    ) -> npt.NDArray[
+        np.floating
+    ]:  # TODO (milanagm): this method may need improvement for handling data with extreme cases
         """Transform Gaussian samples back to original feature space.
 
         Args:
