@@ -153,21 +153,15 @@ class GaussianCopulaImputer(GaussianImputerBase):
             raise ValueError(self._NULL_POINT_MSG)
 
         x_gaussian = self.transform_point_to_gaussian(x.flatten(), self.data)
-        gaussian_samples = self.sample_monte_carlo(x_gaussian, coalitions)
+        imputed_gaussian = self.sample_monte_carlo(x_gaussian, coalitions)
 
-        # TODO (milanagm): the imputer should work without using predict, we should re-create old method
-        # For each coalition, transform samples and get predictions
-        # TODO (milanagm): muss es so sein oder gaussian_samples.shape[0]
-        n_coalitions = coalitions.shape[0]
-        coalition_values = np.zeros(n_coalitions)
+        # TODO (milanagm): is the re-transformation correct?
+        n_coalitions = coalitions.shape[0]  # oder: imputed_gaussian.shape[0]
+        imputed_original = np.zeros(n_coalitions)  # or np.zeros(imputed_gaussian) ?
 
         for i in range(n_coalitions):
-            # Transform samples back to original space
-            original_samples = self.transform_to_original(gaussian_samples[i])
+            imputed_original[i] = self.transform_to_original(imputed_gaussian[i])
 
-            # Get model predictions
-            predictions = self.model(original_samples)
-            # Take mean prediction for this coalition
-            coalition_values[i] = np.mean(predictions)
+        imputed_original = np.mean(imputed_original, axis=1)
 
-        return coalition_values
+        return imputed_original
