@@ -208,4 +208,4 @@ def test_gaussian_imputer_value_function():
 
     result_value_function = imputer.value_function(np.atleast_2d(coalition))
     expected_sum = 1.0 + 0.8 + 0.5
-    np.testing.assert_allclose(result_value_function, expected_sum, atol=0.06)
+    np.testing.assert_allclose(result_value_function, expected_sum, atol=0.05)
