@@ -57,10 +57,10 @@ class GaussianCopulaImputer(GaussianImputerBase):
             self.data_transformed, axis=0
         )  # in theory mean should be (nearly) zero
         self._cov_mat = self._ensure_positive_definite(np.cov(self.data_transformed.T))
+
         self._sorted_data = np.sort(
             self.data, axis=0
         )  # TODO (milanagm): we are NOT does not preserve the coalitions here - check if this is okay
-        # before:  sorted_train = np.sort(self.data[:, i]) (this was in inverse transform)
 
     def gaussian_transform(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
         """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
@@ -94,10 +94,11 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             Transformed point in Gaussian space (n_features,).
         """
-        x_train = np.asarray(x_train)
-        n_features = x_point.shape[0]
+        # TODO (milanagm): add error if x_point shorter than x_train
 
+        n_features = x_point.shape[0]
         x_gaussian = np.zeros_like(x_point, dtype=float)
+
         for j in range(n_features):
             vals = np.concatenate([[x_point[j]], x_train[:, j]])
             rank = rankdata(vals, method="average")[0]
@@ -153,10 +154,12 @@ class GaussianCopulaImputer(GaussianImputerBase):
         x_gaussian = self.transform_point_to_gaussian(x.flatten(), self.data)
         imputed_gaussian = self.sample_monte_carlo(x_gaussian, coalitions)
 
-        # TODO (milanagm): is the re-transformation correct?
-        n_coalitions = coalitions.shape[0]  # oder: imputed_gaussian.shape[0]
-        imputed_original = np.zeros(n_coalitions)  # or np.zeros(imputed_gaussian) ?
+        n_coalitions = coalitions.shape[0]  # TODO (milanagm): oder: imputed_gaussian.shape[0]
+        imputed_original = np.zeros(
+            n_coalitions
+        )  # TODO (milanagm): or np.zeros(imputed_gaussian) ?
 
+        # TODO (milanagm): is the re-transformation correct?
         for i in range(n_coalitions):
             imputed_original[i] = self.transform_to_original(imputed_gaussian[i])
 
