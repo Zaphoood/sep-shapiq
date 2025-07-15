@@ -27,24 +27,16 @@ def plot_knn_shapley_2d(
     *,
     title: str | None = None,
     scale: float = 1,
-    min_val: float | None = None,
+    max_abs: float | None = None,
+    show_max: bool = False,
     min_size: float = 1,
 ) -> None:
     """Plot a 2D KNN Shapley explanation using matplotlib.
 
     This function visualizes the training data, a validation point, and the
     associated Shapley values computed for a KNN explanation.  Each training
-    point is shown with a marker size proportional to the absolute Shapley
-    value. Around each marker, a black circle is show, representing the zero
-    value.
-
-    The sizes of the markers is calculated as follows: The minimum Shapley Value
-    is assigned to size 0, and a Shapley Value of 0 to the value of the `scale`
-    parameter; all other values are interpolated linearly.
-    Finally all sizes are multiplied with a base scale of 100. If you wish to
-    compare Shapley Values across two different plots, it is advisable to
-    compute `min_val` over all Shapley Values of all plots and pass it as a
-    function parameter. This will ensure all markers all scaled equivalently.
+    point is shown with a marker size proportional to its absolute Shapley
+    value. Positive values are shown as a filled circle and non-positve values as an emtpy circle.
 
     Args:
         ax: The matplotlib Axes to plot onto.
@@ -56,9 +48,10 @@ def plot_knn_shapley_2d(
         x_test: A array of shape (2,) representing the test datat point being explained.
         title: The title to set on the plot.
         scale: Scaling factor for Shapley marker sizes (default is 3).
-        min_val: Allows orverriding the minimum value used for calculating the marker sizes. Defaults to ``np.min(shapley_values)``.
+        max_abs: Allows orverriding the maximum value used for scaling the marker sizes. Defaults to ``np.max(np.abs(shapley_values))``.
+        show_max: Draw a black ring around each marker, representing the maximum absolute value.
         min_size: The minimum size of the scaled markers. It's recommended to set this to a small positive value
-            to prevent the smallest Shapley Values from becoming zero-size dots.
+            to prevent the smallest Shapley Values from becoming zero-size dots. Defaults to ``1``.
 
     Raises:
         ValueError: If all Shapley values are zero.
@@ -67,46 +60,50 @@ def plot_knn_shapley_2d(
     if x_test is not None:
         x_test = np.atleast_2d(x_test)
 
-    # TODO(Zaphoood): this linter error is so stupid. Like, 2 is just not a magic value!!
-    two = 2
-    if X_train.ndim != two or X_train.shape[1] != two:
+    if X_train.ndim != 2 or X_train.shape[1] != 2:  # noqa: PLR2004
         msg = f"X_train must be 2D matrix with shape (n, 2), but got {X_train.shape}"
         raise ValueError(msg)
 
-    if min_val is None:
-        min_val = np.min(shapley_values)
-    if np.isclose(min_val, 0):
-        max_val = np.max(shapley_values)
-        sizes = shapley_values / max_val * 2
-    else:
-        sizes = (shapley_values - min_val) / (-min_val)
-        sizes = sizes * scale * BASE_SCALE + min_size
+    if max_abs is None:
+        max_abs = np.max(np.abs(shapley_values))
+    elif np.isclose(max_abs, 0):
+        msg = "Parameter 'max_abs' must not be (close to) zero."
+        raise ValueError(msg)
+
+    positive_mask = shapley_values > 0
+    sizes = np.abs(shapley_values) / max_abs * scale * BASE_SCALE + min_size
 
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     if len(classes) > len(colors):
         msg = f"Sorry, too many classes ({len(classes)}) and not enough colors ({len(colors)})!"
         raise RuntimeError(msg)
 
-    positive = shapley_values > 0
-    sizes[positive] = scale * BASE_SCALE + (sizes[positive] - scale * BASE_SCALE) * 2
-
     for color, class_ in zip(colors, classes, strict=False):
-        mask = y_train == class_
+        class_mask = y_train == class_
         ax.scatter(
-            X_train[mask, 0],
-            X_train[mask, 1],
-            sizes[mask],
+            X_train[class_mask & positive_mask, 0],
+            X_train[class_mask & positive_mask, 1],
+            sizes[class_mask & positive_mask],
             label=str(class_),
             facecolors=color,
         )
-    ax.scatter(
-        X_train[:, 0],
-        X_train[:, 1],
-        s=scale * BASE_SCALE,
-        marker="o",
-        edgecolors="black",
-        facecolors="none",
-    )
+        ax.scatter(
+            X_train[class_mask & ~positive_mask, 0],
+            X_train[class_mask & ~positive_mask, 1],
+            sizes[class_mask & ~positive_mask],
+            label=str(class_),
+            edgecolors=color,
+            facecolors="none",
+        )
+    if show_max:
+        ax.scatter(
+            X_train[:, 0],
+            X_train[:, 1],
+            s=scale * BASE_SCALE,
+            marker="o",
+            edgecolors="black",
+            facecolors="none",
+        )
 
     if x_test is not None:
         ax.scatter(
