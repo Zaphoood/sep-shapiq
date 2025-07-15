@@ -26,10 +26,10 @@ def dummy_model(x: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
     """A simple placeholder model for testing.
 
     Args:
-        x: Input data.
+        x (np.ndarray[Any, Any]): Input data.
 
     Returns:
-        Sum over the last axis of the input.
+        np.ndarray[Any, Any]: Sum over the last axis of the input.
     """
     return np.asarray(np.sum(x, axis=-1), dtype=float)
 
