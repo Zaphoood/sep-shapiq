@@ -19,8 +19,6 @@ from .base import GaussianImputerBase
 class GaussianCopulaImputer(GaussianImputerBase):
     """Implements the Gaussian Copula approach for feature imputation in Shapley Value calculations."""
 
-    _NULL_POINT_MSG = "Explanation point x cannot be None"
-
     @override
     def __init__(
         self,
@@ -150,9 +148,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             An array of shape (n_coalitions,) containing the mean model prediction for each coalition.
         """
-        if x is None:
-            raise ValueError(self._NULL_POINT_MSG)
-
         x_gaussian = self.transform_point_to_gaussian(x.flatten(), self.data)
         imputed_gaussian = self.sample_monte_carlo(x_gaussian, coalitions)
 
