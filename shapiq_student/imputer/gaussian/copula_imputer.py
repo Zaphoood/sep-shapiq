@@ -19,7 +19,7 @@ from .base import GaussianImputerBase
 class GaussianCopulaImputer(GaussianImputerBase):
     """Implements the Gaussian Copula approach for feature imputation in Shapley Value calculations."""
 
-    _NULL_POINT_MSG = "Explanation point x cannot be None"  # TODO (milanagm): notwendig?
+    _NULL_POINT_MSG = "Explanation point x cannot be None"
 
     @override
     def __init__(
@@ -57,7 +57,9 @@ class GaussianCopulaImputer(GaussianImputerBase):
             self.data_transformed, axis=0
         )  # in theory mean should be (nearly) zero
         self._cov_mat = self._ensure_positive_definite(np.cov(self.data_transformed.T))
-        self._sorted_data = np.sort(self.data, axis=0)  # TODO (milanagm): why?
+        self._sorted_data = np.sort(
+            self.data, axis=0
+        )  # TODO (milanagm): we are NOT does not preserve the coalitions here - check if this is okay
         # before:  sorted_train = np.sort(self.data[:, i]) (this was in inverse transform)
 
     def _gaussian_transform(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
@@ -155,9 +157,8 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         # TODO (milanagm): the imputer should work without using predict, we should re-create old method
         # For each coalition, transform samples and get predictions
-        n_coalitions = coalitions.shape[
-            0
-        ]  # TODO (milanagm): muss es so sein oder gaussian_samples.shape[0]
+        # TODO (milanagm): muss es so sein oder gaussian_samples.shape[0]
+        n_coalitions = coalitions.shape[0]
         coalition_values = np.zeros(n_coalitions)
 
         for i in range(n_coalitions):
@@ -170,5 +171,3 @@ class GaussianCopulaImputer(GaussianImputerBase):
             coalition_values[i] = np.mean(predictions)
 
         return coalition_values
-
-    # TODO (milanagm): do we need to add method to call predict?
