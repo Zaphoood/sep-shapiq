@@ -22,6 +22,7 @@ IMPUTED_LOWER = -2
 IMPUTED_UPPER = 4
 
 
+# TODO (milanagm): better way to check these? as they are mostly equal with test_gaussian_approach.py
 def dummy_model(x: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
     """A simple placeholder model for testing.
 
