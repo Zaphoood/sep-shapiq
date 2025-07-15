@@ -44,19 +44,19 @@ class GaussianCopulaImputer(GaussianImputerBase):
         )  # in theory mean should be (nearly) zero
         self._cov_mat = self._ensure_positive_definite(np.cov(self.data_transformed.T))
 
-    def _gaussian_transform(self, x: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
+    def _gaussian_transform(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
         """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
 
-        For each feature (column), this method applies a transformation so that the values follow a standard normal
-        distribution (mean 0, std 1), while preserving the rank order of the original data. This is also known as a
-        rank-Gaussian or empirical CDF transformation.
+        Each feature (column) is transformed to follow a standard normal distribution (mean 0, std 1),
+        while preserving the rank order of the original data.
+        This is also known as a rank-Gaussian or empirical CDF transformation.
         """
-        x_transformed = np.zeros_like(x, dtype=float)
-        for i in range(x.shape[1]):
-            ranks = rankdata(x[:, i], method="average")
+        data_transformed = np.zeros_like(data, dtype=float)
+        for i in range(data.shape[1]):
+            ranks = rankdata(data[:, i], method="average")
             quantile = ranks / (len(ranks) + 1)
-            x_transformed[:, i] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
-        return x_transformed
+            data_transformed[:, i] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
+        return data_transformed
 
     def _transform_x_explain(
         self, x_explain: npt.NDArray[np.floating], x_train: npt.NDArray[np.floating]
