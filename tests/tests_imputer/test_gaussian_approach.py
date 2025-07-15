@@ -196,6 +196,7 @@ def test_gaussian_imputation_first_feature_known() -> None:
 
 def test_gaussian_imputer_value_function():
     """Test the vlaue function of the gaussian imputer."""
+    # TODO (milanagm): set seed o ä für die tests adden
     mean = np.array([0.0, 0.0, 0.0])
     cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
     rng = np.random.default_rng()

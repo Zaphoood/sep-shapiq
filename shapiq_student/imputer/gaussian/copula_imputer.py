@@ -19,7 +19,7 @@ from .base import GaussianImputerBase
 class GaussianCopulaImputer(GaussianImputerBase):
     """Implements the Gaussian Copula approach for feature imputation in Shapley Value calculations."""
 
-    _NULL_POINT_MSG = "Explanation point x cannot be None"
+    _NULL_POINT_MSG = "Explanation point x cannot be None"  # TODO (milanagm): notwendig?
 
     @override
     def __init__(
@@ -50,14 +50,15 @@ class GaussianCopulaImputer(GaussianImputerBase):
         self._check_categorical_features()
 
         # Transform data to Gaussian space using empirical CDF (rank-Gaussian)
-        self.data_transformed = self.rank_gaussian_transform(self.data)
+        self.data_transformed = self._gaussian_transform(self.data)
 
         # Override: GaussianCopulaImputer uses transformed mean/covariance
         self._mean_per_feature = np.mean(
             self.data_transformed, axis=0
         )  # in theory mean should be (nearly) zero
         self._cov_mat = self._ensure_positive_definite(np.cov(self.data_transformed.T))
-        self._sorted_data = np.sort(self.data, axis=0)
+        self._sorted_data = np.sort(self.data, axis=0)  # TODO (milanagm): why?
+        # before:  sorted_train = np.sort(self.data[:, i]) (this was in inverse transform)
 
     def _gaussian_transform(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
         """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
@@ -72,7 +73,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             Transformed data in Gaussian space (n_samples, n_features).
         """
-        data = np.asarray(data)
+        data = np.asarray(data)  # TODO (milanagm): do we need to do this?
         transformed = np.zeros_like(data, dtype=float)
         for i in range(data.shape[1]):
             ranks = rankdata(data[:, i], method="average")
@@ -92,7 +93,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             Transformed point in Gaussian space (n_features,).
         """
-        x_point = np.asarray(x_point).flatten()
+        x_point = np.asarray(x_point).flatten()  # TODO (milanagm): do we need to flatten?
         x_train = np.asarray(x_train)
         n_features = x_point.shape[0]
 
@@ -149,22 +150,25 @@ class GaussianCopulaImputer(GaussianImputerBase):
         if x is None:
             raise ValueError(self._NULL_POINT_MSG)
 
-        # Transform explanation point to Gaussian space
         x_gaussian = self.transform_point_to_gaussian(x.flatten(), self.data)
-
-        # Generate Monte Carlo samples in Gaussian space
         gaussian_samples = self.sample_monte_carlo(x_gaussian, coalitions)
 
+        # TODO (milanagm): the imputer should work without using predict, we should re-create old method
         # For each coalition, transform samples and get predictions
-        n_coalitions = coalitions.shape[0]
+        n_coalitions = coalitions.shape[
+            0
+        ]  # TODO (milanagm): muss es so sein oder gaussian_samples.shape[0]
         coalition_values = np.zeros(n_coalitions)
 
         for i in range(n_coalitions):
             # Transform samples back to original space
             original_samples = self.transform_to_original(gaussian_samples[i])
+
             # Get model predictions
             predictions = self.model(original_samples)
             # Take mean prediction for this coalition
             coalition_values[i] = np.mean(predictions)
 
         return coalition_values
+
+    # TODO (milanagm): do we need to add method to call predict?

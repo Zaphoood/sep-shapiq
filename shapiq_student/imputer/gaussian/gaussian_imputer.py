@@ -61,3 +61,5 @@ class GaussianImputer(GaussianImputerBase):
             An array of shape ``(n_coalitions, n_features)`` containing the imputed data points for each coalition, averaged over Monte Carlo samples.
         """
         return np.mean(self.sample_monte_carlo(x, coalitions), axis=1)
+
+    # TODO (milanagm): add value_prediction function - who deleted it even?
