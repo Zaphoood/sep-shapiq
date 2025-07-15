@@ -1,186 +1,233 @@
-"""Test module for GaussianCopulaImputer class."""
+"""Tests for the GaussianCopulaImputer class.
+
+This module contains unit tests for the GaussianCopulaImputer class, including tests for categorical feature detection,
+Gaussian transformation, and imputation logic.
+"""
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pytest
-from scipy.stats import kstest
 
 from shapiq_student.imputer.gaussian.copula_imputer import GaussianCopulaImputer
+from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError
 
-# Constants
-SIGNIFICANCE_LEVEL = 0.05
-CORRELATION_THRESHOLD = 0.99
+MIN_EXPECTED_SD = 0.7
+MAX_EXPECTED_SD = 1.3
+SHAPIRO_SAMPLE_LIMIT = 5000
+SHAPIRO_SIGNIFICANCE = 0.05
+NORMAL_BOUND = 5
 
 
-class TestGaussianCopulaImputer:
-    """Test class for GaussianCopulaImputer."""
+def dummy_model(x: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
+    """A simple placeholder model for testing.
 
-    @pytest.fixture
-    def setup_data(self):
-        """Fixture for common test data."""
-        rng = np.random.default_rng(42)
-        data_normal = rng.normal(size=(100, 3))
-        data_exp = rng.exponential(size=(100, 3))
-        x = np.array([0.5, 0.5, 0.5])
-        coalitions = np.array(
-            [
-                [False, False, False],  # No features
-                [True, False, False],  # One feature
-                [False, True, True],  # Two features
-                [True, True, True],  # All features
-            ]
-        )
+    Args:
+        x (np.ndarray[Any, Any]): Input data.
 
-        def simple_model(x):
-            """Simple model: sum of features."""
-            return x.sum(axis=1)
+    Returns:
+        np.ndarray[Any, Any]: Sum over the last axis of the input.
+    """
+    return np.asarray(np.sum(x, axis=-1), dtype=float)
 
-        return {
-            "data_normal": data_normal,
-            "data_exp": data_exp,
-            "x": x,
-            "coalitions": coalitions,
-            "simple_model": simple_model,
-        }
 
-    def test_rank_gaussian_transform(self, setup_data):
-        """Test the rank-Gaussian transformation."""
-        imputer = GaussianCopulaImputer(
-            model=setup_data["simple_model"], data=setup_data["data_normal"]
-        )
-        # Use public method through data_transformed attribute
-        transformed = imputer.data_transformed
+def test_check_categorical_features_valid() -> None:
+    """Test that no error is raised when all features are continuous with >2 unique values."""
+    data = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0],
+        ]
+    )
+    x = np.array([[2.0, 3.0, 4.0]])
+    # Should not raise error
+    GaussianCopulaImputer(model=dummy_model, data=data, x=x)
 
-        # Check standard normal distribution
-        for i in range(transformed.shape[1]):
-            _, p_value = kstest(transformed[:, i], "norm")
-            assert p_value > SIGNIFICANCE_LEVEL, (
-                f"Feature {i} is not normally distributed (p={p_value})"
+
+def test_check_categorical_features_binary_integer() -> None:
+    """Test that CategoricalFeatureError is raised for binary integer columns (e.g., 0/1)."""
+    data = np.array(
+        [
+            [1.0, 0, 3.0],
+            [2.0, 1, 4.0],
+            [3.0, 0, 5.0],
+        ]
+    )
+    x = np.array([2.0, 1.0, 4.0])
+    with pytest.raises(CategoricalFeatureError) as exc:
+        GaussianCopulaImputer(model=dummy_model, data=data, x=x)
+    msg = str(exc.value)
+    assert "f2" in msg  # The second column (index 1) should be flagged as categorical
+    assert "f1" not in msg
+    assert "f3" not in msg
+
+
+def test_check_categorical_features_string() -> None:
+    """Test that CategoricalFeatureError is raised for columns containing strings."""
+    data = np.array(
+        [
+            [1.0, "a", 3.0],
+            [2.0, "b", 4.0],
+            [3.0, "a", 5.0],
+        ],
+        dtype=object,
+    )
+    x = np.array([2.0, "b", 4.0], dtype=object)
+    with pytest.raises(CategoricalFeatureError) as exc:
+        GaussianCopulaImputer(model=dummy_model, data=data, x=x)
+    msg = str(exc.value)
+    assert "f2" in msg
+    assert "f1" not in msg
+    assert "f3" not in msg
+
+
+##############################################
+# Tests for Gaussian Transformation ---     #
+##############################################
+
+
+def test_gaussian_transform_valid() -> None:
+    """Test that Gaussian transformation produces standard normal distributions."""
+    # Use larger dataset for more stable statistics
+    data = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0],
+            [10.0, 11.0, 12.0],
+            [13.0, 14.0, 15.0],
+            [16.0, 17.0, 18.0],
+        ]
+    )
+    x = np.array([2.0, 3.0, 4.0])
+    imputer = GaussianCopulaImputer(model=dummy_model, data=data, x=x)
+
+    transformed = imputer.gaussian_transform(data)
+
+    # Check shape preserved
+    assert transformed.shape == data.shape
+
+    # Check each column is approximately standard normal
+    for col_idx, col in enumerate(transformed.T):
+        # Mean should be close to 0 (rank transformation centers data)
+        assert pytest.approx(np.mean(col), abs=0.2) == 0
+
+        # Standard deviation check with named constants
+        col_sd = np.std(col)
+        assert MIN_EXPECTED_SD <= col_sd <= MAX_EXPECTED_SD, f"Column {col_idx} has SD {col_sd}"
+
+        # Test normality using Shapiro-Wilk
+        if len(col) <= SHAPIRO_SAMPLE_LIMIT:
+            from scipy.stats import shapiro
+
+            _, p_value = shapiro(col)
+            assert p_value > SHAPIRO_SIGNIFICANCE, (
+                f"Column {col_idx} fails normality test (p={p_value})"
             )
 
-        # Check mean ~0 and std ~1
-        assert np.allclose(np.mean(transformed, axis=0), 0, atol=0.1)
-        assert np.allclose(np.std(transformed, axis=0), 1, atol=0.1)
 
-    def test_transform_roundtrip(self, setup_data):
-        """Test forward and backward transformation with reasonable tolerance."""
-        original = setup_data["data_normal"]
-        # Test through public interface by creating a new instance
-        test_imputer = GaussianCopulaImputer(model=setup_data["simple_model"], data=original)
-        transformed = test_imputer.data_transformed
+def test_transform_x_explain() -> None:
+    """Test transformation of explanation point using training data's ECDF."""
+    data = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0],
+        ]
+    )
+    x = np.array([2.0, 3.0, 4.0])
+    imputer = GaussianCopulaImputer(model=dummy_model, data=data, x=x)
 
-        # Check that values are in correct order (rank preservation)
-        for i in range(original.shape[1]):
-            # Correlation between original and transformed should be high
-            # (testing monotonicity through rank correlation)
-            from scipy.stats import spearmanr
+    transformed = imputer.transform_x_explain(x, data)
 
-            correlation, _ = spearmanr(original[:, i], transformed[:, i])
-            assert correlation > CORRELATION_THRESHOLD, (
-                f"Rank correlation for feature {i} too low: {correlation}"
-            )
+    assert transformed.shape == x.shape
+    # Check values are within reasonable bounds for standard normal
+    assert np.all(np.isfinite(transformed))
+    assert np.all(np.abs(transformed) < NORMAL_BOUND)
 
-    def test_imputation_with_normal_data(self, setup_data):
-        """Test imputation with normally distributed data."""
-        imputer = GaussianCopulaImputer(
-            model=setup_data["simple_model"], data=setup_data["data_normal"], random_state=42
-        )
-        results = imputer.impute(setup_data["x"], setup_data["coalitions"])
 
-        # Test empty coalition - should approximately match training data mean
-        expected_empty = setup_data["simple_model"](
-            setup_data["data_normal"].mean(axis=0, keepdims=True)
-        )[0]
-        assert np.isclose(results[0], expected_empty, rtol=0.5), (
-            f"Expected: {expected_empty}, Got: {results[0]}"
-        )
+def test_inverse_transform() -> None:
+    """Test that inverse transformation returns to original data range."""
+    data = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0],
+        ]
+    )
+    x = np.array([2.0, 3.0, 4.0])
+    imputer = GaussianCopulaImputer(model=dummy_model, data=data, x=x)
 
-        # Test full coalition - should exactly match input point sum
-        expected_full = setup_data["simple_model"](setup_data["x"].reshape(1, -1))[0]
-        assert np.isclose(results[3], expected_full, rtol=0.1), (
-            f"Expected: {expected_full}, Got: {results[3]}"
-        )
+    # Create some standard normal samples using new Generator interface
+    rng = np.random.default_rng()
+    z_samples = rng.normal(0, 1, size=(10, data.shape[1]))
+    original = imputer.inverse_transform(z_samples)
 
-    def test_imputation_with_non_normal_data(self, setup_data):
-        """Test imputation with non-normally distributed data."""
-        imputer = GaussianCopulaImputer(
-            model=setup_data["simple_model"], data=setup_data["data_exp"], random_state=42
-        )
-        results = imputer.impute(setup_data["x"], setup_data["coalitions"])
-        assert results.shape == (4,), "Wrong output shape"
+    assert original.shape == z_samples.shape
+    # Values should be in original data range
+    assert np.all(original >= np.min(data, axis=0))
+    assert np.all(original <= np.max(data, axis=0))
 
-        # Test that all values are finite
-        assert np.all(np.isfinite(results)), "Not all results are finite"
 
-    def test_reproducibility(self, setup_data):
-        """Test reproducibility with fixed random_state."""
-        imputer1 = GaussianCopulaImputer(
-            model=setup_data["simple_model"], data=setup_data["data_normal"], random_state=42
-        )
-        imputer2 = GaussianCopulaImputer(
-            model=setup_data["simple_model"], data=setup_data["data_normal"], random_state=42
-        )
-        results1 = imputer1.impute(setup_data["x"], setup_data["coalitions"])
-        results2 = imputer2.impute(setup_data["x"], setup_data["coalitions"])
-        assert np.allclose(results1, results2), "Results not reproducible"
+##############################################
+# Test for Imputation ---                    #
+##############################################
 
-    def test_covariance_matrix_positive_definite(self, setup_data):
-        """Test if covariance matrix is positive definite."""
-        imputer = GaussianCopulaImputer(
-            model=setup_data["simple_model"], data=setup_data["data_normal"]
-        )
-        # Access through public interface - check eigenvalues of transformed data covariance
-        eigenvalues = np.linalg.eigvals(np.cov(imputer.data_transformed.T))
-        assert np.all(eigenvalues > 0), "Covariance matrix is not positive definite"
 
-    def test_edge_case_single_feature(self):
-        """Test case with only one feature."""
-        rng = np.random.default_rng(42)
-        data = rng.normal(size=(100, 1))
-        x = np.array([0.5])
-        coalitions = np.array([[False], [True]])
+def test_copula_imputation_first_feature_known() -> None:
+    """Test imputation: first feature known, last two unknown; check imputed values."""
+    # Create correlated data
+    rng = np.random.default_rng(42)
+    cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
+    x_train = rng.multivariate_normal([0, 0, 0], cov, size=10000)
 
-        def identity_model(x):
-            """Identity model for testing."""
-            return x.flatten()
+    # Explanation point with first feature at 1 (in original space)
+    x_explain = np.array([1.0, np.nan, np.nan])
+    coalition = np.array([True, False, False])
 
-        imputer = GaussianCopulaImputer(model=identity_model, data=data, random_state=42)
-        results = imputer.impute(x, coalitions)
-        assert results.shape == (2,), "Wrong output shape for single feature"
+    imputer = GaussianCopulaImputer(
+        model=dummy_model, data=x_train, x=x_explain, n_mc_samples=1000, random_state=42
+    )
 
-    def test_gaussian_transformation_properties(self, setup_data):
-        """Test properties of Gaussian transformation."""
-        # Test with different data types
-        for data in [setup_data["data_normal"], setup_data["data_exp"]]:
-            test_imputer = GaussianCopulaImputer(model=setup_data["simple_model"], data=data)
-            transformed = test_imputer.data_transformed
+    # Get imputed values (mean predictions)
+    imputation_result = imputer.impute(x_explain, np.atleast_2d(coalition))
 
-            # Check that transformation is monotonic
-            for i in range(data.shape[1]):
-                sorted_transformed = np.sort(transformed[:, i])
+    # Transform explanation point to check expected values in Gaussian space
+    x_transformed = imputer.transform_x_explain(x_explain, x_train)
+    expected_cond_mean = x_transformed[0] * np.array([0.8, 0.5])  # cov[0,1:] * x_value
 
-                # Monotonicity: differences should be non-negative
-                assert np.all(np.diff(sorted_transformed) >= 0), (
-                    f"Transformation not monotonic for feature {i}"
-                )
+    # Transform back to original space
+    expected_values = imputer.inverse_transform(
+        np.atleast_2d(np.concatenate([[x_transformed[0]], expected_cond_mean]))
+    )[0, 1:]
 
-    def test_extreme_values_handling(self, setup_data):
-        """Test handling of extreme values."""
-        # Create data with extreme values
-        rng = np.random.default_rng(42)
-        data_extreme = rng.normal(size=(100, 3))
-        data_extreme[0, 0] = 1000  # Very large value
-        data_extreme[1, 1] = -1000  # Very small value
+    # Check imputed values are close to expected
+    np.testing.assert_allclose(
+        imputation_result[0], np.sum(np.concatenate([[x_explain[0]], expected_values])), atol=0.1
+    )
 
-        imputer = GaussianCopulaImputer(
-            model=setup_data["simple_model"], data=data_extreme, random_state=42
-        )
 
-        # Test that transformation works
-        transformed = imputer.data_transformed
-        assert np.all(np.isfinite(transformed)), "Transformation produces non-finite values"
+def test_copula_imputer_value_function() -> None:
+    """Test the value function of the copula imputer."""
+    rng = np.random.default_rng(42)
+    cov = np.array([[1, 0.8], [0.8, 1]])
+    x_train = rng.multivariate_normal([0, 0], cov, size=10000)
+    x_explain = np.array([1.0, np.nan])
+    coalition = np.array([True, False])
 
-        # Test that imputation works with extreme values
-        results = imputer.impute(setup_data["x"], setup_data["coalitions"])
-        assert np.all(np.isfinite(results)), "Imputation produces non-finite values"
+    imputer = GaussianCopulaImputer(
+        data=x_train, x=x_explain, model=dummy_model, n_mc_samples=1000, random_state=42
+    )
+
+    result_value_function = imputer.value_function(np.atleast_2d(coalition))
+
+    # Expected value is x_explain[0] + E[x2|x1=transformed(1.0)]
+    x_transformed = imputer.transform_x_explain(x_explain, x_train)
+    expected_cond_mean = x_transformed[0] * 0.8  # cov[0,1] * x_value
+    expected_x2 = imputer.inverse_transform(np.array([[0, expected_cond_mean]]))[0, 1]
+    expected_sum = x_explain[0] + expected_x2
+
+    np.testing.assert_allclose(result_value_function, expected_sum, atol=0.1)
