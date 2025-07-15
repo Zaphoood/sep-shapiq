@@ -155,23 +155,25 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
         y_val_mask = y_train_sorted == y_val
         y_other_mask = y_train_sorted == y_other
 
-        coalitions_iterator = product([False, True], repeat=self.X_train.shape[0])
-        # Skip emtpy coalition
-        next(coalitions_iterator)
-        for coalition_generator in coalitions_iterator:
+        for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
             coalition = np.array(list(coalition_generator))
 
-            # Utility function according to equation (15) in Wang et al. (2024)
+            # Utility function according to equation (15) in Wang et al. (2024), with the modification that the utility of the empty set is zero.
 
-            # Mask of k nearest training points of current coalition with class y_val or y_other
-            k_nearest_with_relevant_class = keep_first_n(
-                coalition & (y_val_mask | y_other_mask), self.k
-            )
-            y_val_nearest = y_val_mask & k_nearest_with_relevant_class
-            y_other_nearest = y_other_mask & k_nearest_with_relevant_class
-            utility = int(
-                _greater_or_close(np.sum(weights[y_val_nearest]), np.sum(weights[y_other_nearest]))
-            )
+            coalition_relevant_class = coalition & (y_val_mask | y_other_mask)
+            if np.any(coalition_relevant_class):
+                # Mask of k nearest training points of current coalition with class y_val or y_other
+                k_nearest_with_relevant_class = keep_first_n(coalition_relevant_class, self.k)
+                y_val_nearest = y_val_mask & k_nearest_with_relevant_class
+                y_other_nearest = y_other_mask & k_nearest_with_relevant_class
+                utility = int(
+                    _greater_or_close(
+                        np.sum(weights[y_val_nearest]), np.sum(weights[y_other_nearest])
+                    )
+                )
+            else:
+                # Emtpy coalition must be zero
+                utility = 0
 
             coalition_tuple = tuple(sorted(sortperm[coalition]))
             utilities[coalition_tuple] = utility
