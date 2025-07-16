@@ -164,8 +164,7 @@ def test_transform_point_to_gaussian() -> None:
 
 
 def test_identity_transform() -> None:
-    """Test that two consecutive transformations (Gaussian -> Original -> Gaussian) yield the original data."""
-    # Input data (3 samples, 3 features)
+    """Tests that transforming to Gaussian space and gives the original data."""
     data = np.array(
         [
             [1.0, 2.0, 3.0],
@@ -177,15 +176,8 @@ def test_identity_transform() -> None:
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
     data_transformed = imputer.transform_to_gaussian(data)
     data_backtransformed = imputer.transform_from_gaussian(data_transformed)
-    print("Original Data:")
-    print(data)
-    print("Back-transformed Data:")
-    print(data_backtransformed)
 
-    # Check if the transformed-back data is close to the original data
-    assert np.allclose(data, data_backtransformed, atol=1e-2), (
-        f"Expected original data, but got {data_backtransformed}"
-    )
+    assert np.allclose(data, data_backtransformed)
 
 
 def test_transform_to_original() -> None:
