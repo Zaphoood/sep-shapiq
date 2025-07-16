@@ -13,7 +13,7 @@ It adds the following functionalities:
 2. **Imputers:** Provides a *Gaussian* imputer for background data with normally distributed features, and its extension, the *Gaussian copula* imputer, suitable for arbitrary, non-normally distributed data
 3. **Coalition Finding:** Implements an efficient, heuristic algorithm for finding maximal and minimal coalitions for a (simplified) game
 
-The best way to get started is by following one of the :doc:`notebooks <notebooks>`, which provide a hands-on introduction to the usage of the libraries modules while also explaining some of the theoretical concepts involved. Furthermore, an :doc:`API reference <api>` is provided.
+The best way to get started is by following one of the :doc:`notebooks <notebooks>`, which provide a hands-on introduction to the usage of the library's modules while also explaining some of the theoretical concepts involved. Furthermore, an :doc:`API reference <api>` is provided.
 
 Contents
 ~~~~~~~~
