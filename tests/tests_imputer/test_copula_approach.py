@@ -207,31 +207,30 @@ def test_transform_to_original() -> None:
 ##############################################
 
 
-def test_copula_imputation_first_feature_known() -> None:
-    """Test imputation with first feature known, others unknown."""
+def test_copula_imputation_single_feature_known() -> None:
+    """Test imputation with a single feature known and two unknown."""
     # Create correlated data
     rng = np.random.default_rng(42)
     data = rng.normal(size=(1000, 3))
-    data[:, 1] = 0.8 * data[:, 0] + 0.2 * data[:, 1]  # Create correlation
-    data[:, 2] = 0.5 * data[:, 0] + 0.5 * data[:, 2]  # Create correlation
+    # Introduce correlation between features
+    data[:, 1] = 0.8 * data[:, 0] + 0.2 * data[:, 1]
+    data[:, 2] = 0.5 * data[:, 0] + 0.5 * data[:, 2]
 
-    # Create explanation point (first feature at 1.0)
     x_explain = np.array([1.0, np.nan, np.nan])
-    coalition = np.array([True, False, False])
+    coalitions = np.array([[True, False, False]])
 
     imputer = GaussianCopulaImputer(
         model=dummy_model, data=data, x=x_explain, n_mc_samples=1000, random_state=42
     )
 
-    # Get imputed values
-    imputation_result = imputer.impute(x_explain, np.atleast_2d(coalition))
+    imputed = imputer.impute(x_explain, coalitions)
 
-    # The expected value should be sum of known feature (1.0) plus the conditional means
-    # For the copula approach, we can't predict exact values but should be reasonable
-    assert imputation_result.shape == (1,)
-    assert (
-        IMPUTED_LOWER < imputation_result[0] < IMPUTED_UPPER
-    )  # Reasonable range for imputed values
+    # We expect a shape of (n_coaltions, n_features)
+    assert imputed.shape == (coalitions.shape[0], x_explain.shape[0])
+
+    # We can't predict exact values, but they should be within a reasonable range
+    assert np.all(imputed[0, 1:] >= IMPUTED_LOWER)
+    assert np.all(imputed[0, 1:] <= IMPUTED_UPPER)
 
 
 def test_copula_imputer_value_function() -> None:
