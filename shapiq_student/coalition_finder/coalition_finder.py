@@ -50,7 +50,7 @@ def subset_finding(
     Returns:
         An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
     """
-    return coalition_finding_exhaustive_search(interaction_values, max_size)
+    return coalition_finding_best_individuals(interaction_values, max_size)
 
 
 def coalition_finding_exhaustive_search(
