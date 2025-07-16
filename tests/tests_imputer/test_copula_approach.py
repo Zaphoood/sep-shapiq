@@ -111,28 +111,35 @@ def test_check_categorical_features_mixed() -> None:
 
 
 ##############################################
-# Tests for Transformation Methods          #
+# Tests for Transformation Methods --------- #
 ##############################################
 
-# TODO (milanagm): method to check if after two transformations identity function is reached
 
+def test_inverse_transformation() -> None:
+    """Test the inverse transformation gives back the original values."""
+    # Original data (3 samples, 3 features)
+    data = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0],
+        ]
+    )
+    result_data = np.array(
+        [
+            [-0.674, -0.674, -0.674],
+            [0, 0, 0],
+            [0.674, 0.674, 0.674],
+        ]
+    )
 
-def test_rank_gaussian_transform() -> None:
-    """Test the rank-Gaussian transformation preserves ranks and produces standard normal."""
-    # Use more data points to ensure empirical std is close to 1
-    rng = np.random.default_rng(42)
-    data = rng.uniform(0, 10, size=(100, 3))
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-    transformed = imputer.gaussian_transform(data)
-
-    # Check shape
-    assert transformed.shape == data.shape
-
-    # Check each column is standard normal distributed
-    for col in transformed.T:
-        assert np.all((col > LOWER_BOUND) & (col < UPPER_BOUND))
-        assert np.allclose(np.mean(col), 0, atol=0.05)
-        assert np.allclose(np.std(col), 1, atol=0.05)
+    transformed_data = imputer.gaussian_transform(data)
+    print("Transformed Data:")
+    print(transformed_data)
+    assert np.allclose(transformed_data, result_data, atol=1e-3), (
+        f"Expected {result_data}, but got {transformed_data}"
+    )
 
 
 def test_transform_point_to_gaussian() -> None:
@@ -144,15 +151,43 @@ def test_transform_point_to_gaussian() -> None:
             [7.0, 8.0, 9.0],
         ]
     )
-    x_point = np.array([2.5, 3.5, 4.5])
+    result_transformed_point = np.array([0.841621, -0.253347, -0.841621])
+
+    x_point = np.array([8, 3, 1])
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-
-    transformed = imputer.transform_point_to_gaussian(x_point, data)
-
+    transformed_x = imputer.transform_point_to_gaussian(x_point, data)
     # Check shape
-    assert transformed.shape == x_point.shape
+    print("Transformed Data:")
+    print(transformed_x)
+    assert transformed_x.shape == x_point.shape
+    assert np.allclose(transformed_x, result_transformed_point, atol=1e-2), (
+        f"Expected {result_transformed_point}, but got {transformed_x}"
+    )
 
-    assert np.all((transformed > LOWER_BOUND) & (transformed < UPPER_BOUND))
+
+def test_identity_transform() -> None:
+    """Test that two consecutive transformations (Gaussian -> Original -> Gaussian) yield the original data."""
+    # Input data (3 samples, 3 features)
+    data = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0],
+        ]
+    )
+
+    imputer = GaussianCopulaImputer(model=dummy_model, data=data)
+    transformed_data = imputer.gaussian_transform(data)
+    back_to_original = imputer.transform_to_original(transformed_data)
+    print("Original Data:")
+    print(data)
+    print("Back-transformed Data:")
+    print(back_to_original)
+
+    # Check if the transformed-back data is close to the original data
+    assert np.allclose(data, back_to_original, atol=1e-2), (
+        f"Expected original data, but got {back_to_original}"
+    )
 
 
 def test_transform_to_original() -> None:
@@ -178,8 +213,18 @@ def test_transform_to_original() -> None:
 
 
 ##############################################
-# Tests for Imputation                      #
+# Tests for Imputation --------------------- #
 ##############################################
+
+
+def test_null_point_error() -> None:
+    """Test that error is raised when x is None."""
+    rng = np.random.default_rng()
+    data = rng.random((10, 2))
+    imputer = GaussianCopulaImputer(model=dummy_model, data=data)
+
+    with pytest.raises(ValueError, match="Explanation point x cannot be None"):
+        imputer.impute(None, np.array([[True, False]]))
 
 
 def test_copula_imputation_first_feature_known() -> None:
@@ -231,13 +276,3 @@ def test_copula_imputer_value_function() -> None:
     # For the copula approach, we can't predict exact values but should be reasonable
     assert np.isscalar(result_value_function) or result_value_function.shape == (1,)
     assert IMPUTED_LOWER < result_value_function < IMPUTED_UPPER  # Reasonable range for imputed
-
-
-def test_null_point_error() -> None:
-    """Test that error is raised when x is None."""
-    rng = np.random.default_rng()
-    data = rng.random((10, 2))
-    imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-
-    with pytest.raises(ValueError, match="Explanation point x cannot be None"):
-        imputer.impute(None, np.array([[True, False]]))

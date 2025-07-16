@@ -113,6 +113,10 @@ class GaussianCopulaImputer(GaussianImputerBase):
     ]:  # TODO (milanagm): this method may need improvement for handling data with extreme cases
         """Transform Gaussian samples back to original feature space.
 
+        The method np.interp is a linear interpolation method, which means that after transforming
+        back from Gaussian space, it estimates the closest values based on the sorted data.
+        This doesn't necessarily match the exact values of the original data.
+
         Args:
             gaussian_samples: Samples in Gaussian space (n_samples, n_features).
 
