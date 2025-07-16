@@ -136,23 +136,17 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             Samples in original feature space (n_samples, n_features).
         """
-        # TODO (milanagm): get n_features via guassian samples to avoid unused variables
-        n_samples, n_features = data_gaussian.shape
+        n_features = data_gaussian.shape[1]
+        n_samples = self.data.shape[0]
+
         x_original = np.zeros_like(data_gaussian)
-
-        # TODO (milanagm): is the re-transformation correct?
-        for i in range(n_features):
-            # Get uniform values from Gaussian samples
-            uni_values = norm.cdf(data_gaussian[:, i])
-
-            # Use quantile function approach with sorted data
-            n_ref = self._sorted_data.shape[0]
-
-            # Convert uniform values to indices in sorted data
-            indices = uni_values * (n_ref - 1)
-
-            # Use numpy's interp for better interpolation
-            x_original[:, i] = np.interp(indices, np.arange(n_ref), self._sorted_data[:, i])
+        for col in range(n_features):
+            quantiles = norm.cdf(data_gaussian[:, col])
+            ranks = quantiles * (n_samples + 1)
+            # The back-transformed ranks are not necessarily integers, so we interpolate linearly between the closest original datapoints
+            x_original[:, col] = np.interp(
+                ranks, np.arange(1, n_samples + 1), self._sorted_data[:, col]
+            )
 
         return x_original
 
