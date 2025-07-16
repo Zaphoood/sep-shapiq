@@ -175,16 +175,16 @@ def test_identity_transform() -> None:
     )
 
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-    transformed_data = imputer.transform_to_gaussian(data)
-    back_to_original = imputer.transform_to_original(transformed_data)
+    data_transformed = imputer.transform_to_gaussian(data)
+    data_backtransformed = imputer.transform_from_gaussian(data_transformed)
     print("Original Data:")
     print(data)
     print("Back-transformed Data:")
-    print(back_to_original)
+    print(data_backtransformed)
 
     # Check if the transformed-back data is close to the original data
-    assert np.allclose(data, back_to_original, atol=1e-2), (
-        f"Expected original data, but got {back_to_original}"
+    assert np.allclose(data, data_backtransformed, atol=1e-2), (
+        f"Expected original data, but got {data_backtransformed}"
     )
 
 
@@ -200,7 +200,7 @@ def test_transform_to_original() -> None:
     gaussian_samples = np.array([[0, 0, 0], [1, -1, 0.5], [-1, 1, -0.5]])
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
 
-    original = imputer.transform_to_original(gaussian_samples)
+    original = imputer.transform_from_gaussian(gaussian_samples)
 
     # Check shape
     assert original.shape == gaussian_samples.shape

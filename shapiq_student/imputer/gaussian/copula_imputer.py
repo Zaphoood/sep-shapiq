@@ -121,11 +121,9 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         return x_transformed
 
-    def transform_to_original(
+    def transform_from_gaussian(
         self, data_gaussian: npt.NDArray[np.floating]
-    ) -> npt.NDArray[
-        np.floating
-    ]:  # TODO (milanagm): this method may need improvement for handling data with extreme cases
+    ) -> npt.NDArray[np.floating]:
         """Transform Gaussian samples back to original feature space.
 
         The method np.interp is a linear interpolation method, which means that after transforming
@@ -138,7 +136,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             Samples in original feature space (n_samples, n_features).
         """
-        data_gaussian = np.asarray(data_gaussian)
         # TODO (milanagm): get n_features via guassian samples to avoid unused variables
         n_samples, n_features = data_gaussian.shape
         x_original = np.zeros_like(data_gaussian)
@@ -178,7 +175,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         imputed_original = np.zeros(n_imputed_gaussian)
 
         for i in range(n_imputed_gaussian):
-            imputed_original[i] = self.transform_to_original(imputed_gaussian[i])
+            imputed_original[i] = self.transform_from_gaussian(imputed_gaussian[i])
 
         imputed_original = np.mean(imputed_original, axis=1)
 
