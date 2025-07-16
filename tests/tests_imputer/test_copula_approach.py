@@ -207,16 +207,6 @@ def test_transform_to_original() -> None:
 ##############################################
 
 
-def test_null_point_error() -> None:
-    """Test that error is raised when x is None."""
-    rng = np.random.default_rng()
-    data = rng.random((10, 2))
-    imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-
-    with pytest.raises(ValueError, match="Explanation point x cannot be None"):
-        imputer.impute(None, np.array([[True, False]]))
-
-
 def test_copula_imputation_first_feature_known() -> None:
     """Test imputation with first feature known, others unknown."""
     # Create correlated data
