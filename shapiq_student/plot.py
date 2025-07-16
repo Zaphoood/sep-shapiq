@@ -33,7 +33,7 @@ def plot_points_shapley_2d(  # noqa: C901
 ) -> None:
     """Plot a Shapley Values for a 2D training data set using matplotlib.
 
-    This function visualizes the training data with the associated Shapley Values, as well as a test data point.
+    This function visualizes training data points with their associated Shapley Values, and optionally a test data point.
     Each training point is shown with a marker size proportional to its absolute Shapley
     value. Positive values are shown as a filled circle and non-positve values as an emtpy circle.
 
