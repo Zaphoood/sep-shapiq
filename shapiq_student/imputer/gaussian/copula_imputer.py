@@ -48,7 +48,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         self._check_categorical_features()
 
         # Transform data to Gaussian space using empirical CDF (rank-Gaussian)
-        self.data_transformed = self.gaussian_transform(self.data)
+        self.data_transformed = self.transform_to_gaussian(self.data)
 
         # Override: GaussianCopulaImputer uses transformed mean/covariance
         self._mean_per_feature = np.mean(
@@ -60,39 +60,45 @@ class GaussianCopulaImputer(GaussianImputerBase):
             self.data, axis=0
         )  # TODO (milanagm): we are NOT does not preserve the coalitions here - check if this is okay
 
-    def gaussian_transform(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
-        """Transform each feature to standard normal using empirical CDF (rank-Gaussian).
+    def transform_to_gaussian(
+        self, background_data: npt.NDArray[np.floating]
+    ) -> npt.NDArray[np.floating]:
+        """Transform each feature to a standard normal distribution using empirical CDF (rank-Gaussian).
 
         For each feature (column), this method applies a transformation so that the values follow a standard normal
         distribution (mean 0, std 1), while preserving the rank order of the original data. This is also known as a
         rank-Gaussian or empirical CDF transformation.
 
         Args:
-            data: Input data to transform (n_samples, n_features).
+            background_data: Input data to transform (n_samples, n_features).
 
         Returns:
             Transformed data in Gaussian space (n_samples, n_features).
         """
-        transformed = np.zeros_like(data, dtype=float)
-        for i in range(data.shape[1]):
-            ranks = rankdata(data[:, i], method="average")
+        transformed = np.zeros_like(background_data, dtype=float)
+        for col in range(background_data.shape[1]):
+            ranks = rankdata(background_data[:, col], method="average")
+            # Map ranks linearly to the range [1/(n+1), 1-1/(n+1)]
             quantile = ranks / (len(ranks) + 1)
-            transformed[:, i] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
+            # TODO(Zaphoood): clipping shouldn't be necessary, since quantiles are already in range (0, 1)
+            transformed[:, col] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
         return transformed
 
     def transform_point_to_gaussian(
-        self, x_point: npt.NDArray[np.floating], x_train: npt.NDArray[np.floating]
+        self,
+        background_data: npt.NDArray[np.floating],
+        x_point: npt.NDArray[np.floating],
     ) -> npt.NDArray[np.floating]:
         """Transform a single explanation point to Gaussian space using the training data's ECDF.
 
         Args:
+            background_data: Training data used for ECDF (n_samples, n_features).
             x_point: Explanation point to transform (n_features,).
-            x_train: Training data used for ECDF (n_samples, n_features).
 
         Returns:
             Transformed point in Gaussian space (n_features,).
         """
-        if x_point.shape[0] < x_train.shape[1]:
+        if x_point.shape[0] < background_data.shape[1]:
             msg = "x_point must have at least as many features as x_train."
             raise ValueError(msg)
 
@@ -100,14 +106,14 @@ class GaussianCopulaImputer(GaussianImputerBase):
         x_gaussian = np.zeros_like(x_point, dtype=float)
 
         for j in range(n_features):
-            vals = np.concatenate([[x_point[j]], x_train[:, j]])
+            vals = np.concatenate([[x_point[j]], background_data[:, j]])
             rank = rankdata(vals, method="average")[0]
-            quantile = rank / (len(x_train) + 1)
+            quantile = rank / (len(background_data) + 1)
             x_gaussian[j] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
         return x_gaussian
 
     def transform_to_original(
-        self, gaussian_samples: npt.NDArray[np.floating]
+        self, data_gaussian: npt.NDArray[np.floating]
     ) -> npt.NDArray[
         np.floating
     ]:  # TODO (milanagm): this method may need improvement for handling data with extreme cases
@@ -118,20 +124,20 @@ class GaussianCopulaImputer(GaussianImputerBase):
         This doesn't necessarily match the exact values of the original data.
 
         Args:
-            gaussian_samples: Samples in Gaussian space (n_samples, n_features).
+            data_gaussian: Samples in Gaussian space (n_samples, n_features).
 
         Returns:
             Samples in original feature space (n_samples, n_features).
         """
-        gaussian_samples = np.asarray(gaussian_samples)
+        data_gaussian = np.asarray(data_gaussian)
         # TODO (milanagm): get n_features via guassian samples to avoid unused variables
-        n_samples, n_features = gaussian_samples.shape
-        x_original = np.zeros_like(gaussian_samples)
+        n_samples, n_features = data_gaussian.shape
+        x_original = np.zeros_like(data_gaussian)
 
         # TODO (milanagm): is the re-transformation correct?
         for i in range(n_features):
             # Get uniform values from Gaussian samples
-            uni_values = norm.cdf(gaussian_samples[:, i])
+            uni_values = norm.cdf(data_gaussian[:, i])
 
             # Use quantile function approach with sorted data
             n_ref = self._sorted_data.shape[0]
@@ -156,7 +162,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             An array of shape (n_coalitions,) containing the mean model prediction for each coalition.
         """
-        x_gaussian = self.transform_point_to_gaussian(x.flatten(), self.data)
+        x_gaussian = self.transform_point_to_gaussian(self.data, x.flatten())
         imputed_gaussian = self.sample_monte_carlo(x_gaussian, coalitions)
 
         n_imputed_gaussian = imputed_gaussian.shape[0]

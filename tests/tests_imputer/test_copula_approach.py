@@ -133,7 +133,7 @@ def test_transform_to_gaussian() -> None:
     )
 
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-    transformed_data = imputer.gaussian_transform(data)
+    transformed_data = imputer.transform_to_gaussian(data)
     print(f"transformed: {transformed_data}")
 
     assert np.allclose(transformed_data, expected_transformed_data, atol=1e-3), (
@@ -150,11 +150,12 @@ def test_transform_point_to_gaussian() -> None:
             [7.0, 8.0, 9.0],
         ]
     )
+    x_point = np.array([8, 3, 1])
+
     result_transformed_point = np.array([0.841621, -0.253347, -0.841621])
 
-    x_point = np.array([8, 3, 1])
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-    transformed_x = imputer.transform_point_to_gaussian(x_point, data)
+    transformed_x = imputer.transform_point_to_gaussian(data, x_point)
     # Check shape
     print("Transformed Data:")
     print(transformed_x)
@@ -176,7 +177,7 @@ def test_identity_transform() -> None:
     )
 
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-    transformed_data = imputer.gaussian_transform(data)
+    transformed_data = imputer.transform_to_gaussian(data)
     back_to_original = imputer.transform_to_original(transformed_data)
     print("Original Data:")
     print(data)
