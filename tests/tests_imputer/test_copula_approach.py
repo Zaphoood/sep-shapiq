@@ -12,6 +12,7 @@ from typing import Any
 
 import numpy as np
 import pytest
+from scipy.stats import norm
 
 from shapiq_student.imputer.gaussian.copula_imputer import GaussianCopulaImputer
 from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError
@@ -150,19 +151,16 @@ def test_transform_point_to_gaussian() -> None:
             [7.0, 8.0, 9.0],
         ]
     )
-    x_point = np.array([8, 3, 1])
-
-    result_transformed_point = np.array([0.841621, -0.253347, -0.841621])
+    x_test = np.array([8, 2, 1])
+    # Features should be mapped to ranks [3, 1, 1], meaning quantiles [3/4, 1/4, 1/4]
+    expected_quantiles = np.array([3 / 4, 1 / 4, 1 / 4])
+    expected_x_transformed = norm.ppf(expected_quantiles)
 
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-    transformed_x = imputer.transform_point_to_gaussian(data, x_point)
-    # Check shape
-    print("Transformed Data:")
-    print(transformed_x)
-    assert transformed_x.shape == x_point.shape
-    assert np.allclose(transformed_x, result_transformed_point, atol=1e-2), (
-        f"Expected {result_transformed_point}, but got {transformed_x}"
-    )
+    x_transformed = imputer.transform_point_to_gaussian(data, x_test)
+
+    assert x_transformed.shape == x_test.shape
+    assert np.allclose(x_transformed, expected_x_transformed, atol=1e-2)
 
 
 def test_identity_transform() -> None:
