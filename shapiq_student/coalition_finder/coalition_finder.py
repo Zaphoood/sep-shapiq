@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -11,18 +12,6 @@ from itertools import combinations
 
 import numpy as np
 from shapiq.interaction_values import InteractionValues
-
-
-def subset_finding(
-    interaction_values: InteractionValues,
-    max_size: int,
-) -> InteractionValues:
-    """Tries to find the maximizing and minimizing coalitions with size ``max_size`` for the given simplified game.
-
-    Returns:
-        An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
-    """
-    return coalition_finding_best_individuals(interaction_values, max_size)
 
 
 def coalition_finding_exhaustive_search(
@@ -192,3 +181,32 @@ def compute_simplified_game_utility(
             if idx is not None:
                 total += interaction_values.values[idx]
     return total
+
+
+SubsetFindingApproach = Literal["exhaustive_search", "best_individuals"]
+SubsetFindingFunction = Callable[[InteractionValues, int], InteractionValues]
+SUBSET_FINDING_APPROACHES: dict[SubsetFindingApproach, SubsetFindingFunction] = {
+    "exhaustive_search": coalition_finding_exhaustive_search,
+    "best_individuals": coalition_finding_best_individuals,
+}
+
+
+def subset_finding(
+    interaction_values: InteractionValues,
+    max_size: int,
+    approach: SubsetFindingApproach = "best_individuals",
+) -> InteractionValues:
+    """Tries to find the maximizing and minimizing coalitions with size ``max_size`` for the given simplified game.
+
+    Returns:
+        An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
+    """
+    subset_finding_fn = SUBSET_FINDING_APPROACHES.get(approach)
+    if subset_finding_fn is None:
+        msg = (
+            f"Invalid approach for subset finding: '{approach}'. Valid approaches are "
+            + ", ".join(SUBSET_FINDING_APPROACHES)
+        )
+        raise ValueError(msg)
+
+    return subset_finding_fn(interaction_values, max_size)
