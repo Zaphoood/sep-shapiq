@@ -157,20 +157,20 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         Args:
             x: The data point to impute as an array of shape ``(n_features,)``.
-            coalitions: Boolean array of shape ``(n_coalitions, n_features)`` indicating which features are present or missing for each coalition.
+            coalitions: Boolean array of shape ``(n_coalitions, n_features)`` representing coalitions.
 
         Returns:
             An array of shape (n_coalitions,) containing the mean model prediction for each coalition.
         """
-        x_gaussian = self.transform_point_to_gaussian(self.data, x.flatten())
-        imputed_gaussian = self.sample_monte_carlo(x_gaussian, coalitions)
+        x_transformed = self.transform_point_to_gaussian(self.data, x.flatten())
 
-        n_imputed_gaussian = imputed_gaussian.shape[0]
-        imputed_original = np.zeros(n_imputed_gaussian)
+        gaussian_samples = self.sample_monte_carlo(x_transformed, coalitions)
 
-        for i in range(n_imputed_gaussian):
-            imputed_original[i] = self.transform_from_gaussian(imputed_gaussian[i])
+        samples_backtransformed = np.zeros_like(gaussian_samples)
+        for coal_idx in range(coalitions.shape[0]):
+            samples_backtransformed[coal_idx] = self.transform_from_gaussian(
+                gaussian_samples[coal_idx]
+            )
+        imputed = np.mean(samples_backtransformed, axis=1)
 
-        imputed_original = np.mean(imputed_original, axis=1)
-
-        return imputed_original
+        return imputed
