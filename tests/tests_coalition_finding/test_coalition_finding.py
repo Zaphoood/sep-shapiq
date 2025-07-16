@@ -9,8 +9,10 @@ import numpy as np
 from shapiq import InteractionValues
 
 from shapiq_student.coalition_finder.coalition_finder import (
+    coalition_finding_best_individuals,
+    coalition_finding_exhaustive_search,
     compute_simplified_game_utility,
-    exhaustive_search,
+    distribute_payoffs,
 )
 
 
@@ -64,7 +66,7 @@ class TestExhaustiveSearch:
         ]
 
         for test_case in test_cases:
-            iv_found = exhaustive_search(iv, max_size=test_case.max_size)
+            iv_found = coalition_finding_exhaustive_search(iv, max_size=test_case.max_size)
             (min_coal, min_val), (max_coal, max_val) = get_min_max_from_interaction_values(iv_found)
 
             assert min_coal == test_case.min_coal
@@ -98,6 +100,59 @@ class TestExhaustiveSearch:
         for coal, expected_utility in expected_utilites.items():
             utility = compute_simplified_game_utility(coal, simplified_game)
             assert utility == expected_utility
+
+
+class TestBestIndividuals:
+    """Tests the 'best individuals' approach for coalitiong finding."""
+
+    def test_distribute_payoffs(self):
+        """Tests that distributing higher-order interactions among their participants works correctly."""
+        payoffs: dict[tuple[int, ...], float] = {
+            (): 0,
+            (0,): 3,
+            (1,): 2,
+            (2,): -1,
+            (0, 1): 6,
+            (0, 2): 5,
+            (1, 2): 3,
+            (0, 1, 2): 4,
+        }
+        expected_distributed_payoffs = np.array(
+            [
+                3 + 6 / 2 + 5 / 2 + 4 / 3,
+                2 + 6 / 2 + 3 / 2 + 4 / 3,
+                -1 + 5 / 2 + 3 / 2 + 4 / 3,
+            ]
+        )
+
+        iv = interaction_values_from_payoffs(payoffs, index="SII")
+        distributed_payoffs = distribute_payoffs(iv)
+        print(distributed_payoffs)
+
+        assert np.allclose(distributed_payoffs, expected_distributed_payoffs)
+
+    def test_coalition_finding_small(self):
+        """Tests the 'best individuals' approach for coalition finding on a small, hand-picked example."""
+        payoffs: dict[tuple[int, ...], float] = {
+            (): 0,
+            (0,): 3,
+            (1,): 2,
+            (2,): 2,
+            (0, 1): 6,
+            (0, 2): 5,
+            (1, 2): 3,
+            (0, 1, 2): 4,
+        }
+
+        max_size = 2
+        expected_min_coal = (1, 2)
+        expected_max_coal = (0, 1)
+
+        iv = interaction_values_from_payoffs(payoffs, index="SII")
+        iv_min_max = coalition_finding_best_individuals(iv, max_size=max_size)
+        (min_coal, _), (max_coal, _) = get_min_max_from_interaction_values(iv_min_max)
+        assert min_coal == expected_min_coal
+        assert max_coal == expected_max_coal
 
 
 def interaction_values_from_payoffs(
