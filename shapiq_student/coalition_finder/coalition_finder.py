@@ -12,10 +12,14 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-def get_coalitions(n_players: int) -> Iterator[tuple[bool, ...]]:
-    """Returns all 2^n_players coalitions as a binary matrix (shape=(2^n, n_players)).
+def all_coalitions(n_players: int) -> Iterator[tuple[bool, ...]]:
+    """Creates an iterator over all coalitions in a game with ``n_players`` players.
 
-    Each row is a 0/1 vector of length n_players.
+    Args:
+        n_players: The number of players in the game.
+
+    Returns:
+        An iterator of boolean n-tuples representing the coalitions.
     """
     return product([False, True], repeat=n_players)
 
@@ -49,14 +53,21 @@ def exhaustive_search(
     interaction_values: InteractionValues,
     max_size: int,
 ) -> InteractionValues:
-    r"""Searches all S ⊆ N with |S|=coalition_size.
+    r"""Returns the maximizing and minimizing coalition of the given size of a simplified game :math:`\hat v_e` constructed from the given ``interaction_values`` along with their values.
 
-    Returns the coalition that maximizes \hat v_e(S) and the one that minimizes it,
-    along with their values.
+    This is achieved by simply performing an exhaustive search of all coalitions with size ``max_size``.
+
+    Args:
+        interaction_values: The interaction values from which the simplified game :math:`\hat v_e` is constructed.
+        max_size: The size of the resulting maximizing and minimizing coalitions.
 
     Returns:
-        An InteractionValues object containing the maximizing and minimizing coalitions.
+        An ``InteractionValues`` object containing the maximizing and minimizing coalitions.
     """
+    if max_size < 0:
+        msg = f"Parameter 'max_size' must be non-negative, but was {max_size}"
+        raise ValueError(msg)
+
     max_val = -np.inf
     max_coal: tuple[int, ...] | None = None
     min_val = np.inf
@@ -73,8 +84,8 @@ def exhaustive_search(
             min_coal = coalition_indices
 
     if max_coal is None or min_coal is None:
-        error_msg = "no Koalition found!"
-        raise ValueError(error_msg)
+        msg = "Unreachable"
+        raise RuntimeError(msg)
 
     max_coal_t = tuple(max_coal)
     min_coal_t = tuple(min_coal)
@@ -89,7 +100,7 @@ def exhaustive_search(
     return InteractionValues(
         values=values,
         index=interaction_values.index,
-        n_players=len(max_coal),
+        n_players=interaction_values.n_players,
         max_order=max_size,
         min_order=max_size,
         baseline_value=0,
