@@ -113,13 +113,16 @@ def coalition_finding_best_individuals(
     Returns:
         An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
     """
-    player_scores = distribute_payoffs(interaction_values)
+    if max_size == 0:
+        min_coal = ()
+        max_coal = ()
+    else:
+        player_scores = distribute_payoffs(interaction_values)
+        # Sorts player indices by their scores
+        players_sorted = np.argsort(player_scores)
 
-    # Sorts player indices by their scores
-    players_sorted = np.argsort(player_scores)
-
-    min_coal = tuple(sorted(players_sorted[:max_size]))
-    max_coal = tuple(sorted(players_sorted[-max_size:]))
+        min_coal = tuple(sorted(players_sorted[:max_size]))
+        max_coal = tuple(sorted(players_sorted[-max_size:]))
 
     min_val = compute_simplified_game_utility(min_coal, interaction_values)
     max_val = compute_simplified_game_utility(max_coal, interaction_values)
