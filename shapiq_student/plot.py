@@ -1,4 +1,4 @@
-"""Visualization utilities for interpreting KNN-based Shapley values in 2D."""
+"""Plotting functions for the ``shapiq_student`` package."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 BASE_SCALE = 100
 
 
-def plot_knn_shapley_2d(  # noqa: C901
+def plot_points_shapley_2d(  # noqa: C901
     ax: Axes,
     X_train: npt.NDArray[np.floating],
     y_train: npt.NDArray[np.integer],
@@ -31,11 +31,10 @@ def plot_knn_shapley_2d(  # noqa: C901
     show_max: bool = False,
     min_size: float = 1,
 ) -> None:
-    """Plot a 2D KNN Shapley explanation using matplotlib.
+    """Plot a Shapley Values for a 2D training data set using matplotlib.
 
-    This function visualizes the training data, a validation point, and the
-    associated Shapley values computed for a KNN explanation.  Each training
-    point is shown with a marker size proportional to its absolute Shapley
+    This function visualizes the training data with the associated Shapley Values, as well as a test data point.
+    Each training point is shown with a marker size proportional to its absolute Shapley
     value. Positive values are shown as a filled circle and non-positve values as an emtpy circle.
 
     Args:
