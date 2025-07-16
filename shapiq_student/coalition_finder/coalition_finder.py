@@ -16,8 +16,9 @@ def compute_simplified_game_utility(
 
     for k in range(simplified_game.max_order + 1):
         for subset in combinations(coalition, k):
-            idx = simplified_game.interaction_lookup[subset]
-            total += simplified_game.values[idx]
+            idx = simplified_game.interaction_lookup.get(subset)
+            if idx is not None:
+                total += simplified_game.values[idx]
     return total
 
 
