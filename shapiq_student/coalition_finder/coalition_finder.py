@@ -71,6 +71,10 @@ def coalition_finding_best_individuals(
     This algorithm works by first distributing all interactions of order :math:`k \geq 2` equally to their participants and then
     chooses the best (worst) :math:`\ell` players as the maximizing (minimizing) coalition.
 
+    Args:
+        interaction_values: The interaction values from which the simplified game :math:`\hat v_e` is constructed.
+        max_size: The size of the resulting maximizing and minimizing coalitions.
+
     Returns:
         An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
     """
@@ -183,9 +187,9 @@ def compute_simplified_game_utility(
     return total
 
 
-SubsetFindingApproach = Literal["exhaustive_search", "best_individuals"]
+SubsetFindingStrategy = Literal["exhaustive_search", "best_individuals"]
 SubsetFindingFunction = Callable[[InteractionValues, int], InteractionValues]
-SUBSET_FINDING_APPROACHES: dict[SubsetFindingApproach, SubsetFindingFunction] = {
+SUBSET_FINDING_STRATEGIES: dict[SubsetFindingStrategy, SubsetFindingFunction] = {
     "exhaustive_search": coalition_finding_exhaustive_search,
     "best_individuals": coalition_finding_best_individuals,
 }
@@ -194,18 +198,23 @@ SUBSET_FINDING_APPROACHES: dict[SubsetFindingApproach, SubsetFindingFunction] = 
 def subset_finding(
     interaction_values: InteractionValues,
     max_size: int,
-    approach: SubsetFindingApproach = "best_individuals",
+    strategy: SubsetFindingStrategy = "best_individuals",
 ) -> InteractionValues:
-    """Tries to find the maximizing and minimizing coalitions with size ``max_size`` for the given simplified game.
+    r"""Tries to find the maximizing and minimizing coalitions with size ``max_size`` for the given simplified game.
+
+    Args:
+        interaction_values: The interaction values from which the simplified game :math:`\hat v_e` is constructed.
+        max_size: The size of the resulting maximizing and minimizing coalitions.
+        strategy: The strategy to use for finding the coalitions. Defaults to 'best_individuals'.
 
     Returns:
         An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
     """
-    subset_finding_fn = SUBSET_FINDING_APPROACHES.get(approach)
+    subset_finding_fn = SUBSET_FINDING_STRATEGIES.get(strategy)
     if subset_finding_fn is None:
         msg = (
-            f"Invalid approach for subset finding: '{approach}'. Valid approaches are "
-            + ", ".join(SUBSET_FINDING_APPROACHES)
+            f"Invalid subset finding strategy: '{strategy}'. Available strategies are: "
+            + ", ".join(SUBSET_FINDING_STRATEGIES)
         )
         raise ValueError(msg)
 
