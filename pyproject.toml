@@ -105,6 +105,7 @@ exclude = [
     "ARG",  # some functions are not used
     "INP",  # inports can be different
     "N",  # type hints are excludes in tests
+    "T201",
 ]
 "docs/source/*.py" = [
     "A001",  # some conf.py variables shadow builtins which is okay here
