@@ -3,72 +3,49 @@
 from __future__ import annotations
 
 from itertools import combinations, product
+from typing import TYPE_CHECKING
 
 import numpy as np
 from shapiq.interaction_values import InteractionValues
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
-# hatte ursprünglich max_size in den Klamemrn aber ich glaub wir brauchen doch max_order?
-def get_coalitions(max_order: int) -> np.ndarray:
+
+def get_coalitions(n_players: int) -> Iterator[tuple[bool, ...]]:
     """Returns all 2^n_players coalitions as a binary matrix (shape=(2^n, n_players)).
 
     Each row is a 0/1 vector of length n_players.
     """
-    all_coals = list(product([0, 1], repeat=max_order))
-    return np.array(all_coals, dtype=int)
+    return product([False, True], repeat=n_players)
 
 
-def get_explanation_one_feature(
-    coalition: np.ndarray, interaction_values: InteractionValues
+def compute_simplified_game_utility(
+    coalition: tuple[int, ...], simplified_game: InteractionValues
 ) -> float:
-    """Sums all e_i for individual players i ∈ S (|T|=1)."""
+    """Calculates the utility of a given coalition based in the simplified game."""
     total = 0.0
-    S_known_indices = np.nonzero(coalition)[0]
 
-    for i in S_known_indices:
-        idx = interaction_values.interaction_lookup.get((i,))
-        if idx is not None:
-            total += interaction_values.values[idx]
-
-    return total
-
-
-def get_explanation_two_features(
-    coalition: np.ndarray, interaction_values: InteractionValues
-) -> float:
-    """Sum the pairwise interaction values e_{i,j}.
-
-    Calculated for each pair of active features {i,j} ⊆ S (|T|=2) in the coalition.
-    """
-    total = 0.0
-    S_known_indices = np.nonzero(coalition)[0]
-
-    for i, j in combinations(S_known_indices, 2):
-        idx = interaction_values.interaction_lookup.get((i, j))
-        if idx is None:  # just for safety
-            idx = interaction_values.interaction_lookup.get((j, i))
-        if idx is not None:
-            total += interaction_values.values[idx]
-    return total
-
-
-def get_explanation_more_features(
-    coalition: np.ndarray, interaction_values: InteractionValues
-) -> float:
-    """Sum all higher-order interaction values e_T for T of size 3 ≤ |T| ≤ max_order."""
-    total = 0.0
-    S_known_indices = np.nonzero(coalition)[0]
-    max_order = interaction_values.max_order
-
-    for k in range(3, max_order + 1):
-        for subset in combinations(S_known_indices, k):
-            idx = interaction_values.interaction_lookup.get(subset)
-            if idx is not None:
-                total += interaction_values.values[idx]
+    for k in range(simplified_game.max_order + 1):
+        for subset in combinations(coalition, k):
+            idx = simplified_game.interaction_lookup[subset]
+            total += simplified_game.values[idx]
     return total
 
 
 def subset_finding(
+    interaction_values: InteractionValues,
+    max_size: int,
+) -> InteractionValues:
+    """Tries to find the maximizing and minimizing coalitions with size ``max_size`` for the given simplified game.
+
+    Returns:
+        An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
+    """
+    return exhaustive_search(interaction_values, max_size)
+
+
+def exhaustive_search(
     interaction_values: InteractionValues,
     max_size: int,
 ) -> InteractionValues:
@@ -81,38 +58,19 @@ def subset_finding(
         An InteractionValues object containing the maximizing and minimizing coalitions.
     """
     max_val = -np.inf
-    max_coal: np.ndarray | None = None
+    max_coal: tuple[int, ...] | None = None
     min_val = np.inf
-    min_coal: np.ndarray | None = None
+    min_coal: tuple[int, ...] | None = None
 
-    e0 = interaction_values.baseline_value
-    for coalition in get_coalitions(interaction_values.max_order):
-        S_known = coalition.sum()
+    for coalition_indices in combinations(range(interaction_values.n_players), max_size):
+        utility = compute_simplified_game_utility(coalition_indices, interaction_values)
 
-        if S_known == 0:
-            total = e0
-
-        elif S_known == 1:
-            e1 = get_explanation_one_feature(coalition, interaction_values)
-            total = e0 + e1
-
-        elif S_known == 2:  # noqa: PLR2004
-            e1 = get_explanation_one_feature(coalition, interaction_values)
-            e2 = get_explanation_two_features(coalition, interaction_values)
-            total = e0 + e1 + e2
-
-        else:
-            e1 = get_explanation_one_feature(coalition, interaction_values)
-            e2 = get_explanation_two_features(coalition, interaction_values)
-            e3 = get_explanation_more_features(coalition, interaction_values)
-            total = e0 + e1 + e2 + e3
-
-        if total > max_val:
-            max_val = total
-            max_coal = coalition.copy()
-        if total < min_val:
-            min_val = total
-            min_coal = coalition.copy()
+        if utility > max_val:
+            max_val = utility
+            max_coal = coalition_indices
+        if utility < min_val:
+            min_val = utility
+            min_coal = coalition_indices
 
     if max_coal is None or min_coal is None:
         error_msg = "no Koalition found!"
