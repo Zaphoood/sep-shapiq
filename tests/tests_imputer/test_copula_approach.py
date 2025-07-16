@@ -115,9 +115,8 @@ def test_check_categorical_features_mixed() -> None:
 ##############################################
 
 
-def test_inverse_transformation() -> None:
-    """Test the inverse transformation gives back the original values."""
-    # Original data (3 samples, 3 features)
+def test_transform_to_gaussian() -> None:
+    """Tests transforming background data to Gaussian space."""
     data = np.array(
         [
             [1.0, 2.0, 3.0],
@@ -125,7 +124,7 @@ def test_inverse_transformation() -> None:
             [7.0, 8.0, 9.0],
         ]
     )
-    result_data = np.array(
+    expected_transformed_data = np.array(
         [
             [-0.674, -0.674, -0.674],
             [0, 0, 0],
@@ -135,10 +134,10 @@ def test_inverse_transformation() -> None:
 
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
     transformed_data = imputer.gaussian_transform(data)
-    print("Transformed Data:")
-    print(transformed_data)
-    assert np.allclose(transformed_data, result_data, atol=1e-3), (
-        f"Expected {result_data}, but got {transformed_data}"
+    print(f"transformed: {transformed_data}")
+
+    assert np.allclose(transformed_data, expected_transformed_data, atol=1e-3), (
+        f"Expected {expected_transformed_data}, but got {transformed_data}"
     )
 
 
