@@ -9,16 +9,30 @@ from shapiq.interaction_values import InteractionValues
 
 
 def compute_simplified_game_utility(
-    coalition: tuple[int, ...], simplified_game: InteractionValues
+    coalition: tuple[int, ...], interaction_values: InteractionValues
 ) -> float:
-    """Calculates the utility of a given coalition based in the simplified game."""
+    r"""Calculates the utility of a coalition in the simplified game constructed from the ``interaction_values``.
+
+    The utility of the given coalition :math:`S` is calculated as
+
+            :math:`\sum_{T\subseteq S, |T|\leq k} e_T`,
+
+    where :math:`k` is the maximum order of the interaction values and :math:`e_T` is the interaction for subset :math:`T`.
+
+    Args:
+        coalition: The coalition in question.
+        interaction_values: The interaction values from which the simplified game :math:`\hat v_e` is constructed.
+
+    Returns:
+        The utility of the given coalition.
+    """
     total = 0.0
 
-    for k in range(simplified_game.max_order + 1):
+    for k in range(interaction_values.max_order + 1):
         for subset in combinations(coalition, k):
-            idx = simplified_game.interaction_lookup.get(subset)
+            idx = interaction_values.interaction_lookup.get(subset)
             if idx is not None:
-                total += simplified_game.values[idx]
+                total += interaction_values.values[idx]
     return total
 
 
