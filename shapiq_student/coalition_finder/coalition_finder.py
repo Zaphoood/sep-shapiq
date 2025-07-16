@@ -2,26 +2,10 @@
 
 from __future__ import annotations
 
-from itertools import combinations, product
-from typing import TYPE_CHECKING
+from itertools import combinations
 
 import numpy as np
 from shapiq.interaction_values import InteractionValues
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-
-def all_coalitions(n_players: int) -> Iterator[tuple[bool, ...]]:
-    """Creates an iterator over all coalitions in a game with ``n_players`` players.
-
-    Args:
-        n_players: The number of players in the game.
-
-    Returns:
-        An iterator of boolean n-tuples representing the coalitions.
-    """
-    return product([False, True], repeat=n_players)
 
 
 def compute_simplified_game_utility(
