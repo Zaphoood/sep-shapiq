@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 from itertools import combinations, product
-from typing import TYPE_CHECKING
 
 import numpy as np
-
-if TYPE_CHECKING:
-    from shapiq.interaction_values import InteractionValues
+from shapiq.interaction_values import InteractionValues
 
 
 # hatte ursprünglich max_size in den Klamemrn aber ich glaub wir brauchen doch max_order?
@@ -73,20 +70,22 @@ def get_explanation_more_features(
 
 def subset_finding(
     interaction_values: InteractionValues,
-    max_size: int,  # noqa: ARG001
-) -> tuple[np.ndarray, float, np.ndarray, float]:
+    max_size: int,
+) -> InteractionValues:
     r"""Searches all S ⊆ N with |S|=coalition_size.
 
     Returns the coalition that maximizes \hat v_e(S) and the one that minimizes it,
     along with their values.
+
+    Returns:
+        An InteractionValues object containing the maximizing and minimizing coalitions.
     """
     max_val = -np.inf
     max_coal: np.ndarray | None = None
-    min_val = np.inf  # min muss wrs base sein?
-    min_coal: np.ndarray | None = None  # min muss wrs base sein?
+    min_val = np.inf
+    min_coal: np.ndarray | None = None
 
     e0 = interaction_values.baseline_value
-    # ursprünglich hatte ich: for coalition in get_coalitions(max_size): aber macht ja keinen sinn wenn k kleiner ist?
     for coalition in get_coalitions(interaction_values.max_order):
         S_known = coalition.sum()
 
@@ -118,4 +117,23 @@ def subset_finding(
     if max_coal is None or min_coal is None:
         error_msg = "no Koalition found!"
         raise ValueError(error_msg)
-    return max_coal, max_val, min_coal, min_val
+
+    max_coal_t = tuple(max_coal)
+    min_coal_t = tuple(min_coal)
+    interaction_lookup = {
+        max_coal_t: 0,
+        min_coal_t: 1,
+    }
+    values = np.zeros(2, dtype=float)
+    values[interaction_lookup[max_coal_t]] = max_val
+    values[interaction_lookup[min_coal_t]] = min_val
+
+    return InteractionValues(
+        values=values,
+        index=interaction_values.index,
+        n_players=len(max_coal),
+        max_order=max_size,
+        min_order=max_size,
+        baseline_value=0,
+        interaction_lookup=interaction_lookup,
+    )
