@@ -127,7 +127,6 @@ class TestBestIndividuals:
 
         iv = interaction_values_from_payoffs(payoffs, index="SII")
         distributed_payoffs = distribute_payoffs(iv)
-        print(distributed_payoffs)
 
         assert np.allclose(distributed_payoffs, expected_distributed_payoffs)
 
