@@ -86,22 +86,85 @@ def exhaustive_search(
         msg = "Unreachable"
         raise RuntimeError(msg)
 
-    max_coal_t = tuple(max_coal)
-    min_coal_t = tuple(min_coal)
+    return min_max_coals_to_interaction_values(
+        tuple(min_coal),
+        min_val,
+        tuple(max_coal),
+        max_val,
+        index=interaction_values.index,
+        n_players=interaction_values.n_players,
+    )
+
+
+def best_individuals(
+    interaction_values: InteractionValues,
+    max_size: int,
+) -> InteractionValues:
+    r"""Heuristic algorithm for finding the maximizing and minimizing coalitions with size ``max_size`` for the given simplified game.
+
+    This algorithm works by first distributing all interactions of order :math:`k \geq 2` equally to their participants and then
+    chooses the best (worst) :math:`\ell` players as the maximizing (minimizing) coalition.
+
+    Returns:
+        An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
+    """
+    player_scores = np.zeros(interaction_values.n_players, dtype=float)
+
+    for coalition, value_idx in interaction_values.interaction_lookup.items():
+        coalition_size = len(coalition)
+        if coalition_size == 0:
+            continue
+
+        coalition_value = interaction_values.values[value_idx]
+        per_player_payoff = coalition_value / coalition_size
+
+        for player in coalition:
+            player_scores[player] += per_player_payoff
+
+    players_sorted = np.argsort(player_scores)
+    min_coal = tuple(players_sorted[:max_size])
+    max_coal = tuple(players_sorted[-max_size:])
+
+    min_val = compute_simplified_game_utility(min_coal, interaction_values)
+    max_val = compute_simplified_game_utility(max_coal, interaction_values)
+
+    return min_max_coals_to_interaction_values(
+        min_coal,
+        min_val,
+        max_coal,
+        max_val,
+        index=interaction_values.index,
+        n_players=interaction_values.n_players,
+    )
+
+
+def min_max_coals_to_interaction_values(
+    min_coal: tuple[int, ...],
+    min_val: float,
+    max_coal: tuple[int, ...],
+    max_val: float,
+    index: str,
+    n_players: int,
+) -> InteractionValues:
+    """Wrap the given minimizing and maximizing coalitions in an ``InteractionValues`` object."""
+    if len(min_coal) != len(max_coal):
+        msg = f"Maximum and minimum coalition must be of the same size, but min. coal has size {len(min_coal)} and max. coal has size {len(max_coal)}."
+        raise ValueError(msg)
+
     interaction_lookup = {
-        max_coal_t: 0,
-        min_coal_t: 1,
+        max_coal: 0,
+        min_coal: 1,
     }
     values = np.zeros(2, dtype=float)
-    values[interaction_lookup[max_coal_t]] = max_val
-    values[interaction_lookup[min_coal_t]] = min_val
+    values[interaction_lookup[max_coal]] = max_val
+    values[interaction_lookup[min_coal]] = min_val
 
     return InteractionValues(
         values=values,
-        index=interaction_values.index,
-        n_players=interaction_values.n_players,
-        max_order=max_size,
-        min_order=max_size,
+        index=index,
+        n_players=n_players,
+        max_order=len(max_coal),
+        min_order=len(max_coal),
         baseline_value=0,
         interaction_lookup=interaction_lookup,
     )
