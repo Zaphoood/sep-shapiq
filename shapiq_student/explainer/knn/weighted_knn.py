@@ -149,7 +149,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
             )
 
         n_players = self.X_train.shape[0]
-        utilities: dict[tuple[int, ...], float] = {(): 0}
+        utilities: dict[tuple[int, ...], float] = {}
 
         y_train_sorted = self.y_train_indices[sortperm]
         y_val_mask = y_train_sorted == y_val
