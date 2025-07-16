@@ -135,7 +135,6 @@ def test_transform_to_gaussian() -> None:
 
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
     transformed_data = imputer.transform_to_gaussian(data)
-    print(f"transformed: {transformed_data}")
 
     assert np.allclose(transformed_data, expected_transformed_data, atol=1e-3), (
         f"Expected {expected_transformed_data}, but got {transformed_data}"
