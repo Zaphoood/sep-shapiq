@@ -36,7 +36,7 @@ class _WeightedKNNExplainerBase(_CommonKNNExplainer):
 
         model_weights = self.knn_model.weights  # type: ignore[attr-defined]
         if model_weights != "distance":
-            msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
+            msg = f"KNeighborsClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
 
     def _get_normalized_weights(
@@ -172,7 +172,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
                     )
                 )
             else:
-                # Emtpy coalition must be zero
+                # Empty coalition must be zero
                 utility = 0
 
             coalition_tuple = tuple(sorted(sortperm[coalition]))
@@ -215,7 +215,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     ) -> None:
         """Initializes the class.
 
-        This methods extracts the training data as well as the parameter :math:`k` from the provided KNN model and stores them as class members.
+        This method extracts the training data as well as the parameter :math:`k` from the provided KNN model and stores them as class members.
 
         Args:
             model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
@@ -309,7 +309,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     def _get_prepared_weights(
         self, x_val: npt.NDArray[np.floating]
     ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.integer]]:
-        """Returns weigths after normalization, discretization and sign-flipping."""
+        """Returns weights after normalization, discretization and sign-flipping."""
         sortperm, weights = self._get_normalized_weights(x_val)
         # Change sign of weights where class disagrees with class that is to be explained
         weights[(self.y_train_indices != self.class_index)[sortperm]] *= -1
