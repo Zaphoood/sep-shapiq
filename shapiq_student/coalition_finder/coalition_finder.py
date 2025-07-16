@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
+
 from itertools import combinations
 
 import numpy as np
@@ -45,10 +50,10 @@ def subset_finding(
     Returns:
         An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
     """
-    return exhaustive_search(interaction_values, max_size)
+    return coalition_finding_exhaustive_search(interaction_values, max_size)
 
 
-def exhaustive_search(
+def coalition_finding_exhaustive_search(
     interaction_values: InteractionValues,
     max_size: int,
 ) -> InteractionValues:
@@ -96,7 +101,7 @@ def exhaustive_search(
     )
 
 
-def best_individuals(
+def coalition_finding_best_individuals(
     interaction_values: InteractionValues,
     max_size: int,
 ) -> InteractionValues:
@@ -108,22 +113,13 @@ def best_individuals(
     Returns:
         An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
     """
-    player_scores = np.zeros(interaction_values.n_players, dtype=float)
+    player_scores = distribute_payoffs(interaction_values)
 
-    for coalition, value_idx in interaction_values.interaction_lookup.items():
-        coalition_size = len(coalition)
-        if coalition_size == 0:
-            continue
-
-        coalition_value = interaction_values.values[value_idx]
-        per_player_payoff = coalition_value / coalition_size
-
-        for player in coalition:
-            player_scores[player] += per_player_payoff
-
+    # Sorts player indices by their scores
     players_sorted = np.argsort(player_scores)
-    min_coal = tuple(players_sorted[:max_size])
-    max_coal = tuple(players_sorted[-max_size:])
+
+    min_coal = tuple(sorted(players_sorted[:max_size]))
+    max_coal = tuple(sorted(players_sorted[-max_size:]))
 
     min_val = compute_simplified_game_utility(min_coal, interaction_values)
     max_val = compute_simplified_game_utility(max_coal, interaction_values)
@@ -136,6 +132,31 @@ def best_individuals(
         index=interaction_values.index,
         n_players=interaction_values.n_players,
     )
+
+
+def distribute_payoffs(interaction_values: InteractionValues) -> npt.NDArray[np.floating]:
+    """Distribute payoffs of all coalitions equally among their participants.
+
+    Args:
+        interaction_values: The payoffs to distribute.
+
+    Returns:
+        An ``np.ndarray`` of shape ``(n_players,)`` containing the distributed payoff for each player.
+    """
+    player_scores = np.zeros(interaction_values.n_players, dtype=np.float64)
+
+    for coalition, value_idx in interaction_values.interaction_lookup.items():
+        coalition_size = len(coalition)
+        if coalition_size == 0:
+            continue
+
+        coalition_value = interaction_values.values[value_idx]
+        per_player_payoff = coalition_value / coalition_size
+
+        for player in coalition:
+            player_scores[player] += per_player_payoff
+
+    return player_scores
 
 
 def min_max_coals_to_interaction_values(
