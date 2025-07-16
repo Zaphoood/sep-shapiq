@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 from shapiq import InteractionValues
 
@@ -9,6 +11,18 @@ from shapiq_student.coalition_finder.coalition_finder import (
     compute_simplified_game_utility,
     exhaustive_search,
 )
+
+
+@dataclass
+class CoalitionFindingTestCase:
+    """Defines a test case for the coalition finding algorithm."""
+
+    max_size: int
+
+    min_coal: tuple[int, ...]
+    min_val: int
+    max_coal: tuple[int, ...]
+    max_val: int
 
 
 class TestExhaustiveSearch:
@@ -28,22 +42,34 @@ class TestExhaustiveSearch:
         }
         iv = interaction_values_from_payoffs(payoffs, index="SII")
 
-        iv_found = exhaustive_search(iv, max_size=2)
-        # (0, 1) = 6 + 3 + 2 + 0 = 11
-        # (0, 2) = 5 + 3 + 2 + 0 = 10
-        # (1, 2) = 3 + 2 + 2 + 0 = 7
-        (min_coal, min_val), (max_coal, max_val) = get_min_max_from_interaction_values(iv_found)
-        print(f"{min_coal=}")
-        print(f"{max_coal=}")
-        expected_min_coal = (1, 2)
-        expected_min_val = 7
-        expected_max_coal = (0, 1)
-        expected_max_val = 11
+        test_cases = [
+            CoalitionFindingTestCase(
+                max_size=0,
+                min_coal=(),
+                min_val=0,
+                max_coal=(),
+                max_val=0,
+            ),
+            CoalitionFindingTestCase(
+                max_size=2,
+                # (0, 1) = 6 + 3 + 2 + 0 = 11
+                # (0, 2) = 5 + 3 + 2 + 0 = 10
+                # (1, 2) = 3 + 2 + 2 + 0 = 7
+                min_coal=(1, 2),
+                min_val=7,
+                max_coal=(0, 1),
+                max_val=11,
+            ),
+        ]
 
-        assert min_coal == expected_min_coal
-        assert min_val == expected_min_val
-        assert max_coal == expected_max_coal
-        assert max_val == expected_max_val
+        for test_case in test_cases:
+            iv_found = exhaustive_search(iv, max_size=test_case.max_size)
+            (min_coal, min_val), (max_coal, max_val) = get_min_max_from_interaction_values(iv_found)
+
+            assert min_coal == test_case.min_coal
+            assert min_val == test_case.min_val
+            assert max_coal == test_case.max_coal
+            assert max_val == test_case.max_val
 
     def test_compute_simplified_game_utility(self):
         """Tests that computing the utility of a coalition in the simplified game works."""
