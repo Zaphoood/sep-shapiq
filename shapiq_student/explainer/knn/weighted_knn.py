@@ -179,7 +179,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
             utilities[coalition_tuple] = utility
 
         game = LookupGame(n_players, utilities)
-        iv = game.exact_values("SII", order=1)
+        iv = game.exact_values("SV", order=1)
 
         return interaction_values_to_array(iv)
 
