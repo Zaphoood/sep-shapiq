@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, cast, override
 
 import numpy as np
 from scipy.stats import norm, rankdata
@@ -87,30 +87,39 @@ class GaussianCopulaImputer(GaussianImputerBase):
     def transform_point_to_gaussian(
         self,
         background_data: npt.NDArray[np.floating],
-        x_point: npt.NDArray[np.floating],
+        x: npt.NDArray[np.floating],
     ) -> npt.NDArray[np.floating]:
         """Transform a single explanation point to Gaussian space using the training data's ECDF.
 
         Args:
-            background_data: Training data used for ECDF (n_samples, n_features).
-            x_point: Explanation point to transform (n_features,).
+            background_data: Training data used to compute ECDF, with shape (n_samples, n_features).
+            x: Explanation point to transform, with shape (n_features,).
 
         Returns:
-            Transformed point in Gaussian space (n_features,).
+            Transformed point in Gaussian space, with shape (n_features,).
         """
-        if x_point.shape[0] < background_data.shape[1]:
-            msg = "x_point must have at least as many features as x_train."
+        n_features = background_data.shape[1]
+
+        if x.shape[0] != background_data.shape[1]:
+            msg = (
+                f"Background data has {n_features} features but point to transform has {x.shape[0]}"
+            )
             raise ValueError(msg)
 
-        n_features = x_point.shape[0]
-        x_gaussian = np.zeros_like(x_point, dtype=float)
+        x_transformed = np.zeros_like(x, dtype=float)
 
-        for j in range(n_features):
-            vals = np.concatenate([[x_point[j]], background_data[:, j]])
-            rank = rankdata(vals, method="average")[0]
-            quantile = rank / (len(background_data) + 1)
-            x_gaussian[j] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
-        return x_gaussian
+        for col in range(n_features):
+            rank = cast("np.integer", np.sum(background_data[:, col] <= x[col]))
+            # Need to clip the rank, since it may be equal to 0 (or n_train) if
+            # the value is smaller (or larger) than the smallest (largest)
+            # sample in the background data
+            rank = np.clip(rank, a_min=1, a_max=background_data.shape[0])
+
+            quantile = rank / (background_data.shape[0] + 1)
+            # TODO(Zaphoood): clipping should be unnecessary here
+            x_transformed[col] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
+
+        return x_transformed
 
     def transform_to_original(
         self, data_gaussian: npt.NDArray[np.floating]
