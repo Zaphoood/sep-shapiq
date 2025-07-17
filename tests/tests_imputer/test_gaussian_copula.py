@@ -16,6 +16,19 @@ from shapiq_student.imputer.gaussian.gaussian_copula_imputer import GaussianCopu
 ##############################################
 
 
+def test_empirical_cdf(dummy_model) -> None:
+    """Tests that the empirical CDF is calculated correctly for a single column."""
+    feature_values = np.array([-5, 10, 0, 3, 4])
+    expected_empirical_cdf = np.array([1, 5, 2, 3, 4]) / (5 + 1)
+
+    dummy_data = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    imputer = GaussianCopulaImputer(model=dummy_model, data=dummy_data)
+
+    empirical_cdf = imputer._empirical_cdf(feature_values)
+
+    assert np.allclose(empirical_cdf, expected_empirical_cdf)
+
+
 def test_transform_to_gaussian(dummy_model) -> None:
     """Tests transforming background data to Gaussian space."""
     data = np.array(
