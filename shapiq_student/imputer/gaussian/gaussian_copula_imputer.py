@@ -61,13 +61,27 @@ class GaussianCopulaImputer(GaussianImputerBase):
             Transformed data in Gaussian space (n_samples, n_features).
         """
         transformed = np.zeros_like(background_data, dtype=float)
+
         for col in range(background_data.shape[1]):
-            ranks = rankdata(background_data[:, col], method="average")
-            # Map ranks linearly to the range [1/(n+1), 1-1/(n+1)]
-            quantile = ranks / (len(ranks) + 1)
+            empirical_distribution = self._empirical_distribution(background_data[:, col])
             # TODO(Zaphoood): clipping shouldn't be necessary, since quantiles are already in range (0, 1)
-            transformed[:, col] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
+            transformed[:, col] = norm.ppf(np.clip(empirical_distribution, 1e-10, 1 - 1e-10))
+
         return transformed
+
+    def _empirical_distribution(
+        self, samples: npt.NDArray[np.floating]
+    ) -> npt.NDArray[np.floating]:
+        """Computes the empirical distribution function for the given samples.
+
+        Note that we define the empirical distribution in such a way that `f(x_min) == 1/(n+1)`
+        and `f(x_max) == n/(n+1)`, where `x_min` and `x_max` are the minimal and maximal obeserved sample respectively.
+        """
+        ranks = rankdata(samples, method="average")
+        # Map ranks linearly to the range [1/(n+1), n/(n+1)]
+        edf = ranks / (len(ranks) + 1)
+
+        return edf
 
     def transform_point_to_gaussian(
         self,
