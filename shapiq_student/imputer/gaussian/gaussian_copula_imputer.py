@@ -71,7 +71,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         Each column of the input is treated as samples drawn from a separate random variable and transformed to its empirical CDF.
 
-        Note that we define the empirical distribution in such a way that `f(x_min) == 1/(n+1)` and `f(x_max) == n/(n+1)`,
+        Note that we define the empirical distribution in such a way that `F(x_min) == 1/(n+1)` and `F(x_max) == n/(n+1)`,
         where `x_min` and `x_max` are the minimal and maximal obeserved sample for that feature respectively.
 
         Args:
@@ -98,35 +98,47 @@ class GaussianCopulaImputer(GaussianImputerBase):
         background_data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating],
     ) -> npt.NDArray[np.floating]:
-        """Transform a single explanation point to Gaussian space using the training data's ECDF.
+        """Transforms a single data point to Gaussian space using the training data's empirical CDF.
 
         Args:
-            background_data: Training data used to compute ECDF, with shape ``(n_samples, n_features)``.
-            x: Explanation point to transform, with shape ``(n_features,)``.
+            background_data: Data used to compute the empirical CDF, with shape ``(n_samples, n_features)``.
+            x: Data point to transform, with shape ``(n_features,)``.
 
         Returns:
             Transformed point in Gaussian space, with shape ``(n_features,)``.
         """
         n_features = background_data.shape[1]
-
-        if x.shape[0] != background_data.shape[1]:
+        if x.shape[0] != n_features:
             msg = f"Background data has {n_features} features but point to transform has {x.shape[0]} features"
             raise ValueError(msg)
 
-        x_transformed = np.zeros_like(x, dtype=float)
-
-        for col in range(n_features):
-            rank = cast("np.integer", np.sum(background_data[:, col] <= x[col]))
-            # Need to clip the rank, since it may be equal to 0 (or n_train) if
-            # the value is smaller (or larger) than the smallest (largest)
-            # sample in the background data
-            rank = np.clip(rank, a_min=1, a_max=background_data.shape[0])
-
-            quantile = rank / (background_data.shape[0] + 1)
-            # TODO(Zaphoood): clipping should be unnecessary here
-            x_transformed[col] = norm.ppf(np.clip(quantile, 1e-10, 1 - 1e-10))
+        x_empirical_cdf = self._empirical_cdf_point(background_data, x)
+        # TODO(Zaphoood): clipping should be unnecessary here
+        x_transformed = norm.ppf(np.clip(x_empirical_cdf, 1e-10, 1 - 1e-10))
 
         return x_transformed
+
+    def _empirical_cdf_point(
+        self, data: npt.NDArray[np.floating], x: npt.NDArray[np.floating]
+    ) -> npt.NDArray[np.floating]:
+        """Evaluates an empirical cumulative distribution function for each feature of a single data point.
+
+        Note that we define the empirical distribution in such a way that `F(x_min) == 1/(n+1)` and `F(x_max) == n/(n+1)`,
+        where `x_min` and `x_max` are the minimal and maximal obeserved sample for that feature respectively.
+
+        Args:
+            data: An array of shape `(n_samples, n_features)` which defines an empirical CDF for each feature.
+            x: A data point for which to evaluate CDFs for.
+
+        Returns:
+            An array of shape `(n_features)` containing the CDF of each feature evaluated for the value of ``x`` in that column.
+        """
+        n_samples = data.shape[0]
+        ranks = cast("npt.NDArray[np.integer]", np.sum(data <= x, axis=0))
+        ranks = np.clip(ranks, a_min=1, a_max=n_samples)
+        ecdf = ranks / (n_samples + 1)
+
+        return ecdf
 
     def _transform_from_gaussian(
         self, data_gaussian: npt.NDArray[np.floating]
