@@ -4,8 +4,6 @@ This module defines the base class for different Gaussian-based imputation appro
 calculations. It inherits from shapiq's Imputer base class and provides a common interface that all specific approaches must implement.
 """
 
-# TODO(Zaphoood): Make sure all docstrings follow Google's style
-
 from __future__ import annotations
 
 from abc import abstractmethod
