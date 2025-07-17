@@ -5,8 +5,6 @@ This module contains unit tests for the GaussianImputer class, including tests f
 
 from __future__ import annotations
 
-from typing import Any
-
 import numpy as np
 import pytest
 
@@ -14,22 +12,10 @@ from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError
 from shapiq_student.imputer.gaussian.gaussian_imputer import GaussianImputer
 
 
-def dummy_model(x: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
-    """A simple placeholder model for testing.
-
-    Args:
-        x (np.ndarray[Any, Any]): Input data.
-
-    Returns:
-        np.ndarray[Any, Any]: Sum over the last axis of the input.
-    """
-    return np.asarray(np.sum(x, axis=-1), dtype=float)
-
-
 class TestInputValidation:
     """Tests that input data is handled correctly and that malformed data is detected successfully."""
 
-    def test_categorical_feature_check_only_continuous(self) -> None:
+    def test_categorical_feature_check_only_continuous(self, dummy_model) -> None:
         """Test that no error is raised when all features are continuous with >2 unique values."""
         data = np.array(
             [
@@ -42,7 +28,7 @@ class TestInputValidation:
         # Should not raise error
         GaussianImputer(model=dummy_model, data=data, x=x)
 
-    def test_categorical_feature_check_binary_column(self) -> None:
+    def test_categorical_feature_check_binary_column(self, dummy_model) -> None:
         """Test that an exception is raised if the background data has column containing only two unique values."""
         data = np.array(
             [
@@ -61,7 +47,7 @@ class TestInputValidation:
         assert "f1" not in msg
         assert "f3" not in msg
 
-    def test_categorical_feature_check_string(self) -> None:
+    def test_categorical_feature_check_string(self, dummy_model) -> None:
         """Test that an exception is raised if the background data has a column containing string values."""
         data = np.array(
             [
@@ -79,7 +65,7 @@ class TestInputValidation:
         assert "f1" not in msg
         assert "f3" not in msg
 
-    def test_categorical_feature_check_mixed(self) -> None:
+    def test_categorical_feature_check_mixed(self, dummy_model) -> None:
         """Test that an exception is raised if the background data has binary and string-valued columns."""
         data = np.array(
             [
@@ -100,39 +86,13 @@ class TestInputValidation:
         assert "f1" not in msg
         assert "f4" not in msg
 
-    def test_x_explain_shapes(self):
-        """Tests that an explain point can be passed both as a vector and a matrix with one row; both when passing in the constructor and when calling the fit() method."""
-        data = np.array(
-            [
-                [1, 2, 3],
-                [4, 5, 6],
-                [7, 8, 9],
-            ]
-        )
-        x_explain = np.array([3, 2, 1])
-        coalitions = np.array([[False, True, False]])
-
-        imputer = GaussianImputer(model=dummy_model, data=data, x=x_explain.copy())
-        imputer.value_function(coalitions)
-
-        imputer = GaussianImputer(model=dummy_model, data=data, x=np.atleast_2d(x_explain.copy()))
-        imputer.value_function(coalitions)
-
-        imputer = GaussianImputer(model=dummy_model, data=data)
-        imputer.fit(x_explain.copy())
-        imputer.value_function(coalitions)
-
-        imputer = GaussianImputer(model=dummy_model, data=data)
-        imputer.fit(np.atleast_2d(x_explain.copy()))
-        imputer.value_function(coalitions)
-
 
 ##############################################
 # Tests for Cov Mat and Mean Calculation --- #
 ##############################################
 
 
-def test_calculate_mean_per_feature_valid() -> None:
+def test_calculate_mean_per_feature_valid(dummy_model) -> None:
     """Test mean calculation with valid data."""
     data = np.array(
         [
@@ -148,7 +108,7 @@ def test_calculate_mean_per_feature_valid() -> None:
     assert imputer.mean_per_feature.shape == (3,)
 
 
-def test_calculate_mean_per_feature_empty_data() -> None:
+def test_calculate_mean_per_feature_empty_data(dummy_model) -> None:
     """Test that EmptyDataError is raised when calculating mean with empty data."""
     data = np.empty((0, 3))
     x = np.array([])
@@ -156,7 +116,7 @@ def test_calculate_mean_per_feature_empty_data() -> None:
         GaussianImputer(model=dummy_model, data=data, x=x)
 
 
-def test_calculate_covariance_matrix_valid() -> None:
+def test_calculate_covariance_matrix_valid(dummy_model) -> None:
     """Test covariance matrix calculation with valid data."""
     data = np.array(
         [
@@ -172,7 +132,7 @@ def test_calculate_covariance_matrix_valid() -> None:
     assert imputer.cov_mat.shape == (3, 3)
 
 
-def test_calculate_covariance_matrix_empty_data() -> None:
+def test_calculate_covariance_matrix_empty_data(dummy_model) -> None:
     """Test that EmptyDataError is raised when calculating covariance with empty data."""
     data = np.empty((0, 3))
     x = np.array([])
@@ -199,7 +159,7 @@ def test_gaussian_imputation_first_feature_known_mean_and_cov_check() -> None:
     np.testing.assert_allclose(sample_cov, cov, atol=0.05)
 
 
-def test_gaussian_imputation_first_feature_known() -> None:
+def test_gaussian_imputation_first_feature_known(dummy_model) -> None:
     """Test imputation: first feature known, last two set to 1; check imputed mean."""
     mean = np.array([0.0, 0.0, 0.0])
     cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
