@@ -6,3 +6,4 @@ API Reference
     :recursive:
 
     shapiq_student.explainer
+    shapiq_student.imputer
