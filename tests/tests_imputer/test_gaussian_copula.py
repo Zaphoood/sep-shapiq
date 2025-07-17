@@ -14,8 +14,8 @@ import numpy as np
 import pytest
 from scipy.stats import norm
 
-from shapiq_student.imputer.gaussian.copula_imputer import GaussianCopulaImputer
 from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError
+from shapiq_student.imputer.gaussian.gaussian_copula_imputer import GaussianCopulaImputer
 
 LOWER_BOUND = -4.0
 UPPER_BOUND = 4.0
