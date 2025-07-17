@@ -22,10 +22,14 @@ from .base import GaussianImputerBase
 
 
 class GaussianImputer(GaussianImputerBase):
-    """Implementation of Gaussian-based approach for Shapley Value calculations.
+    """Implements a Gaussian-based approach for imputation.
 
-    This approach uses multivariate normal distribution for generating samples.
-    It only supports continuous features.
+    This approach assumes that the features of the background data form a multivariate Gaussian distribution.
+    Missing values are imputed by first calculating the conditional distribution of missing features given the present
+    features and the using Monte Carlo sampling to generate values.
+
+    Note that only continuous features are supported, meaning that this imputer can't be used for datasets containing
+    categorical or binary features.
     """
 
     @override
