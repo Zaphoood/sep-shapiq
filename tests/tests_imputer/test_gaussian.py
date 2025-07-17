@@ -26,10 +26,10 @@ def dummy_model(x: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
     return np.asarray(np.sum(x, axis=-1), dtype=float)
 
 
-class TestCheckCategoricalFeatures:
-    """Tests that categorical features are detected correctly."""
+class TestInputValidation:
+    """Tests that input data is handled correctly and that malformed data is detected successfully."""
 
-    def test_only_continuous(self) -> None:
+    def test_categorical_feature_check_only_continuous(self) -> None:
         """Test that no error is raised when all features are continuous with >2 unique values."""
         data = np.array(
             [
@@ -42,8 +42,8 @@ class TestCheckCategoricalFeatures:
         # Should not raise error
         GaussianImputer(model=dummy_model, data=data, x=x)
 
-    def test_binary_column(self) -> None:
-        """Test that an exception is raised for a column containing only two unique values."""
+    def test_categorical_feature_check_binary_column(self) -> None:
+        """Test that an exception is raised if the background data has column containing only two unique values."""
         data = np.array(
             [
                 [1.0, 0, 3.0],
@@ -61,8 +61,8 @@ class TestCheckCategoricalFeatures:
         assert "f1" not in msg
         assert "f3" not in msg
 
-    def test_string(self) -> None:
-        """Test that an exception is raised for a column containing string values."""
+    def test_categorical_feature_check_string(self) -> None:
+        """Test that an exception is raised if the background data has a column containing string values."""
         data = np.array(
             [
                 [1.0, "a", 3.0],
@@ -79,8 +79,8 @@ class TestCheckCategoricalFeatures:
         assert "f1" not in msg
         assert "f3" not in msg
 
-    def test_mixed(self) -> None:
-        """Test that an exception is raised for all columns that have either binary or string values."""
+    def test_categorical_feature_check_mixed(self) -> None:
+        """Test that an exception is raised if the background data has binary and string-valued columns."""
         data = np.array(
             [
                 [1.0, 0, "a", 3.0],
@@ -99,6 +99,32 @@ class TestCheckCategoricalFeatures:
         # f1 and f4 must not appear
         assert "f1" not in msg
         assert "f4" not in msg
+
+    def test_x_explain_shapes(self):
+        """Tests that an explain point can be passed both as a vector and a matrix with one row; both when passing in the constructor and when calling the fit() method."""
+        data = np.array(
+            [
+                [1, 2, 3],
+                [4, 5, 6],
+                [7, 8, 9],
+            ]
+        )
+        x_explain = np.array([3, 2, 1])
+        coalitions = np.array([[False, True, False]])
+
+        imputer = GaussianImputer(model=dummy_model, data=data, x=x_explain.copy())
+        imputer.value_function(coalitions)
+
+        imputer = GaussianImputer(model=dummy_model, data=data, x=np.atleast_2d(x_explain.copy()))
+        imputer.value_function(coalitions)
+
+        imputer = GaussianImputer(model=dummy_model, data=data)
+        imputer.fit(x_explain.copy())
+        imputer.value_function(coalitions)
+
+        imputer = GaussianImputer(model=dummy_model, data=data)
+        imputer.fit(np.atleast_2d(x_explain.copy()))
+        imputer.value_function(coalitions)
 
 
 ##############################################
