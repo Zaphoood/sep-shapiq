@@ -123,15 +123,11 @@ class GaussianCopulaImputer(GaussianImputerBase):
     ) -> npt.NDArray[np.floating]:
         """Transform Gaussian samples back to original feature space.
 
-        The method np.interp is a linear interpolation method, which means that after transforming
-        back from Gaussian space, it estimates the closest values based on the sorted data.
-        This doesn't necessarily match the exact values of the original data.
-
         Args:
-            data_gaussian: Samples in Gaussian space ``(n_samples, n_features)``.
+            data_gaussian: Transformed samples in Gaussian space as an array of ``(n_samples, n_features)``.
 
         Returns:
-            Samples in original feature space ``(n_samples, n_features)``.
+            Samples in original feature spaces as an array of ``(n_samples, n_features)``.
         """
         n_features = data_gaussian.shape[1]
         n_samples = self.data.shape[0]
