@@ -207,7 +207,7 @@ class GaussianImputerBase(Imputer):
         return samples_all_coalitions
 
     @abstractmethod
-    def impute(
+    def _impute(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
     ) -> npt.NDArray[np.floating]:
         """Impute missing values for given coalitions. This method must be overridden by each subclass.
@@ -239,4 +239,4 @@ class GaussianImputerBase(Imputer):
             msg = f"Must call {self.__class__.__name__}.fit(x) first before imputing"
             raise RuntimeError(msg)
 
-        return self.predict(self.impute(self.x, coalitions))
+        return self.predict(self._impute(self.x, coalitions))

@@ -51,20 +51,9 @@ class GaussianImputer(GaussianImputerBase):
         )
         self._check_categorical_features()
 
-    def impute(
+    def _impute(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
     ) -> npt.NDArray[np.floating]:
-        """Impute missing values for given coalitions using Gaussian MC sampling.
-
-        This method performs the imputation without calling the prediction function.
-
-        Args:
-            x: The data point to impute as an array of shape ``(n_features,)``.
-            coalitions: Boolean array of shape ``(n_coalitions, n_features)`` indicating which features are present or missing for each coalition.
-
-        Returns:
-            An array of shape ``(n_coalitions, n_features)`` containing the imputed data points for each coalition, averaged over Monte Carlo samples.
-        """
         return cast(
             "npt.NDArray[np.floating]", np.mean(self.sample_monte_carlo(x, coalitions), axis=1)
         )

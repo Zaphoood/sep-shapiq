@@ -156,18 +156,9 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         return x_original
 
-    def impute(
+    def _impute(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
     ) -> npt.NDArray[np.floating]:
-        """Perform Gaussian Copula imputation for Shapley value calculations.
-
-        Args:
-            x: The data point to impute as an array of shape ``(n_features,)``.
-            coalitions: Boolean array of shape ``(n_coalitions, n_features)`` representing coalitions.
-
-        Returns:
-            An array of shape (n_coalitions,) containing the mean model prediction for each coalition.
-        """
         x_transformed = self.transform_point_to_gaussian(self.data, x.flatten())
 
         gaussian_samples = self.sample_monte_carlo(x_transformed, coalitions)

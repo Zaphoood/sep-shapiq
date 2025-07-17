@@ -222,7 +222,7 @@ def test_copula_imputation_single_feature_known() -> None:
         model=dummy_model, data=data, x=x_explain, n_mc_samples=1000, random_state=42
     )
 
-    imputed = imputer.impute(x_explain, coalitions)
+    imputed = imputer._impute(x_explain, coalitions)
 
     # We expect a shape of (n_coaltions, n_features)
     assert imputed.shape == (coalitions.shape[0], x_explain.shape[0])
