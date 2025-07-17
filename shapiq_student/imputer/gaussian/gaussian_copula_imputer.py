@@ -110,9 +110,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         n_features = background_data.shape[1]
 
         if x.shape[0] != background_data.shape[1]:
-            msg = (
-                f"Background data has {n_features} features but point to transform has {x.shape[0]}"
-            )
+            msg = f"Background data has {n_features} features but point to transform has {x.shape[0]} features"
             raise ValueError(msg)
 
         x_transformed = np.zeros_like(x, dtype=float)
