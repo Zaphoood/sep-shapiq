@@ -10,7 +10,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError, EmptyDataError
+from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError
 from shapiq_student.imputer.gaussian.gaussian_imputer import GaussianImputer
 
 
@@ -126,7 +126,7 @@ def test_calculate_mean_per_feature_empty_data() -> None:
     """Test that EmptyDataError is raised when calculating mean with empty data."""
     data = np.empty((0, 3))
     x = np.array([])
-    with pytest.raises(EmptyDataError):
+    with pytest.raises(ValueError, match="data.*empty"):
         GaussianImputer(model=dummy_model, data=data, x=x)
 
 
@@ -150,7 +150,7 @@ def test_calculate_covariance_matrix_empty_data() -> None:
     """Test that EmptyDataError is raised when calculating covariance with empty data."""
     data = np.empty((0, 3))
     x = np.array([])
-    with pytest.raises(EmptyDataError):
+    with pytest.raises(ValueError, match="data.*empty"):
         GaussianImputer(model=dummy_model, data=data, x=x)
 
 
@@ -187,7 +187,7 @@ def test_gaussian_imputation_first_feature_known() -> None:
         data=x_train,
         x=x_explain[0],
     )
-    imputation_result = imputer.get_imputed_result_data(np.atleast_2d(coalition))
+    imputation_result = imputer.impute(x_explain[0], np.atleast_2d(coalition))
     imputed_features = imputation_result[0, ~coalition]
 
     # The mean should be close to [0.8, 0.5]
@@ -196,6 +196,7 @@ def test_gaussian_imputation_first_feature_known() -> None:
 
 def test_gaussian_imputer_value_function():
     """Test the vlaue function of the gaussian imputer."""
+    # TODO (milanagm): set seed o ä für die tests adden
     mean = np.array([0.0, 0.0, 0.0])
     cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
     rng = np.random.default_rng()
