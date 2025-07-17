@@ -84,14 +84,16 @@ class GaussianImputerBase(Imputer):
             CategoricalFeatureError: If any categorical features are detected.
         """
         categorical_indices: list[int] = []
-        for i, col in enumerate(self.data.T):
-            if any(isinstance(v, str) for v in col):
+
+        for i, feature_values in enumerate(self.data.T):
+            if any(isinstance(v, str) for v in feature_values):
                 categorical_indices.append(i)
                 continue
-            unique_count = len(np.unique(col))
-            if unique_count <= MAX_UNIQUE_VALUES_FOR_CATEGORICAL:
+            unique_values = len(np.unique(feature_values))
+            if unique_values <= MAX_UNIQUE_VALUES_FOR_CATEGORICAL:
                 categorical_indices.append(i)
-        if categorical_indices:
+
+        if len(categorical_indices) > 0:
             raise CategoricalFeatureError(categorical_indices)
 
     @property
