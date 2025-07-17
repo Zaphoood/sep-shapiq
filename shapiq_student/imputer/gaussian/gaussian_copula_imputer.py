@@ -38,18 +38,12 @@ class GaussianCopulaImputer(GaussianImputerBase):
             random_state=random_state,
         )
 
-        # Transform data to Gaussian space using empirical CDF (rank-Gaussian)
         self.data_transformed = self.transform_to_gaussian(self.data)
-
-        # Override: GaussianCopulaImputer uses transformed mean/covariance
-        self._mean_per_feature = np.mean(
-            self.data_transformed, axis=0
-        )  # in theory mean should be (nearly) zero
+        # The mean should be zero in theory but may differ in practice, therefore we still need to compute it
+        self._mean_per_feature = np.mean(self.data_transformed, axis=0)
         self._cov_mat = self._ensure_positive_definite(np.cov(self.data_transformed.T))
-
-        self._sorted_data = np.sort(
-            self.data, axis=0
-        )  # TODO (milanagm): we are NOT does not preserve the coalitions here - check if this is okay
+        # Sorted data is required for the transformation back from Gaussian space to the original feature space
+        self._data_sorted = np.sort(self.data, axis=0)
 
     def transform_to_gaussian(
         self, background_data: npt.NDArray[np.floating]
@@ -136,7 +130,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
             ranks = quantiles * (n_samples + 1)
             # The back-transformed ranks are not necessarily integers, so we interpolate linearly between the closest original datapoints
             x_original[:, col] = np.interp(
-                ranks, np.arange(1, n_samples + 1), self._sorted_data[:, col]
+                ranks, np.arange(1, n_samples + 1), self._data_sorted[:, col]
             )
 
         return x_original
