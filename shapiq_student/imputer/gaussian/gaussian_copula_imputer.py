@@ -154,14 +154,14 @@ class GaussianCopulaImputer(GaussianImputerBase):
         n_features = data_gaussian.shape[1]
         n_samples = self.data.shape[0]
 
+        quantiles = norm.cdf(data_gaussian)
+        ranks = quantiles * (n_samples + 1)
+
         x_original = np.zeros_like(data_gaussian)
+        rank_indices = np.arange(1, n_samples + 1)
         for col in range(n_features):
-            quantiles = norm.cdf(data_gaussian[:, col])
-            ranks = quantiles * (n_samples + 1)
             # The back-transformed ranks are not necessarily integers, so we interpolate linearly between the closest original datapoints
-            x_original[:, col] = np.interp(
-                ranks, np.arange(1, n_samples + 1), self._data_sorted[:, col]
-            )
+            x_original[:, col] = np.interp(ranks[:, col], rank_indices, self._data_sorted[:, col])
 
         return x_original
 
