@@ -130,7 +130,6 @@ def test_copula_imputation_single_feature_known(dummy_model) -> None:
 
     imputed = imputer._impute(x_explain, coalitions)
 
-    # We expect a shape of (n_coaltions, n_features)
     assert imputed.shape == (coalitions.shape[0], x_explain.shape[0])
 
     # We can't predict exact values, but they should be within a reasonable range
@@ -143,20 +142,20 @@ def test_copula_imputer_value_function(dummy_model) -> None:
     # Create correlated data
     rng = np.random.default_rng(seed=42)
     data = rng.normal(size=(1000, 3))
-    data[:, 1] = 0.8 * data[:, 0] + 0.2 * data[:, 1]  # Create correlation
-    data[:, 2] = 0.5 * data[:, 0] + 0.5 * data[:, 2]  # Create correlation
+    # Introduce correlation between features
+    data[:, 1] = 0.8 * data[:, 0] + 0.2 * data[:, 1]
+    data[:, 2] = 0.5 * data[:, 0] + 0.5 * data[:, 2]
 
-    # Create explanation point (first feature at 1.0)
     x_explain = np.array([1.0, np.nan, np.nan])
-    coalition = np.array([True, False, False])
+    coalitions = np.array([[True, False, False]])
 
     imputer = GaussianCopulaImputer(
         model=dummy_model, data=data, x=x_explain, n_mc_samples=1000, random_state=42
     )
+    y_predicted = imputer.value_function(coalitions)
 
-    result_value_function = imputer.value_function(np.atleast_2d(coalition))
-
+    assert y_predicted.shape == (coalitions.shape[0],)
     # The expected value should be sum of known feature (1.0) plus the conditional means
-    # For the copula approach, we can't predict exact values but should be reasonable
-    assert np.isscalar(result_value_function) or result_value_function.shape == (1,)
-    assert IMPUTED_LOWER < result_value_function < IMPUTED_UPPER  # Reasonable range for imputed
+    # We can't predict exact values, but they should be within a reasonable range
+    assert np.all(y_predicted[0] >= IMPUTED_LOWER)
+    assert np.all(y_predicted[0] <= IMPUTED_UPPER)
