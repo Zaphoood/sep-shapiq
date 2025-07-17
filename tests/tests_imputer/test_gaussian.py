@@ -53,20 +53,6 @@ def test_calculate_covariance_matrix(dummy_model) -> None:
 ##############################################
 
 
-def test_gaussian_imputation_first_feature_known_mean_and_cov_check() -> None:
-    """Test imputation: first feature known, last two unknown; check mean and covariance."""
-    mean = np.array([0.0, 0.0, 0.0])
-    cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
-    rng = np.random.default_rng(seed=42)
-    x_train = rng.multivariate_normal(mean, cov, size=10000)
-
-    # Check sample mean and covariance
-    sample_mean = np.mean(x_train, axis=0)
-    sample_cov = np.cov(x_train, rowvar=False)
-    np.testing.assert_allclose(sample_mean, mean, atol=0.05)
-    np.testing.assert_allclose(sample_cov, cov, atol=0.05)
-
-
 def test_gaussian_imputation_first_feature_known(dummy_model) -> None:
     """Test imputation: first feature known, last two set to 1; check imputed mean."""
     mean = np.array([0.0, 0.0, 0.0])
