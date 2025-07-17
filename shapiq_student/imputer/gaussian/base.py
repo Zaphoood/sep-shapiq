@@ -9,7 +9,7 @@ calculations. It inherits from shapiq's Imputer base class and provides a common
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from typing_extensions import override
 
 import numpy as np
@@ -98,13 +98,12 @@ class GaussianImputerBase(Imputer):
 
     @property
     def mean_per_feature(self) -> npt.NDArray[np.floating]:
-        """Get the mean values per feature, computing them if not already computed.
+        """The mean value for each feature.
 
-        Returns:
-            An array containing the mean value for each feature.
+        This proprety is only computed once and then cached.
         """
         if self._mean_per_feature is None:
-            self._mean_per_feature = np.mean(self.data, axis=0)
+            self._mean_per_feature = cast("npt.NDArray[np.floating]", np.mean(self.data, axis=0))
         return self._mean_per_feature
 
     @property
