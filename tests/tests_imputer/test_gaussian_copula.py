@@ -115,7 +115,7 @@ def test_transform_to_original(dummy_model) -> None:
 def test_copula_imputation_single_feature_known(dummy_model) -> None:
     """Test imputation with a single feature known and two unknown."""
     # Create correlated data
-    rng = np.random.default_rng(42)
+    rng = np.random.default_rng(seed=42)
     data = rng.normal(size=(1000, 3))
     # Introduce correlation between features
     data[:, 1] = 0.8 * data[:, 0] + 0.2 * data[:, 1]
@@ -141,7 +141,7 @@ def test_copula_imputation_single_feature_known(dummy_model) -> None:
 def test_copula_imputer_value_function(dummy_model) -> None:
     """Test the value function of the copula imputer."""
     # Create correlated data
-    rng = np.random.default_rng(42)
+    rng = np.random.default_rng(seed=42)
     data = rng.normal(size=(1000, 3))
     data[:, 1] = 0.8 * data[:, 0] + 0.2 * data[:, 1]  # Create correlation
     data[:, 2] = 0.5 * data[:, 0] + 0.5 * data[:, 2]  # Create correlation
