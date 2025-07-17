@@ -26,79 +26,79 @@ def dummy_model(x: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
     return np.asarray(np.sum(x, axis=-1), dtype=float)
 
 
-def test_check_categorical_features_valid() -> None:
-    """Test that no error is raised when all features are continuous with >2 unique values."""
-    data = np.array(
-        [
-            [1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0],
-            [7.0, 8.0, 9.0],
-        ]
-    )
-    x = np.array([[2.0, 3.0, 4.0]])
-    # Should not raise error
-    GaussianImputer(model=dummy_model, data=data, x=x)
+class TestCheckCategoricalFeatures:
+    """Tests that categorical features are detected correctly."""
 
-
-def test_check_categorical_features_binary_integer() -> None:
-    """Test that CategoricalFeatureError is raised for binary integer columns (e.g., 0/1)."""
-    data = np.array(
-        [
-            [1.0, 0, 3.0],
-            [2.0, 1, 4.0],
-            [3.0, 0, 5.0],
-        ]
-    )
-    x = np.array([2.0, 1.0, 4.0])
-    with pytest.raises(CategoricalFeatureError) as exc:
+    def test_only_continuous(self) -> None:
+        """Test that no error is raised when all features are continuous with >2 unique values."""
+        data = np.array(
+            [
+                [1.0, 2.0, 3.0],
+                [4.0, 5.0, 6.0],
+                [7.0, 8.0, 9.0],
+            ]
+        )
+        x = np.array([[2.0, 3.0, 4.0]])
+        # Should not raise error
         GaussianImputer(model=dummy_model, data=data, x=x)
-    msg = str(exc.value)
-    # The second column (index 1) should be flagged as categorical, so 'f2' should be in the message
-    assert "f2" in msg
-    # The first and third columns should not be flagged, so 'f1' and 'f3' should not be in the message
-    assert "f1" not in msg
-    assert "f3" not in msg
 
+    def test_binary_column(self) -> None:
+        """Test that an exception is raised for a column containing only two unique values."""
+        data = np.array(
+            [
+                [1.0, 0, 3.0],
+                [2.0, 1, 4.0],
+                [3.0, 0, 5.0],
+            ]
+        )
+        x = np.array([2.0, 1.0, 4.0])
+        with pytest.raises(CategoricalFeatureError) as exc:
+            GaussianImputer(model=dummy_model, data=data, x=x)
+        msg = str(exc.value)
+        # The second column (index 1) should be flagged as categorical, so 'f2' should be in the message
+        assert "f2" in msg
+        # The first and third columns should not be flagged, so 'f1' and 'f3' should not be in the message
+        assert "f1" not in msg
+        assert "f3" not in msg
 
-def test_check_categorical_features_string() -> None:
-    """Test that CategoricalFeatureError is raised for columns containing strings."""
-    data = np.array(
-        [
-            [1.0, "a", 3.0],
-            [2.0, "b", 4.0],
-            [3.0, "a", 5.0],
-        ],
-        dtype=object,
-    )
-    x = np.array([2.0, "b", 4.0], dtype=object)
-    with pytest.raises(CategoricalFeatureError) as exc:
-        GaussianImputer(model=dummy_model, data=data, x=x)
-    msg = str(exc.value)
-    assert "f2" in msg
-    assert "f1" not in msg
-    assert "f3" not in msg
+    def test_string(self) -> None:
+        """Test that an exception is raised for a column containing string values."""
+        data = np.array(
+            [
+                [1.0, "a", 3.0],
+                [2.0, "b", 4.0],
+                [3.0, "a", 5.0],
+            ],
+            dtype=object,
+        )
+        x = np.array([2.0, "b", 4.0], dtype=object)
+        with pytest.raises(CategoricalFeatureError) as exc:
+            GaussianImputer(model=dummy_model, data=data, x=x)
+        msg = str(exc.value)
+        assert "f2" in msg
+        assert "f1" not in msg
+        assert "f3" not in msg
 
-
-def test_check_categorical_features_mixed() -> None:
-    """Test that CategoricalFeatureError is raised for columns with both binary and string values."""
-    data = np.array(
-        [
-            [1.0, 0, "a", 3.0],
-            [2.0, 1, "b", 4.0],
-            [3.0, 0, "a", 5.0],
-        ],
-        dtype=object,
-    )
-    x = np.array([2.0, 1.0, "b", 4.0], dtype=object)
-    with pytest.raises(CategoricalFeatureError) as exc:
-        GaussianImputer(model=dummy_model, data=data, x=x)
-    msg = str(exc.value)
-    # Both f2 (index 1) and f3 (index 2) must be mentioned
-    assert "f2" in msg
-    assert "f3" in msg
-    # f1 and f4 must not appear
-    assert "f1" not in msg
-    assert "f4" not in msg
+    def test_mixed(self) -> None:
+        """Test that an exception is raised for all columns that have either binary or string values."""
+        data = np.array(
+            [
+                [1.0, 0, "a", 3.0],
+                [2.0, 1, "b", 4.0],
+                [3.0, 0, "a", 5.0],
+            ],
+            dtype=object,
+        )
+        x = np.array([2.0, 1.0, "b", 4.0], dtype=object)
+        with pytest.raises(CategoricalFeatureError) as exc:
+            GaussianImputer(model=dummy_model, data=data, x=x)
+        msg = str(exc.value)
+        # Both f2 (index 1) and f3 (index 2) must be mentioned
+        assert "f2" in msg
+        assert "f3" in msg
+        # f1 and f4 must not appear
+        assert "f1" not in msg
+        assert "f4" not in msg
 
 
 ##############################################
