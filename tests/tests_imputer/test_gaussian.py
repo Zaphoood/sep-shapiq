@@ -32,18 +32,15 @@ def test_calculate_mean_per_feature(dummy_model) -> None:
 
 def test_calculate_covariance_matrix(dummy_model) -> None:
     """Test that the covariance matrix is calculated correctly."""
-    data = np.array(
-        [
-            [1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0],
-            [7.0, 8.0, 9.0],
-        ]
-    )
+    rng = np.random.default_rng(seed=456)
+    n_samples = 200
+    n_features = 10
+    data = rng.normal(size=(n_samples, n_features))
     x = np.array([2.0, 3.0, 4.0])
+
     imputer = GaussianImputer(model=dummy_model, data=data, x=x)
     expected_cov = np.cov(data.T)
-    np.testing.assert_allclose(imputer.cov_mat, expected_cov, atol=1e-5)
-    assert imputer.cov_mat.shape == (3, 3)
+    np.testing.assert_allclose(imputer.cov_mat, expected_cov)
 
 
 ##############################################
