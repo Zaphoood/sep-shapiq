@@ -55,10 +55,10 @@ class GaussianCopulaImputer(GaussianImputerBase):
         rank-Gaussian or empirical CDF transformation.
 
         Args:
-            background_data: Input data to transform (n_samples, n_features).
+            background_data: Input data to transform as an array of shape ``(n_samples, n_features)``.
 
         Returns:
-            Transformed data in Gaussian space (n_samples, n_features).
+            Transformed data in Gaussian space as an array of shape ``(n_samples, n_features)``.
         """
         transformed = np.zeros_like(background_data, dtype=float)
 
@@ -89,11 +89,11 @@ class GaussianCopulaImputer(GaussianImputerBase):
         """Transform a single explanation point to Gaussian space using the training data's ECDF.
 
         Args:
-            background_data: Training data used to compute ECDF, with shape (n_samples, n_features).
-            x: Explanation point to transform, with shape (n_features,).
+            background_data: Training data used to compute ECDF, with shape ``(n_samples, n_features)``.
+            x: Explanation point to transform, with shape ``(n_features,)``.
 
         Returns:
-            Transformed point in Gaussian space, with shape (n_features,).
+            Transformed point in Gaussian space, with shape ``(n_features,)``.
         """
         n_features = background_data.shape[1]
 
@@ -128,10 +128,10 @@ class GaussianCopulaImputer(GaussianImputerBase):
         This doesn't necessarily match the exact values of the original data.
 
         Args:
-            data_gaussian: Samples in Gaussian space (n_samples, n_features).
+            data_gaussian: Samples in Gaussian space ``(n_samples, n_features)``.
 
         Returns:
-            Samples in original feature space (n_samples, n_features).
+            Samples in original feature space ``(n_samples, n_features)``.
         """
         n_features = data_gaussian.shape[1]
         n_samples = self.data.shape[0]
