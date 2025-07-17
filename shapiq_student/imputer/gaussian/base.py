@@ -224,23 +224,19 @@ class GaussianImputerBase(Imputer):
 
     @override
     def value_function(self, coalitions: npt.NDArray[np.bool]) -> npt.NDArray[np.floating]:
-        """Impute missing values and return model predictions for given coalitions.
-
-        This method performs imputation and then calls the model's prediction function
-        on the imputed data. This is the main interface expected by Shapley Value explainers.
+        """Imputes the missing values of a data point and gets predictions for all coalitions.
 
         Args:
-            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0)
-                for each coalition.
+            coalitions: A boolean array of shape ``(n_coalitions, n_features)`` indicating which features are present (``True``) and which are missing (``False``).
 
         Returns:
-            An array of shape ``(n_coalitions,)`` with model predictions for each imputed data point.
+            The model's predictions on the imputed data points as an array of shape ``(n_coalitions, n_outputs)``.
 
         Raises:
             RuntimeError: If no explanation point has been provided, neither in the constructor nor by calling ``fit()``.
         """
         if self.x is None:
-            msg = f"Must call {self.__class__.__name__}.fit() first before imputing"
+            msg = f"Must call {self.__class__.__name__}.fit(x) first before imputing"
             raise RuntimeError(msg)
 
         return self.predict(self.impute(self.x, coalitions))
