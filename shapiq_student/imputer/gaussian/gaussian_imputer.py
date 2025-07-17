@@ -21,7 +21,7 @@ class GaussianImputer(GaussianImputerBase):
     r"""Implements a Gaussian-based approach for imputation.
 
     This approach assumes that the features of the background data form a multivariate Gaussian distribution.
-    Missing values of a coalition are imputed by sampling from the conditional distribution given the values present in a coalition using Monte Carlo sampling.
+    The missing values are imputed by drawing Montea Carlo samples from the conditional distribution given the values of the features present in a coalition.
 
     Note that only continuous features are supported, meaning that this imputer can't be used for datasets containing
     categorical or binary features.
