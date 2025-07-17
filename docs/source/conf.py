@@ -35,17 +35,22 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",  # Insert links to the source code to classes, methods etc.
     "sphinx.ext.napoleon",  # Enable parsing of Google-style docstrings
+    # Note: This requires 'pandoc' to be installed on the system
+    "nbsphinx",  # Include Jupyter Notebooks
 ]
 
 templates_path = ["_templates"]
-exclude_patterns: list[str] = []
+exclude_patterns = ["scripts"]
 
 # -- Autodoc ------------------------------------------------------------------
 autosummary_generate = True
 autodoc_default_options = {
     "members": True,  # Generate documentation for module members
+    "special-members": "__init__",  # Also generate docs for __init__ methods
+    "inherited-members": False,  # Exclude inherited members from documentation
 }
-autoclass_content = "class"  # Use the class' docstring, not the docstring of its __init__ method
+autodoc_member_order = "bysource"
+autoclass_content = "class"  # Use the class docstring, not the docstring of its __init__ method
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

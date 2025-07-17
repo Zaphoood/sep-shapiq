@@ -8,8 +8,14 @@ The ``shapiq_student`` Python package
 
 TODO: Add a package description here.
 
+.. toctree::
+   :maxdepth: 2
+
+   Notebooks <notebooks>
 
 .. toctree::
    :maxdepth: 2
 
    api
+
+   citations

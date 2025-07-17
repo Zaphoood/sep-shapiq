@@ -5,5 +5,5 @@ API Reference
     :toctree: api/
     :recursive:
 
-    shapiq_student.foo
+    shapiq_student.explainer
     shapiq_student.imputer
