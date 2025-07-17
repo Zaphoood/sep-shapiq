@@ -11,12 +11,6 @@ from scipy.stats import norm
 
 from shapiq_student.imputer.gaussian.gaussian_copula_imputer import GaussianCopulaImputer
 
-LOWER_BOUND = -4.0
-UPPER_BOUND = 4.0
-IMPUTED_LOWER = -2
-IMPUTED_UPPER = 4
-
-
 ##############################################
 # Tests for Transformation Methods --------- #
 ##############################################
@@ -85,8 +79,8 @@ def test_identity_transform(dummy_model) -> None:
     assert np.allclose(data, data_backtransformed)
 
 
-def test_transform_to_original(dummy_model) -> None:
-    """Test transforming from Gaussian space back to original space."""
+def test_trasnform_from_gaussian(dummy_model) -> None:
+    """Test transforming from Gaussian space back to original feature space."""
     data = np.array(
         [
             [1.0, 2.0, 3.0],
@@ -94,7 +88,13 @@ def test_transform_to_original(dummy_model) -> None:
             [7.0, 8.0, 9.0],
         ]
     )
-    gaussian_samples = np.array([[0, 0, 0], [1, -1, 0.5], [-1, 1, -0.5]])
+    gaussian_samples = np.array(
+        [
+            [0, 0, 0],
+            [1, -1, 0.5],
+            [-1, 1, -0.5],
+        ]
+    )
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
 
     original = imputer._transform_from_gaussian(gaussian_samples)
@@ -133,8 +133,10 @@ def test_copula_imputation_single_feature_known(dummy_model) -> None:
     assert imputed.shape == (coalitions.shape[0], x_explain.shape[0])
 
     # We can't predict exact values, but they should be within a reasonable range
-    assert np.all(imputed[0, 1:] >= IMPUTED_LOWER)
-    assert np.all(imputed[0, 1:] <= IMPUTED_UPPER)
+    lower_bound = -2
+    upper_bound = 4
+    assert np.all(imputed[0, 1:] >= lower_bound)
+    assert np.all(imputed[0, 1:] <= upper_bound)
 
 
 def test_copula_imputer_value_function(dummy_model) -> None:
@@ -157,5 +159,7 @@ def test_copula_imputer_value_function(dummy_model) -> None:
     assert y_predicted.shape == (coalitions.shape[0],)
     # The expected value should be sum of known feature (1.0) plus the conditional means
     # We can't predict exact values, but they should be within a reasonable range
-    assert np.all(y_predicted[0] >= IMPUTED_LOWER)
-    assert np.all(y_predicted[0] <= IMPUTED_UPPER)
+    imputed_lower = -2
+    imputed_upper = 4
+    assert np.all(y_predicted[0] >= imputed_lower)
+    assert np.all(y_predicted[0] <= imputed_upper)
