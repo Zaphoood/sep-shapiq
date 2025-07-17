@@ -20,6 +20,11 @@ from .base import GaussianImputerBase
 class GaussianCopulaImputer(GaussianImputerBase):
     """Implements the Gaussian Copula approach for feature imputation in Shapley Value calculations."""
 
+    QUANTILE_CLIP_EPSILON = 1e-10
+    """Used for clipping values to the 'exclusive range' (0, 1) when evaluating a quantile function.
+
+    More specifically, values will be clipped to the range `[epsilon, 1 - epsilon]`."""
+
     @override
     def __init__(
         self,
@@ -61,8 +66,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
             Transformed data in Gaussian space as an array of shape ``(n_samples, n_features)``.
         """
         empirical_cdf = self._empirical_cdf(background_data)
-        # TODO(Zaphoood): clipping shouldn't be necessary, since quantiles are already in range (0, 1)
-        transformed = norm.ppf(np.clip(empirical_cdf, 1e-10, 1 - 1e-10))
+        transformed = norm.ppf(empirical_cdf)
 
         return transformed
 
@@ -113,8 +117,10 @@ class GaussianCopulaImputer(GaussianImputerBase):
             raise ValueError(msg)
 
         x_empirical_cdf = self._empirical_cdf_point(background_data, x)
-        # TODO(Zaphoood): clipping should be unnecessary here
-        x_transformed = norm.ppf(np.clip(x_empirical_cdf, 1e-10, 1 - 1e-10))
+        # Low out-of-range values may be mapped to an eCDF of 0, so we need to clip them
+        # This cannot happen on the high end since the eCDF is always <= n/(n+1) < 1
+        x_empirical_cdf = np.clip(x_empirical_cdf, a_min=self.QUANTILE_CLIP_EPSILON, a_max=None)
+        x_transformed = norm.ppf(x_empirical_cdf)
 
         return x_transformed
 
@@ -125,6 +131,8 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         Note that we define the empirical distribution in such a way that `F(x_min) == 1/(n+1)` and `F(x_max) == n/(n+1)`,
         where `x_min` and `x_max` are the minimal and maximal value observed in the background data for that feature respectively.
+        If the value of `x` for any feature is less than the lowest value `x_min` observed in the background data for that feature,
+        the corresponding column will be mapped to `0`.
 
         Args:
             data: The background data as an array of shape `(n_samples, n_features)` which defines an empirical CDF for each feature.
@@ -135,7 +143,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
         """
         n_samples = data.shape[0]
         ranks = cast("npt.NDArray[np.integer]", np.sum(data <= x, axis=0))
-        ranks = np.clip(ranks, a_min=1, a_max=n_samples)
         ecdf = ranks / (n_samples + 1)
 
         return ecdf
