@@ -4,17 +4,11 @@ This module contains unit tests for the GaussianCopulaImputer class, including t
 categorical feature detection, transformation methods, and imputation logic.
 """
 
-# # TODO (milanagm): REVIEW WHOLE TEST SCRIPT
-
 from __future__ import annotations
 
-from typing import Any
-
 import numpy as np
-import pytest
 from scipy.stats import norm
 
-from shapiq_student.imputer.gaussian.exceptions import CategoricalFeatureError
 from shapiq_student.imputer.gaussian.gaussian_copula_imputer import GaussianCopulaImputer
 
 LOWER_BOUND = -4.0
@@ -23,100 +17,12 @@ IMPUTED_LOWER = -2
 IMPUTED_UPPER = 4
 
 
-# TODO (milanagm): better way to check these? as they are mostly equal with test_gaussian_approach.py
-def dummy_model(x: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
-    """A simple placeholder model for testing.
-
-    Args:
-        x (np.ndarray[Any, Any]): Input data.
-
-    Returns:
-        np.ndarray[Any, Any]: Sum over the last axis of the input.
-    """
-    return np.asarray(np.sum(x, axis=-1), dtype=float)
-
-
-def test_check_categorical_features_valid() -> None:
-    """Test that no error is raised when all features are continuous with >2 unique values."""
-    data = np.array(
-        [
-            [1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0],
-            [7.0, 8.0, 9.0],
-        ]
-    )
-    x = np.array([[2.0, 3.0, 4.0]])
-    # Should not raise error
-    GaussianCopulaImputer(model=dummy_model, data=data, x=x)
-
-
-def test_check_categorical_features_binary_integer() -> None:
-    """Test that CategoricalFeatureError is raised for binary integer columns (e.g., 0/1)."""
-    data = np.array(
-        [
-            [1.0, 0, 3.0],
-            [2.0, 1, 4.0],
-            [3.0, 0, 5.0],
-        ]
-    )
-    x = np.array([2.0, 1.0, 4.0])
-    with pytest.raises(CategoricalFeatureError) as exc:
-        GaussianCopulaImputer(model=dummy_model, data=data, x=x)
-    msg = str(exc.value)
-    # The second column (index 1) should be flagged as categorical, so 'f2' should be in the message
-    assert "f2" in msg
-    # The first and third columns should not be flagged, so 'f1' and 'f3' should not be in the message
-    assert "f1" not in msg
-    assert "f3" not in msg
-
-
-def test_check_categorical_features_string() -> None:
-    """Test that CategoricalFeatureError is raised for columns containing strings."""
-    data = np.array(
-        [
-            [1.0, "a", 3.0],
-            [2.0, "b", 4.0],
-            [3.0, "a", 5.0],
-        ],
-        dtype=object,
-    )
-    x = np.array([2.0, "b", 4.0], dtype=object)
-    with pytest.raises(CategoricalFeatureError) as exc:
-        GaussianCopulaImputer(model=dummy_model, data=data, x=x)
-    msg = str(exc.value)
-    assert "f2" in msg
-    assert "f1" not in msg
-    assert "f3" not in msg
-
-
-def test_check_categorical_features_mixed() -> None:
-    """Test that CategoricalFeatureError is raised for columns with both binary and string values."""
-    data = np.array(
-        [
-            [1.0, 0, "a", 3.0],
-            [2.0, 1, "b", 4.0],
-            [3.0, 0, "a", 5.0],
-        ],
-        dtype=object,
-    )
-    x = np.array([2.0, 1.0, "b", 4.0], dtype=object)
-    with pytest.raises(CategoricalFeatureError) as exc:
-        GaussianCopulaImputer(model=dummy_model, data=data, x=x)
-    msg = str(exc.value)
-    # Both f2 (index 1) and f3 (index 2) must be mentioned
-    assert "f2" in msg
-    assert "f3" in msg
-    # f1 and f4 must not appear
-    assert "f1" not in msg
-    assert "f4" not in msg
-
-
 ##############################################
 # Tests for Transformation Methods --------- #
 ##############################################
 
 
-def test_transform_to_gaussian() -> None:
+def test_transform_to_gaussian(dummy_model) -> None:
     """Tests transforming background data to Gaussian space."""
     data = np.array(
         [
@@ -141,7 +47,7 @@ def test_transform_to_gaussian() -> None:
     )
 
 
-def test_transform_point_to_gaussian() -> None:
+def test_transform_point_to_gaussian(dummy_model) -> None:
     """Test transforming a single point to Gaussian space."""
     data = np.array(
         [
@@ -162,7 +68,7 @@ def test_transform_point_to_gaussian() -> None:
     assert np.allclose(x_transformed, expected_x_transformed, atol=1e-2)
 
 
-def test_identity_transform() -> None:
+def test_identity_transform(dummy_model) -> None:
     """Tests that transforming to Gaussian space and gives the original data."""
     data = np.array(
         [
@@ -179,7 +85,7 @@ def test_identity_transform() -> None:
     assert np.allclose(data, data_backtransformed)
 
 
-def test_transform_to_original() -> None:
+def test_transform_to_original(dummy_model) -> None:
     """Test transforming from Gaussian space back to original space."""
     data = np.array(
         [
@@ -206,7 +112,7 @@ def test_transform_to_original() -> None:
 ##############################################
 
 
-def test_copula_imputation_single_feature_known() -> None:
+def test_copula_imputation_single_feature_known(dummy_model) -> None:
     """Test imputation with a single feature known and two unknown."""
     # Create correlated data
     rng = np.random.default_rng(42)
@@ -232,7 +138,7 @@ def test_copula_imputation_single_feature_known() -> None:
     assert np.all(imputed[0, 1:] <= IMPUTED_UPPER)
 
 
-def test_copula_imputer_value_function() -> None:
+def test_copula_imputer_value_function(dummy_model) -> None:
     """Test the value function of the copula imputer."""
     # Create correlated data
     rng = np.random.default_rng(42)
