@@ -72,7 +72,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Each column of the input is treated as samples drawn from a separate random variable and transformed to its empirical CDF.
 
         Note that we define the empirical distribution in such a way that `F(x_min) == 1/(n+1)` and `F(x_max) == n/(n+1)`,
-        where `x_min` and `x_max` are the minimal and maximal obeserved sample for that feature respectively.
+        where `x_min` and `x_max` are the minimal and maximal obeserved value for that feature respectively.
 
         Args:
             data: An array of shape `(n_samples, n_features)`.
@@ -124,10 +124,10 @@ class GaussianCopulaImputer(GaussianImputerBase):
         """Evaluates an empirical cumulative distribution function for each feature of a single data point.
 
         Note that we define the empirical distribution in such a way that `F(x_min) == 1/(n+1)` and `F(x_max) == n/(n+1)`,
-        where `x_min` and `x_max` are the minimal and maximal obeserved sample for that feature respectively.
+        where `x_min` and `x_max` are the minimal and maximal value observed in the background data for that feature respectively.
 
         Args:
-            data: An array of shape `(n_samples, n_features)` which defines an empirical CDF for each feature.
+            data: The background data as an array of shape `(n_samples, n_features)` which defines an empirical CDF for each feature.
             x: A data point for which to evaluate CDFs for.
 
         Returns:
