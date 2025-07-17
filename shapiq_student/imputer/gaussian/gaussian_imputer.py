@@ -49,7 +49,6 @@ class GaussianImputer(GaussianImputerBase):
             n_mc_samples=n_mc_samples,
             random_state=random_state,
         )
-        self._check_categorical_features()
 
     def _impute(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]

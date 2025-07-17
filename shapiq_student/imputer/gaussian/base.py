@@ -58,7 +58,7 @@ class GaussianImputerBase(Imputer):
             random_state: The random state to use for sampling. Defaults to ``None``.
 
         Raises:
-            EmptyDataError: If the provided data is empty.
+            CategoricalFeatureError: If the background data contains any categorical features.
         """
         if data is None or np.size(data) == 0 or (hasattr(data, "shape") and data.shape[0] == 0):
             msg = "Training data is empty."
@@ -72,6 +72,7 @@ class GaussianImputerBase(Imputer):
             categorical_features=[],
             random_state=random_state,
         )
+        self._check_categorical_features()
 
         self.n_mc_samples = n_mc_samples
         self._mean_per_feature: npt.NDArray[np.floating] | None = None

@@ -51,7 +51,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
             n_mc_samples=n_mc_samples,
             random_state=random_state,
         )
-        self._check_categorical_features()
 
         # Transform data to Gaussian space using empirical CDF (rank-Gaussian)
         self.data_transformed = self.transform_to_gaussian(self.data)
