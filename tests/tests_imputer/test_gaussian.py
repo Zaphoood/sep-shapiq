@@ -6,7 +6,6 @@ This module contains unit tests for the GaussianImputer class, including tests f
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from shapiq_student.imputer.gaussian.gaussian_imputer import GaussianImputer
 
@@ -33,14 +32,6 @@ def test_calculate_mean_per_feature_valid(dummy_model) -> None:
     assert imputer.mean_per_feature.shape == (3,)
 
 
-def test_calculate_mean_per_feature_empty_data(dummy_model) -> None:
-    """Test that EmptyDataError is raised when calculating mean with empty data."""
-    data = np.empty((0, 3))
-    x = np.array([])
-    with pytest.raises(ValueError, match="data.*empty"):
-        GaussianImputer(model=dummy_model, data=data, x=x)
-
-
 def test_calculate_covariance_matrix_valid(dummy_model) -> None:
     """Test covariance matrix calculation with valid data."""
     data = np.array(
@@ -55,14 +46,6 @@ def test_calculate_covariance_matrix_valid(dummy_model) -> None:
     expected_cov = np.cov(data.T)
     np.testing.assert_allclose(imputer.cov_mat, expected_cov, atol=1e-5)
     assert imputer.cov_mat.shape == (3, 3)
-
-
-def test_calculate_covariance_matrix_empty_data(dummy_model) -> None:
-    """Test that EmptyDataError is raised when calculating covariance with empty data."""
-    data = np.empty((0, 3))
-    x = np.array([])
-    with pytest.raises(ValueError, match="data.*empty"):
-        GaussianImputer(model=dummy_model, data=data, x=x)
 
 
 ##############################################

@@ -110,3 +110,10 @@ class TestInputValidation:
         imputer = model_class(model=dummy_model, data=data)
         imputer.fit(np.atleast_2d(x_explain.copy()))
         imputer.value_function(coalitions)
+
+    def test_empty_background_data(self, dummy_model, model_class) -> None:
+        """Test that a ValueError is raised when instantiating the imputer with an empty background data array."""
+        data = np.array([])
+        x = np.array([1, 2, 3])
+        with pytest.raises(ValueError, match="data.*empty"):
+            model_class(model=dummy_model, data=data, x=x)
