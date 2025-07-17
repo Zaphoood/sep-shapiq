@@ -60,26 +60,38 @@ class GaussianCopulaImputer(GaussianImputerBase):
         Returns:
             Transformed data in Gaussian space as an array of shape ``(n_samples, n_features)``.
         """
-        transformed = np.zeros_like(background_data, dtype=float)
-
-        for col in range(background_data.shape[1]):
-            empirical_cdf = self._empirical_cdf(background_data[:, col])
-            # TODO(Zaphoood): clipping shouldn't be necessary, since quantiles are already in range (0, 1)
-            transformed[:, col] = norm.ppf(np.clip(empirical_cdf, 1e-10, 1 - 1e-10))
+        empirical_cdf = self._empirical_cdf(background_data)
+        # TODO(Zaphoood): clipping shouldn't be necessary, since quantiles are already in range (0, 1)
+        transformed = norm.ppf(np.clip(empirical_cdf, 1e-10, 1 - 1e-10))
 
         return transformed
 
-    def _empirical_cdf(self, samples: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
-        """Computes the empirical cumulative distribution function for the given samples.
+    def _empirical_cdf(self, data: npt.NDArray[np.floating]) -> npt.NDArray[np.floating]:
+        """Computes the empirical cumulative distribution function for each feature of the given training data matrix.
 
-        Note that we define the empirical distribution in such a way that `f(x_min) == 1/(n+1)`
-        and `f(x_max) == n/(n+1)`, where `x_min` and `x_max` are the minimal and maximal obeserved sample respectively.
+        Each column of the input is treated as samples drawn from a separate random variable and transformed to its empirical CDF.
+
+        Note that we define the empirical distribution in such a way that `f(x_min) == 1/(n+1)` and `f(x_max) == n/(n+1)`,
+        where `x_min` and `x_max` are the minimal and maximal obeserved sample for that feature respectively.
+
+        Args:
+            data: An array of shape `(n_samples, n_features)`.
+
+        Returns:
+            An array of shape `(n_samples, n_features)` containing the CDF for each column.
         """
-        ranks = rankdata(samples, method="average")
-        # Map ranks linearly to the range [1/(n+1), n/(n+1)]
-        edf = ranks / (len(ranks) + 1)
+        expected_dimensionality = 2
+        if data.ndim == 1:
+            msg = "Expected a 2D array but got a 1D array. To compute the empirical CDF for a single feature, use array.reshape(-1, 1)"
+            raise ValueError(msg)
+        if data.ndim > expected_dimensionality:
+            msg = f"Expected a {expected_dimensionality}-dimensional array but got a {data.ndim}-dimensional array instead."
+            raise ValueError(msg)
 
-        return edf
+        ranks = rankdata(data, axis=0, method="average")
+        ecdf = ranks / (len(ranks) + 1)
+
+        return ecdf
 
     def _transform_point_to_gaussian(
         self,

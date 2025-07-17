@@ -24,7 +24,7 @@ def test_empirical_cdf(dummy_model) -> None:
     dummy_data = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     imputer = GaussianCopulaImputer(model=dummy_model, data=dummy_data)
 
-    empirical_cdf = imputer._empirical_cdf(feature_values)
+    empirical_cdf = imputer._empirical_cdf(feature_values.reshape(-1, 1)).flatten()
 
     assert np.allclose(empirical_cdf, expected_empirical_cdf)
 
