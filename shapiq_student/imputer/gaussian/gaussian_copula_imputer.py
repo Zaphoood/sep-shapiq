@@ -20,8 +20,6 @@ from .base import GaussianImputerBase
 class GaussianCopulaImputer(GaussianImputerBase):
     """Implements the Gaussian Copula approach for feature imputation in Shapley Value calculations."""
 
-    # TODO(Zaphoood): Rename `n_mc_samples` to `sample_size`?
-    # TODO(Zaphoood): Reintroduce `verbose` flag?
     @override
     def __init__(
         self,

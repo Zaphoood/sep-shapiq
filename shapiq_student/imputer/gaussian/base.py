@@ -38,6 +38,8 @@ class GaussianImputerBase(Imputer):
     Gaussian-based imputation approaches must implement.
     """
 
+    # TODO(Zaphoood): Rename `n_mc_samples` to `sample_size`?
+    # TODO(Zaphoood): Reintroduce `verbose` flag?
     def __init__(
         self,
         model: object | Game | Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]],
