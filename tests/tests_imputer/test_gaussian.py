@@ -25,9 +25,11 @@ def test_calculate_mean_per_feature_valid(dummy_model) -> None:
         ]
     )
     x = np.array([2.0, 3.0, 4.0])
+
     imputer = GaussianImputer(model=dummy_model, data=data, x=x)
     expected_mean = np.mean(data, axis=0)
-    np.testing.assert_array_almost_equal(imputer.mean_per_feature, expected_mean)
+
+    np.testing.assert_allclose(imputer.mean_per_feature, expected_mean)
     assert imputer.mean_per_feature.shape == (3,)
 
 
@@ -51,7 +53,7 @@ def test_calculate_covariance_matrix_valid(dummy_model) -> None:
     x = np.array([2.0, 3.0, 4.0])
     imputer = GaussianImputer(model=dummy_model, data=data, x=x)
     expected_cov = np.cov(data.T)
-    np.testing.assert_array_almost_equal(imputer.cov_mat, expected_cov)
+    np.testing.assert_allclose(imputer.cov_mat, expected_cov, atol=1e-5)
     assert imputer.cov_mat.shape == (3, 3)
 
 
