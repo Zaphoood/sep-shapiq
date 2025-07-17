@@ -242,4 +242,4 @@ class GaussianImputerBase(Imputer):
             msg = f"Must call {self.__class__.__name__}.fit(x) first before imputing"
             raise RuntimeError(msg)
 
-        return self.predict(self._impute(self.x, coalitions))
+        return self.predict(self._impute(self.x.flatten(), coalitions))

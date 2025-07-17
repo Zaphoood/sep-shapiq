@@ -146,7 +146,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
     def _impute(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
     ) -> npt.NDArray[np.floating]:
-        x_transformed = self._transform_point_to_gaussian(self.data, x.flatten())
+        x_transformed = self._transform_point_to_gaussian(self.data, x)
 
         gaussian_samples = self.sample_monte_carlo(x_transformed, coalitions)
 
