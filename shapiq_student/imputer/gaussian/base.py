@@ -145,15 +145,15 @@ class GaussianImputerBase(Imputer):
         x: npt.NDArray[np.floating],
         coalitions: npt.NDArray[np.bool],
     ) -> npt.NDArray[np.floating]:
-        """GEnerate Gaussian Monte Carlo samples for missing values for given coalitions.
+        """Generate Gaussian Monte Carlo samples for the features missing in the given coalitions.
 
         Args:
-            coalitions: Binary array of shape ``(n_coalitions, n_features)`` indicating which features are present (1) or missing (0)
-                for each coalition.
-            x: Explanation point to use for imputation. If ``None``, uses ``self.x``.
+            coalitions: The coalitions for which to impute values as a boolean array of shape ``(n_coalitions, n_features)``.
+            x: The explanation point to use the imputer on.
 
         Returns:
-            Imputed data points for each coalition as an array of shape ``(n_coalitions, n_mc_samples, n_features)``.
+            Random samples for the missing features of each coalition as an array of shape ``(n_coalitions, n_mc_samples, n_features)``.
+                The columns corresponding to known features are filled with the value of ``x`` for that feature.
         """
         x_explain = x.flatten()
         n_coalitions, n_features = coalitions.shape
