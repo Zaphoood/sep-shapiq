@@ -50,8 +50,8 @@ class GaussianCopulaImputer(GaussianImputerBase):
     ) -> npt.NDArray[np.floating]:
         """Transform each feature to a standard normal distribution using empirical CDF (rank-Gaussian).
 
-        For each feature (column), this method applies a transformation so that the values follow a standard normal
-        distribution (mean 0, std 1), while preserving the rank order of the original data. This is also known as a
+        For each feature, this method applies a transformation such that the values follow a standard normal
+        distribution, while preserving the rank order of the original data. This is also known as a
         rank-Gaussian or empirical CDF transformation.
 
         Args:
