@@ -1,17 +1,9 @@
-"""Imputation approaches for Shapley Value calculations.
+"""Implementations of Gaussian-based imputers.
 
-This module provides different approaches for handling missing values and generating
-samples for Shapley Value calculations. It includes two main approaches:
+This package provides two imputer implementations:
 
-- GaussianImputer: Uses Gaussian distribution for generating samples
-- GaussianCopulaImputer: Uses Copula's binning strategy for generating samples
-
-Classes
--------
-GaussianImputerBase : Imputer
-    Abstract base class for Gaussian-based imputation approaches
-GaussianImputer : GaussianImputerBase
-    Implementation using Gaussian distribution for sampling
+- ``GaussianImputer``: Uses Monte Carlo sampling from normal distributions of features.
+- ``GaussianCopulaImputer``: Uses Gaussian copulas to model arbitrary data as normal distributions.
 """
 
 from .copula_imputer import GaussianCopulaImputer
