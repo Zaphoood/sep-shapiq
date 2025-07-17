@@ -5,6 +5,8 @@ This module contains unit tests for the GaussianImputer class, including tests f
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 
 from shapiq_student.imputer.gaussian.gaussian_imputer import GaussianImputer
@@ -53,39 +55,53 @@ def test_calculate_covariance_matrix(dummy_model) -> None:
 ##############################################
 
 
-def test_gaussian_imputation_first_feature_known(dummy_model) -> None:
-    """Test imputation: first feature known, last two set to 1; check imputed mean."""
+def test_gaussian_imputation_single_feature_known(dummy_model) -> None:
+    """Test the imputation for a coalition with one known and two unknown features."""
     mean = np.array([0.0, 0.0, 0.0])
-    cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
+    cov = np.array(
+        [
+            [1, 0.8, 0.5],
+            [0.8, 1, 0.3],
+            [0.5, 0.3, 1],
+        ]
+    )
+
     rng = np.random.default_rng(seed=42)
     x_train = rng.multivariate_normal(mean, cov, size=10000)
-    x_explain = np.array([[1.0, np.nan, np.nan]])
+    x_explain = np.array([1.0, np.nan, np.nan])
     coalition = np.array([True, False, False])
 
     imputer = GaussianImputer(
         model=dummy_model,
         data=x_train,
-        x=x_explain[0],
+        x=x_explain,
     )
-    imputation_result = imputer._impute(x_explain[0], np.atleast_2d(coalition))
-    imputed_features = imputation_result[0, ~coalition]
+    result = imputer._impute(x_explain, np.atleast_2d(coalition))
+    imputed_features = result[0, ~coalition]
 
-    # The mean should be close to [0.8, 0.5]
     np.testing.assert_allclose(imputed_features, [0.8, 0.5], atol=0.1)
 
 
-def test_gaussian_imputer_value_function():
-    """Test the vlaue function of the gaussian imputer."""
+def test_gaussian_imputer_value_function(dummy_model):
+    """Tests that the value function of the Gaussian imputer gives the expected result using a dummy model."""
     mean = np.array([0.0, 0.0, 0.0])
-    cov = np.array([[1, 0.8, 0.5], [0.8, 1, 0.3], [0.5, 0.3, 1]])
-    rng = np.random.default_rng(seed=42)
-    x_train = rng.multivariate_normal(mean, cov, size=10000)
+    cov = np.array(
+        [
+            [1, 0.8, 0.5],
+            [0.8, 1, 0.3],
+            [0.5, 0.3, 1],
+        ]
+    )
     x_explain = np.array([[1.0, np.nan, np.nan]])
     coalition = np.array([True, False, False])
-    model = np.sum
 
-    imputer = GaussianImputer(data=x_train, x=x_explain[0], model=model)
+    expected_imputed = np.array([1.0, 0.8, 0.5])
+    y_expected = cast("np.floating", dummy_model(expected_imputed))
 
-    result_value_function = imputer.value_function(np.atleast_2d(coalition))
-    expected_sum = 1.0 + 0.8 + 0.5
-    np.testing.assert_allclose(result_value_function, expected_sum, atol=0.1)
+    rng = np.random.default_rng(seed=42)
+    x_train = rng.multivariate_normal(mean, cov, size=10000)
+
+    imputer = GaussianImputer(data=x_train, x=x_explain[0], model=dummy_model)
+    y_predicted = imputer.value_function(np.atleast_2d(coalition))
+
+    np.testing.assert_allclose(y_predicted, y_expected, atol=0.1)
