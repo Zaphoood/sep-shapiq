@@ -38,14 +38,14 @@ class GaussianCopulaImputer(GaussianImputerBase):
             random_state=random_state,
         )
 
-        self.data_transformed = self.transform_to_gaussian(self.data)
+        self.data_transformed = self._transform_to_gaussian(self.data)
         # The mean should be zero in theory but may differ in practice, therefore we still need to compute it
         self._mean_per_feature = np.mean(self.data_transformed, axis=0)
         self._cov_mat = self._ensure_positive_definite(np.cov(self.data_transformed.T))
         # Sorted data is required for the transformation back from Gaussian space to the original feature space
         self._data_sorted = np.sort(self.data, axis=0)
 
-    def transform_to_gaussian(
+    def _transform_to_gaussian(
         self, background_data: npt.NDArray[np.floating]
     ) -> npt.NDArray[np.floating]:
         """Transform each feature to a standard normal distribution using empirical CDF (rank-Gaussian).
@@ -81,7 +81,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         return edf
 
-    def transform_point_to_gaussian(
+    def _transform_point_to_gaussian(
         self,
         background_data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating],
@@ -118,7 +118,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
 
         return x_transformed
 
-    def transform_from_gaussian(
+    def _transform_from_gaussian(
         self, data_gaussian: npt.NDArray[np.floating]
     ) -> npt.NDArray[np.floating]:
         """Transform Gaussian samples back to original feature space.
@@ -150,13 +150,13 @@ class GaussianCopulaImputer(GaussianImputerBase):
     def _impute(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
     ) -> npt.NDArray[np.floating]:
-        x_transformed = self.transform_point_to_gaussian(self.data, x.flatten())
+        x_transformed = self._transform_point_to_gaussian(self.data, x.flatten())
 
         gaussian_samples = self.sample_monte_carlo(x_transformed, coalitions)
 
         samples_backtransformed = np.zeros_like(gaussian_samples)
         for coal_idx in range(coalitions.shape[0]):
-            samples_backtransformed[coal_idx] = self.transform_from_gaussian(
+            samples_backtransformed[coal_idx] = self._transform_from_gaussian(
                 gaussian_samples[coal_idx]
             )
         imputed = cast("npt.NDArray[np.floating]", np.mean(samples_backtransformed, axis=1))

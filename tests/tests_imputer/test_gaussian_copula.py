@@ -134,7 +134,7 @@ def test_transform_to_gaussian() -> None:
     )
 
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-    transformed_data = imputer.transform_to_gaussian(data)
+    transformed_data = imputer._transform_to_gaussian(data)
 
     assert np.allclose(transformed_data, expected_transformed_data, atol=1e-3), (
         f"Expected {expected_transformed_data}, but got {transformed_data}"
@@ -156,7 +156,7 @@ def test_transform_point_to_gaussian() -> None:
     expected_x_transformed = norm.ppf(expected_quantiles)
 
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-    x_transformed = imputer.transform_point_to_gaussian(data, x_test)
+    x_transformed = imputer._transform_point_to_gaussian(data, x_test)
 
     assert x_transformed.shape == x_test.shape
     assert np.allclose(x_transformed, expected_x_transformed, atol=1e-2)
@@ -173,8 +173,8 @@ def test_identity_transform() -> None:
     )
 
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
-    data_transformed = imputer.transform_to_gaussian(data)
-    data_backtransformed = imputer.transform_from_gaussian(data_transformed)
+    data_transformed = imputer._transform_to_gaussian(data)
+    data_backtransformed = imputer._transform_from_gaussian(data_transformed)
 
     assert np.allclose(data, data_backtransformed)
 
@@ -191,7 +191,7 @@ def test_transform_to_original() -> None:
     gaussian_samples = np.array([[0, 0, 0], [1, -1, 0.5], [-1, 1, -0.5]])
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
 
-    original = imputer.transform_from_gaussian(gaussian_samples)
+    original = imputer._transform_from_gaussian(gaussian_samples)
 
     # Check shape
     assert original.shape == gaussian_samples.shape
