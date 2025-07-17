@@ -14,8 +14,8 @@ from shapiq_student.imputer.gaussian.gaussian_imputer import GaussianImputer
 ##############################################
 
 
-def test_calculate_mean_per_feature_valid(dummy_model) -> None:
-    """Test mean calculation with valid data."""
+def test_calculate_mean_per_feature(dummy_model) -> None:
+    """Test that the mean per feature is calculated correctly."""
     data = np.array(
         [
             [1.0, 2.0, 3.0],
@@ -32,8 +32,8 @@ def test_calculate_mean_per_feature_valid(dummy_model) -> None:
     assert imputer.mean_per_feature.shape == (3,)
 
 
-def test_calculate_covariance_matrix_valid(dummy_model) -> None:
-    """Test covariance matrix calculation with valid data."""
+def test_calculate_covariance_matrix(dummy_model) -> None:
+    """Test that the covariance matrix is calculated correctly."""
     data = np.array(
         [
             [1.0, 2.0, 3.0],
