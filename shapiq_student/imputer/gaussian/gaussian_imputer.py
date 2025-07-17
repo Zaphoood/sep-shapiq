@@ -54,6 +54,5 @@ class GaussianImputer(GaussianImputerBase):
     def _impute(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
     ) -> npt.NDArray[np.floating]:
-        return cast(
-            "npt.NDArray[np.floating]", np.mean(self.sample_monte_carlo(x, coalitions), axis=1)
-        )
+        mc_samples = self.sample_monte_carlo(x, coalitions)
+        return cast("npt.NDArray[np.floating]", np.mean(mc_samples, axis=1))
