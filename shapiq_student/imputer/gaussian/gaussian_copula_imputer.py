@@ -30,18 +30,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
         n_mc_samples: int = 1000,
         random_state: int | None = None,
     ) -> None:
-        """Initializes the class.
-
-        Args:
-            model: The model to explain as a callable function expecting a data points as input and
-                returning the model's predictions.
-            data: The background data to use for the explainer as a 2-dimensional array with shape
-                ``(n_samples, n_features)``.
-            x: The explanation point to use the imputer on either as a 2-dimensional array with
-                shape ``(1, n_features)`` or as a vector with shape ``(n_features,)``.
-            n_mc_samples: Number of Monte Carlo samples. Defaults to ``1000``.
-            random_state: The random state to use for sampling. Defaults to ``None``.
-        """
         super().__init__(
             model=model,
             data=data,
