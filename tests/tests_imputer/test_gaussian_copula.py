@@ -20,16 +20,16 @@ def test_transform_to_gaussian(dummy_model) -> None:
     """Tests transforming background data to Gaussian space."""
     data = np.array(
         [
-            [1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0],
-            [7.0, 8.0, 9.0],
+            [1.0, 2.0, 0.0],
+            [4.0, 8.0, -10.0],
+            [7.0, 5.0, 200.0],
         ]
     )
     expected_transformed_data = np.array(
         [
-            [-0.674, -0.674, -0.674],
-            [0, 0, 0],
-            [0.674, 0.674, 0.674],
+            [-0.674, -0.674, 0],
+            [0, 0.674, -0.674],
+            [0.674, 0, 0.674],
         ]
     )
 
