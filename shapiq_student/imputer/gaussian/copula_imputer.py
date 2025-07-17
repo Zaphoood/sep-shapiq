@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast, override
+from typing import TYPE_CHECKING, cast
+from typing_extensions import override
 
 import numpy as np
 from scipy.stats import norm, rankdata
@@ -171,6 +172,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
             samples_backtransformed[coal_idx] = self.transform_from_gaussian(
                 gaussian_samples[coal_idx]
             )
-        imputed = np.mean(samples_backtransformed, axis=1)
+        imputed = cast("npt.NDArray[np.floating]", np.mean(samples_backtransformed, axis=1))
 
         return imputed

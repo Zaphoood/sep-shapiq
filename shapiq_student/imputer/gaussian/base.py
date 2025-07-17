@@ -9,7 +9,8 @@ calculations. It inherits from shapiq's Imputer base class and provides a common
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING
+from typing_extensions import override
 
 import numpy as np
 from numpy.random import default_rng

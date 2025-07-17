@@ -7,7 +7,8 @@ continuous features only.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, cast
+from typing_extensions import override
 
 import numpy as np
 
@@ -60,4 +61,6 @@ class GaussianImputer(GaussianImputerBase):
         Returns:
             An array of shape ``(n_coalitions, n_features)`` containing the imputed data points for each coalition, averaged over Monte Carlo samples.
         """
-        return np.mean(self.sample_monte_carlo(x, coalitions), axis=1)
+        return cast(
+            "npt.NDArray[np.floating]", np.mean(self.sample_monte_carlo(x, coalitions), axis=1)
+        )
