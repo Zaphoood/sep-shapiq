@@ -159,30 +159,28 @@ class GaussianImputerBase(Imputer):
         n_coalitions, n_features = coalitions.shape
         rng = default_rng(self.random_state)
 
-        imputed_data = np.zeros((n_coalitions, self.n_mc_samples, n_features))
+        samples_all_coalitions = np.zeros((n_coalitions, self.n_mc_samples, n_features))
 
-        for S_ind, coalition in enumerate(coalitions):
-            S_idx_known = np.where(coalition)[0]
-            S_idx_unknown = np.where(~coalition)[0]
+        for i, coalition in enumerate(coalitions):
+            known_indices = np.where(coalition)[0]
+            unknown_indices = np.where(~coalition)[0]
 
-            if len(S_idx_known) == 0:
+            if len(known_indices) == 0:
                 # No conditioning on known features, therefore sample from original data distribution
-                Z = rng.standard_normal((self.n_mc_samples, len(S_idx_unknown)))
+                Z = rng.standard_normal((self.n_mc_samples, len(unknown_indices)))
                 samples = Z @ np.linalg.cholesky(self.cov_mat).T + self.mean_per_feature
-            elif len(S_idx_unknown) == 0:
-                # all features known, therefore we just return explanation point
+            elif len(unknown_indices) == 0:
                 samples = np.tile(x_explain, (self.n_mc_samples, 1))
-                # TODO (milanagm): aus dem loop aussteigen und x_explain direkt unten in samples eintragen
             else:
-                x_S_star = x_explain[S_idx_known]
+                x_S_star = x_explain[known_indices]
 
-                mu_S_known = self.mean_per_feature[S_idx_known]
-                mu_S_unknown = self.mean_per_feature[S_idx_unknown]
+                mu_S_known = self.mean_per_feature[known_indices]
+                mu_S_unknown = self.mean_per_feature[unknown_indices]
 
-                cov_S_known_known = self.cov_mat[np.ix_(S_idx_known, S_idx_known)]
-                cov_S_known_unknown = self.cov_mat[np.ix_(S_idx_known, S_idx_unknown)]
-                cov_S_unknown_known = self.cov_mat[np.ix_(S_idx_unknown, S_idx_known)]
-                cov_S_unknown_unknown = self.cov_mat[np.ix_(S_idx_unknown, S_idx_unknown)]
+                cov_S_known_known = self.cov_mat[np.ix_(known_indices, known_indices)]
+                cov_S_known_unknown = self.cov_mat[np.ix_(known_indices, unknown_indices)]
+                cov_S_unknown_known = self.cov_mat[np.ix_(unknown_indices, known_indices)]
+                cov_S_unknown_unknown = self.cov_mat[np.ix_(unknown_indices, unknown_indices)]
 
                 cov_S_known_known_inv = np.linalg.inv(cov_S_known_known)
 
@@ -198,15 +196,15 @@ class GaussianImputerBase(Imputer):
                 cond_cov = 0.5 * (cond_cov + cond_cov.T)
 
                 # MC samples and Cholesky to turn N(0,1) to desired Gaussian distribution
-                Z = rng.standard_normal((self.n_mc_samples, len(S_idx_unknown)))
+                Z = rng.standard_normal((self.n_mc_samples, len(unknown_indices)))
                 samples_unknown = Z @ np.linalg.cholesky(cond_cov).T + cond_mean
 
                 samples = np.tile(x_explain, (self.n_mc_samples, 1))
-                samples[:, S_idx_unknown] = samples_unknown
+                samples[:, unknown_indices] = samples_unknown
 
-            imputed_data[S_ind] = samples
+            samples_all_coalitions[i] = samples
 
-        return imputed_data
+        return samples_all_coalitions
 
     @abstractmethod
     def impute(
