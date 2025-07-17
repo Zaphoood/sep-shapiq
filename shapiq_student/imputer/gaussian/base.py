@@ -62,8 +62,8 @@ class GaussianImputerBase(Imputer):
         Raises:
             CategoricalFeatureError: If the background data contains any categorical features.
         """
-        if data is None or np.size(data) == 0 or (hasattr(data, "shape") and data.shape[0] == 0):
-            msg = "Training data is empty."
+        if data.shape[0] == 0:
+            msg = "Background data must not be empty"
             raise ValueError(msg)
 
         super().__init__(
