@@ -8,15 +8,11 @@ continuous features only.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
-from typing_extensions import override
 
 import numpy as np
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     import numpy.typing as npt
-    from shapiq import Game
 
 from .base import GaussianImputerBase
 
@@ -31,24 +27,6 @@ class GaussianImputer(GaussianImputerBase):
     Note that only continuous features are supported, meaning that this imputer can't be used for datasets containing
     categorical or binary features.
     """
-
-    @override
-    def __init__(
-        self,
-        model: object | Game | Callable[[npt.NDArray[np.floating]], npt.NDArray[np.floating]],
-        data: npt.NDArray[np.floating],
-        x: npt.NDArray[np.floating] | None = None,
-        *,
-        n_mc_samples: int = 1000,
-        random_state: int | None = None,
-    ) -> None:
-        super().__init__(
-            model=model,
-            data=data,
-            x=x,
-            n_mc_samples=n_mc_samples,
-            random_state=random_state,
-        )
 
     def _impute(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
