@@ -120,26 +120,24 @@ class GaussianImputerBase(Imputer):
     def _ensure_positive_definite(
         self,
         cov_mat: npt.NDArray[np.floating],
-        min_eigen_value: float = 1e-06,
+        min_allowed_eigen_value: float = 1e-06,
     ) -> npt.NDArray[np.floating]:
         """Ensure covariance matrix is positive definite by correcting eigenvalues if necessary.
 
         Args:
-            cov_mat: Input covariance matrix.
-            min_eigen_value: Minimum allowed eigenvalue. Defaults to 1e-06.
+            cov_mat: The input covariance matrix.
+            min_allowed_eigen_value: The minimum allowed eigenvalue. Defaults to ``1e-06``.
 
         Returns:
             The positive definite covariance matrix.
         """
         eigen_values = np.linalg.eigvalsh(cov_mat)
 
-        # If any eigenvalue is too small (close to zero or negative)
-        if np.any(eigen_values <= min_eigen_value):
-            # Add regularization to make it positive definite
-            min_actual_eigen_value = np.min(eigen_values)
-            cov_mat = cov_mat + np.eye(cov_mat.shape[0]) * (
-                min_eigen_value - min_actual_eigen_value
-            )
+        if np.any(eigen_values <= min_allowed_eigen_value):
+            # Add regularization to make the matrix positive definite
+            min_eigen_value = np.min(eigen_values)
+            cov_mat += (min_allowed_eigen_value - min_eigen_value) * np.eye(cov_mat.shape[0])
+
         return cov_mat
 
     def sample_monte_carlo(
