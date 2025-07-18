@@ -37,25 +37,27 @@ Here's a short example showing how to explain the prediction of a weighted :math
 
 .. code-block:: python
 
-   >>> from sklearn.neighbors import KNeighborsClassifier
-   >>> from shapiq_student.explainer.knn import KNNExplainer, interaction_values_to_array
-   >>>
-   >>> X_train, X_test, y_train, y_test = ...  # Load some data set
-   >>> # Created a weighted classifier using `weights="distance"`
-   >>> model = KNeighborsClassifier(n_neighbors=7, weights="distance")
-   >>> model.fit(X_train, y_train)
-   >>>
-   >>> # Explain the prediction for class 0
-   >>> explainer = KNNExplainer(model, class_index=0)
-   >>> type(explainer)  # Explainer for weighted KNN models was selected automatically
-   <class 'shapiq_student.explainer.knn.weighted_knn.WeightedKNNExplainer'>
-   >>>
-   >>> iv = explainer.explain(X_test[0])
-   >>> sv = interaction_values_to_array(iv)  # Convert to array for easier handling
-   >>> sv
-   array([ 0.04347826, -0.00197628,  0.07894378, ... ])
-   >>> sv.shape[0] == X_train.shape[0]  # Every training data point is assigned a Shapley Value
-   True
+    >>> from sklearn.neighbors import KNeighborsClassifier
+    >>> from sklearn.datasets import make_classification
+    >>> from shapiq_student.explainer.knn import KNNExplainer, interaction_values_to_array
+    >>> from sklearn.model_selection import train_test_split
+    >>>
+    >>> X, y = make_classification(n_samples=40)
+    >>> X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
+    >>> # Create a weighted classifier using `weights="distance"`
+    >>> model = KNeighborsClassifier(n_neighbors=7, weights="distance")
+    >>> model.fit(X_train, y_train)
+    KNeighborsClassifier(n_neighbors=7, weights='distance')
+    >>> # Explain the prediction for class 0
+    >>> explainer = KNNExplainer(model, class_index=0)
+    >>> type(explainer)  # Explainer for weighted KNN models is selected automatically
+    <class 'shapiq_student.explainer.knn.weighted_knn.WeightedKNNExplainer'>
+    >>> iv = explainer.explain(X_test[0])
+    >>> sv = interaction_values_to_array(iv)  # Convert to array for easier handling
+    >>> sv
+    array([ 0.06971687,  0.03333333,  0.09914777, ... ])
+    >>> sv.shape[0] == X_train.shape[0]  # Every training data point is assigned a Shapley Value
+    True
 
 Imputers
 ~~~~~~~~
