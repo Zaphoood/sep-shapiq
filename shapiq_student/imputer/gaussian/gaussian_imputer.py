@@ -86,7 +86,7 @@ class GaussianImputer(ConditionalImputer):
             verbose=verbose,
         )
 
-        # We need to set the member explicitely here, since its type will be `int | None` if we set it through the superclass constructor
+        # We need to set the member explicitely here, since its type would be `int | None` if we set it through the superclass constructor
         self.sample_size: int = sample_size
         self._check_categorical_features()
 
