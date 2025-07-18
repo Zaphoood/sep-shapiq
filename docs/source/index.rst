@@ -32,6 +32,9 @@ Explainers
 
 Here's a short example showing how to explain the prediction of a weighted :math:`k`-nearest neighbors model:
 
+..
+    TODO: Make sure all code blocks are ready to be copied and executed (don't contain any '...' in the instructions etc.)
+
 .. code-block:: python
 
    >>> from sklearn.neighbors import KNeighborsClassifier
