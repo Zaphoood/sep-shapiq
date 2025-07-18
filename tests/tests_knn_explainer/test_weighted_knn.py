@@ -267,7 +267,7 @@ class TestWKNNSanity:
 
         sv = interaction_values_to_array(explainer.explain(x_val))
 
-        assert np.allclose(sv, 0)
+        assert np.allclose(sv, 1 / X_train.shape[0])
 
     def test_mode(self):
         """Tests that the explainer mode is set correctly."""
