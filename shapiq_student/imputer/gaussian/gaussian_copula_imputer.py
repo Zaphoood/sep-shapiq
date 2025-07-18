@@ -66,6 +66,9 @@ class GaussianCopulaImputer(GaussianImputerBase):
             Transformed data in Gaussian space as an array of shape ``(n_samples, n_features)``.
         """
         empirical_cdf = self._empirical_cdf(background_data)
+        empirical_cdf = np.clip(
+            empirical_cdf, self.QUANTILE_CLIP_EPSILON, 1 - self.QUANTILE_CLIP_EPSILON
+        )
         transformed = norm.ppf(empirical_cdf)
 
         return transformed
@@ -74,9 +77,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
         """Computes the empirical cumulative distribution function for each feature of the given training data matrix.
 
         Each column of the input is treated as samples drawn from a separate random variable and transformed to its empirical CDF.
-
-        Note that we define the empirical distribution in such a way that `F(x_min) == 1/(n+1)` and `F(x_max) == n/(n+1)`,
-        where `x_min` and `x_max` are the minimal and maximal obeserved value for that feature respectively.
 
         Args:
             data: An array of shape `(n_samples, n_features)`.
@@ -93,7 +93,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
             raise ValueError(msg)
 
         ranks = rankdata(data, axis=0, method="average")
-        ecdf = ranks / (len(ranks) + 1)
+        ecdf = ranks / data.shape[0]
 
         return ecdf
 
@@ -117,9 +117,9 @@ class GaussianCopulaImputer(GaussianImputerBase):
             raise ValueError(msg)
 
         x_empirical_cdf = self._empirical_cdf_point(background_data, x)
-        # Low out-of-range values may be mapped to an eCDF of 0, so we need to clip them
-        # This cannot happen on the high end since the eCDF is always <= n/(n+1) < 1
-        x_empirical_cdf = np.clip(x_empirical_cdf, a_min=self.QUANTILE_CLIP_EPSILON, a_max=None)
+        x_empirical_cdf = np.clip(
+            x_empirical_cdf, self.QUANTILE_CLIP_EPSILON, 1 - self.QUANTILE_CLIP_EPSILON
+        )
         x_transformed = norm.ppf(x_empirical_cdf)
 
         return x_transformed
@@ -128,11 +128,6 @@ class GaussianCopulaImputer(GaussianImputerBase):
         self, data: npt.NDArray[np.floating], x: npt.NDArray[np.floating]
     ) -> npt.NDArray[np.floating]:
         """Evaluates an empirical cumulative distribution function for each feature of a single data point.
-
-        Note that we define the empirical distribution in such a way that `F(x_min) == 1/(n+1)` and `F(x_max) == n/(n+1)`,
-        where `x_min` and `x_max` are the minimal and maximal value observed in the background data for that feature respectively.
-        If the value of `x` for any feature is less than the lowest value `x_min` observed in the background data for that feature,
-        the corresponding column will be mapped to `0`.
 
         Args:
             data: The background data as an array of shape `(n_samples, n_features)` which defines an empirical CDF for each feature.
@@ -143,7 +138,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         """
         n_samples = data.shape[0]
         ranks = cast("npt.NDArray[np.integer]", np.sum(data <= x, axis=0))
-        ecdf = ranks / (n_samples + 1)
+        ecdf = ranks / n_samples
 
         return ecdf
 
@@ -162,7 +157,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         n_samples = self.data.shape[0]
 
         quantiles = norm.cdf(data_gaussian)
-        ranks = quantiles * (n_samples + 1)
+        ranks = quantiles * n_samples
 
         x_original = np.zeros_like(data_gaussian)
         rank_indices = np.arange(1, n_samples + 1)

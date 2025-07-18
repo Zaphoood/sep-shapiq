@@ -19,7 +19,7 @@ from shapiq_student.imputer.gaussian.gaussian_copula_imputer import GaussianCopu
 def test_empirical_cdf(dummy_model) -> None:
     """Tests that the empirical CDF is calculated correctly for a single column."""
     feature_values = np.array([-5, 10, 0, 3, 4])
-    expected_empirical_cdf = np.array([1, 5, 2, 3, 4]) / (5 + 1)
+    expected_empirical_cdf = np.array([1, 5, 2, 3, 4]) / 5
 
     dummy_data = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     imputer = GaussianCopulaImputer(model=dummy_model, data=dummy_data)
@@ -38,15 +38,20 @@ def test_transform_to_gaussian(dummy_model) -> None:
             [7.0, 5.0, 200.0],
         ]
     )
+    imputer = GaussianCopulaImputer(model=dummy_model, data=data)
+
     expected_transformed_data = np.array(
         [
-            [-0.674, -0.674, 0],
-            [0, 0.674, -0.674],
-            [0.674, 0, 0.674],
+            [norm.ppf(1 / 3), norm.ppf(1 / 3), norm.ppf(2 / 3)],
+            [norm.ppf(2 / 3), norm.ppf(1 - imputer.QUANTILE_CLIP_EPSILON), norm.ppf(1 / 3)],
+            [
+                norm.ppf(1 - imputer.QUANTILE_CLIP_EPSILON),
+                norm.ppf(2 / 3),
+                norm.ppf(1 - imputer.QUANTILE_CLIP_EPSILON),
+            ],
         ]
     )
 
-    imputer = GaussianCopulaImputer(model=dummy_model, data=data)
     transformed_data = imputer._transform_to_gaussian(data)
 
     assert np.allclose(transformed_data, expected_transformed_data, atol=1e-3), (
@@ -66,9 +71,11 @@ def test_transform_point_to_gaussian(dummy_model) -> None:
     imputer = GaussianCopulaImputer(model=dummy_model, data=data)
 
     x_test = np.array([8, 2, 1])
-    # Features should be mapped to ranks [4, 1, 0], meaning quantiles [3/4, 1/4, 0/4]
+    # Features should be mapped to ranks [3, 1, 0], meaning quantiles [3/3, 1/3, 0/3]
     # The out-of-range value of 0 will be clipped according to the imputers configuration
-    expected_quantiles = np.array([3 / 4, 1 / 4, imputer.QUANTILE_CLIP_EPSILON])
+    expected_quantiles = np.array(
+        [1 - imputer.QUANTILE_CLIP_EPSILON, 1 / 3, imputer.QUANTILE_CLIP_EPSILON]
+    )
     expected_x_transformed = norm.ppf(expected_quantiles)
 
     x_transformed = imputer._transform_point_to_gaussian(data, x_test)
