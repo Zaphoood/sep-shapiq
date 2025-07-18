@@ -6,7 +6,7 @@
 The ``shapiq_student`` Python package
 =====================================
 
-The ``shapiq_student`` package is an extension to the the ``shapiq`` library for approximating Shapley interactions and explaining machine learning models.
+The ``shapiq_student`` package is an extension to the ``shapiq`` library for explaining machine learning models with Shapley interactions.
 It adds the following functionalities:
 
 1. **Explainers:** Easy-to-use explainers implementing efficient algorithms for explaining nearest neighbor models, including unweighted and weighted $k$-nearest neighbor classifiers, as well as threshold nearest neighbor classifiers
