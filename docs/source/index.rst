@@ -27,6 +27,9 @@ Details about the library's interfaces can be found in the :doc:`API reference <
 Quick Start
 -----------
 
+Explainers
+~~~~~~~~~~
+
 Here's a short example showing how to explain the prediction of a weighted :math:`k`-nearest neighbors model:
 
 .. code-block:: python
@@ -50,6 +53,11 @@ Here's a short example showing how to explain the prediction of a weighted :math
    array([ 0.04347826, -0.00197628,  0.07894378, ... ])
    >>> sv.shape[0] == X_train.shape[0]  # Every training data point is assigned a Shapley Value
    True
+
+Imputers
+~~~~~~~~
+
+The following example uses the `GaussianImputer` to explain the prediction of a random forest model.
 
 Contents
 --------
