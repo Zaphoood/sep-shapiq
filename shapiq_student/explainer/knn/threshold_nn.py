@@ -24,7 +24,7 @@ MODE_THRESHOLD = "threshold"
 
 
 class _BruteForceTNNExplainer(KNNExplainer):
-    """Brute force approach for explaining TKNN Classifiers.
+    """Brute force approach for explaining TNN Classifiers.
 
     References:
         Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
