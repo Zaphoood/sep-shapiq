@@ -45,9 +45,6 @@ class KNNExplainer(Explainer):
     y_train: npt.NDArray[np.object_]
     """Training data labels extracted from the model. This array simply resolves the indirection of looking up class indices from ``y_train_indices`` in ``y_train_classes``."""
 
-    k: int
-    """The parameter ``k`` of the k-nearest neighbors model."""
-
     def __init__(
         self,
         model: KNeighborsClassifier | RadiusNeighborsClassifier,
