@@ -14,10 +14,10 @@ if TYPE_CHECKING:
     import numpy.typing as npt
     from shapiq import Game
 
-from .base import GaussianImputerBase
+from .gaussian_imputer import GaussianImputer
 
 
-class GaussianCopulaImputer(GaussianImputerBase):
+class GaussianCopulaImputer(GaussianImputer):
     r"""Implements a Gaussian copula-based approach for imputation.
 
     This method models feature dependence using a Gaussian copula, separating the modeling of marginal distributions
