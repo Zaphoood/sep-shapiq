@@ -1,0 +1,191 @@
+"""Plotting functions for the ``shapiq_student`` package."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from matplotlib.lines import Line2D
+import matplotlib.pyplot as plt
+import numpy as np
+import numpy.typing as npt
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from matplotlib.axes import Axes
+
+BASE_SCALE = 100
+
+
+def plot_points_shapley_2d(  # noqa: C901
+    ax: Axes,
+    X_train: npt.NDArray[np.floating],
+    y_train: npt.NDArray[np.integer],
+    shapley_values: npt.NDArray[np.floating],
+    classes: npt.NDArray[np.integer],
+    x_test: npt.NDArray[np.floating] | None = None,
+    *,
+    title: str | None = None,
+    scale: float = 1,
+    max_abs: float | None = None,
+    show_max: bool = False,
+    min_size: float = 1,
+) -> None:
+    """Plot a Shapley Values for a 2D training data set using matplotlib.
+
+    This function visualizes training data points with their associated Shapley Values, and optionally a test data point.
+    Each training point is shown with a marker size proportional to its absolute Shapley
+    value. Positive values are shown as a filled circle and non-positve values as an emtpy circle.
+
+    Args:
+        ax: The matplotlib Axes to plot onto.
+        X_train: A 2D array of shape (n_samples, 2) with the training points.
+        y_train: A 1D array of shape (n_samples,) with class labels for each training point.
+        shapley_values: A sequence of Shapley values (or similar interaction scores)
+                        corresponding to each training point.
+        classes: A sequence of unique class labels (must not exceed the number of matplotlib colors available).
+        x_test: A array of shape (2,) representing the test datat point being explained.
+        title: The title to set on the plot.
+        scale: Scaling factor for Shapley marker sizes (default is 3).
+        max_abs: Allows orverriding the maximum value used for scaling the marker sizes. Defaults to ``np.max(np.abs(shapley_values))``.
+        show_max: Draw a black ring around each marker, representing the maximum absolute value.
+        min_size: The minimum size of the scaled markers. It's recommended to set this to a small positive value
+            to prevent the smallest Shapley Values from becoming zero-size dots. Defaults to ``1``.
+
+    Raises:
+        ValueError: If all Shapley values are zero.
+        RuntimeError: If the number of classes exceeds the number of available default colors.
+    """
+    if x_test is not None:
+        x_test = np.atleast_2d(x_test)
+
+    if X_train.ndim != 2 or X_train.shape[1] != 2:  # noqa: PLR2004
+        msg = f"X_train must be 2D matrix with shape (n, 2), but got {X_train.shape}"
+        raise ValueError(msg)
+
+    if max_abs is None:
+        max_abs = np.max(np.abs(shapley_values))
+    elif np.isclose(max_abs, 0):
+        msg = "Parameter 'max_abs' must not be (close to) zero."
+        raise ValueError(msg)
+
+    positive_mask = shapley_values > 0
+    sizes = np.abs(shapley_values) / max_abs * scale * BASE_SCALE + min_size
+
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    if len(classes) > len(colors):
+        msg = f"Sorry, too many classes ({len(classes)}) and not enough colors ({len(colors)})!"
+        raise RuntimeError(msg)
+
+    for color, class_ in zip(colors, classes, strict=False):
+        class_mask = y_train == class_
+        ax.scatter(
+            X_train[class_mask & positive_mask, 0],
+            X_train[class_mask & positive_mask, 1],
+            sizes[class_mask & positive_mask],
+            label=str(class_),
+            facecolors=color,
+        )
+    if show_max:
+        ax.scatter(
+            X_train[:, 0],
+            X_train[:, 1],
+            s=scale * BASE_SCALE,
+            marker="o",
+            edgecolors="black",
+            facecolors="none",
+        )
+    for color, class_ in zip(colors, classes, strict=False):
+        class_mask = y_train == class_
+        ax.scatter(
+            X_train[class_mask & ~positive_mask, 0],
+            X_train[class_mask & ~positive_mask, 1],
+            sizes[class_mask & ~positive_mask],
+            label=str(class_),
+            edgecolors=color,
+            facecolors="none",
+        )
+
+    if x_test is not None:
+        ax.scatter(
+            x_test[:, 0],
+            x_test[:, 1],
+            marker="x",
+            facecolors="black",
+            s=0.5 * scale * BASE_SCALE,
+            linewidths=1.5,
+        )
+
+    x_lims, y_lims = _axis_lims_center_mean(
+        np.vstack([X_train, x_test]) if x_test is not None else X_train
+    )
+    ax.set_xlim(x_lims)
+    ax.set_ylim(y_lims)
+
+    ax.set_aspect("equal")
+    ax.legend(
+        handles=_make_legend_handles(
+            colors,
+            classes,
+            marker_kwargs={
+                "marker": "o",
+                "color": "w",
+            },
+            x_test_kwargs={
+                "marker": "x",
+                "color": "w",
+                "label": "x_explain",
+                "markeredgecolor": "black",
+            },
+            legend_size=100,
+        )
+    )
+
+    if title is not None:
+        ax.title.set_text(title)
+
+
+def _make_legend_handles(
+    colors: Iterable[str],
+    classes: Iterable[int],
+    marker_kwargs: dict[str, Any],
+    x_test_kwargs: dict[str, Any] | None = None,
+    legend_size: float = 100,
+) -> list[Line2D]:
+    handles = [
+        Line2D(
+            [0],
+            [0],
+            markersize=np.sqrt(legend_size),  # markersize is in points (approx sqrt of s)
+            label=f"Class {class_}",
+            markerfacecolor=color,
+            **marker_kwargs,
+        )
+        for color, class_ in zip(colors, classes, strict=False)
+    ]
+    if x_test_kwargs is not None:
+        handles.append(
+            Line2D(
+                [0],
+                [0],
+                markersize=np.sqrt(0.5 * legend_size),
+                **x_test_kwargs,
+            )
+        )
+    return handles
+
+
+def _axis_lims_center_mean(
+    points: npt.NDArray[np.floating], padding_percent: float = 0.2
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Calcualte the x and y limits such that the plot is square and centered around the mean of the points."""
+    x_min, y_min = np.min(points, axis=0)
+    x_max, y_max = np.max(points, axis=0)
+    x_center = (x_min + x_max) / 2
+    y_center = (y_min + y_max) / 2
+    half_range = max(x_max - x_min, y_max - y_min) / 2
+    padding_scale = 1 + padding_percent
+    x_lims = (x_center - padding_scale * half_range, x_center + padding_scale * half_range)
+    y_lims = (y_center - padding_scale * half_range, y_center + padding_scale * half_range)
+
+    return x_lims, y_lims

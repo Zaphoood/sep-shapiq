@@ -60,3 +60,18 @@ html_theme = "furo"
 html_css_files = [
     "custom.css",
 ]
+
+# -- Jupyter Notebooks -------------------------------------------------------
+nbsphinx_prolog = """
+.. raw:: html
+
+    <style>
+        div.output_area {
+            display: flex;
+            flex-direction: column;
+        }
+        div.output_area img {
+            align-self: center;
+        }
+    </style>
+"""
