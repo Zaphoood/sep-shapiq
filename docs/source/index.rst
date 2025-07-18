@@ -30,7 +30,7 @@ Quick Start
 Explainers
 ~~~~~~~~~~
 
-Here's a short example showing how to use `KNNExplainer` to explain the prediction of a weighted `KNeighborsClassifier`:
+Here's a short example showing how to use ``KNNExplainer`` to explain the prediction of a weighted ``KNeighborsClassifier``:
 
 .. code-block:: python
 
