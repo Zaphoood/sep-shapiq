@@ -48,8 +48,8 @@ Here's a short example showing how to explain the prediction of a weighted :math
     >>> model = KNeighborsClassifier(n_neighbors=7, weights="distance")
     >>> model.fit(X_train, y_train)
     KNeighborsClassifier(n_neighbors=7, weights='distance')
-    >>> # Explain the prediction for class 0
-    >>> explainer = KNNExplainer(model, class_index=0)
+    >>>
+    >>> explainer = KNNExplainer(model, class_index=0) # Explain the prediction for class 0
     >>> type(explainer)  # Explainer for weighted KNN models is selected automatically
     <class 'shapiq_student.explainer.knn.weighted_knn.WeightedKNNExplainer'>
     >>> iv = explainer.explain(X_test[0])
@@ -85,6 +85,7 @@ This example uses the ``GaussianImputer`` to explain the prediction of a random 
     ... )
     >>> model.fit(X_train, y_train)
     RandomForestRegressor(...)
+    >>>
     >>> gaussian_imputer = GaussianImputer(model=model.predict, data=X_train, n_mc_samples=100)
     >>> explainer = TabularExplainer(
     ...     model=model, data=X_train, index="SII", max_order=2, imputer=gaussian_imputer
