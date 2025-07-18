@@ -183,7 +183,7 @@ class GaussianCopulaImputer(GaussianImputer):
     ) -> npt.NDArray[np.floating]:
         x_transformed = self._transform_point_to_gaussian(self.data, x)
 
-        gaussian_samples = self.sample_monte_carlo(x_transformed, coalitions)
+        gaussian_samples = self._sample_monte_carlo(x_transformed, coalitions)
 
         samples_backtransformed = np.zeros_like(gaussian_samples)
         for coal_idx in range(coalitions.shape[0]):

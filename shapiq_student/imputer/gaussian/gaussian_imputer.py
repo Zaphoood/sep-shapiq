@@ -156,7 +156,7 @@ class GaussianImputer(ConditionalImputer):
 
         return cov_mat
 
-    def sample_monte_carlo(
+    def _sample_monte_carlo(
         self,
         x: npt.NDArray[np.floating],
         coalitions: npt.NDArray[np.bool],
@@ -244,5 +244,5 @@ class GaussianImputer(ConditionalImputer):
     def _impute(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
     ) -> npt.NDArray[np.floating]:
-        mc_samples = self.sample_monte_carlo(x, coalitions)
+        mc_samples = self._sample_monte_carlo(x, coalitions)
         return cast("npt.NDArray[np.floating]", np.mean(mc_samples, axis=1))
