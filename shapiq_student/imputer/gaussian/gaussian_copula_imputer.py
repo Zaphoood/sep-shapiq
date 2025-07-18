@@ -21,9 +21,9 @@ class GaussianCopulaImputer(GaussianImputerBase):
     """Implements the Gaussian Copula approach for feature imputation in Shapley Value calculations."""
 
     QUANTILE_CLIP_EPSILON = 1e-10
-    """Used for clipping values to the 'exclusive range' (0, 1) when evaluating a quantile function.
+    """Used for clipping values to the 'exclusive range' ``(0, 1)`` when evaluating a quantile function.
 
-    More specifically, values will be clipped to the range `[epsilon, 1 - epsilon]`."""
+    More specifically, values will be clipped to the range ``[epsilon, 1 - epsilon]``."""
 
     @override
     def __init__(
