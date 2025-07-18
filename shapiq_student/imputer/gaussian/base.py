@@ -12,6 +12,7 @@ from typing_extensions import override
 
 import numpy as np
 from numpy.random import default_rng
+from shapiq import ConditionalImputer
 
 from .exceptions import CategoricalFeatureError
 
@@ -29,7 +30,7 @@ from shapiq.games.imputer.base import Imputer
 MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 2
 
 
-class GaussianImputerBase(Imputer):
+class GaussianImputerBase(ConditionalImputer):
     """Abstract base class for Gaussian-based imputation approaches.
 
     This class inherits from shapiq's Imputer base class and defines the interface that all specific
@@ -64,7 +65,8 @@ class GaussianImputerBase(Imputer):
             msg = "Background data must not be empty"
             raise ValueError(msg)
 
-        super().__init__(
+        Imputer.__init__(
+            self,
             model=model,
             data=data,
             x=x,
