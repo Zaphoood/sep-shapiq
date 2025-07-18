@@ -57,7 +57,43 @@ Here's a short example showing how to explain the prediction of a weighted :math
 Imputers
 ~~~~~~~~
 
-The following example uses the `GaussianImputer` to explain the prediction of a random forest model.
+This example uses the ``GaussianImputer`` to explain the prediction of a random forest model trained on the California Housing dataset.
+
+.. code-block:: python
+
+    >>> from shapiq.datasets import load_california_housing
+    >>> from sklearn.ensemble import RandomForestRegressor
+    >>> from sklearn.model_selection import train_test_split
+    >>>
+    >>> from shapiq import TabularExplainer
+    >>> from shapiq_student import GaussianImputer
+    >>>
+    >>> X, y = load_california_housing()
+    >>> X_train, X_test, y_train, y_test = train_test_split(
+    ...     X.values,
+    ...     y.values,
+    ...     test_size=0.25,
+    ...     random_state=42,
+    ... )
+    >>> model = RandomForestRegressor(
+    ...     max_depth=X_train.shape[1], max_features=2 / 3, max_samples=2 / 3, random_state=42,
+    ... )
+    >>> model.fit(X_train, y_train)
+    RandomForestRegressor(...)
+    >>> gaussian_imputer = GaussianImputer(model=model.predict, data=X_train, n_mc_samples=100)
+    >>> explainer = TabularExplainer(
+    ...     model=model, data=X_train, index="SII", max_order=2, imputer=gaussian_imputer
+    ... )
+    >>> explainer.explain(X_test[0], budget=2**X_train.shape[1])
+    InteractionValues(
+        index=SII, max_order=2, min_order=0, estimated=False, estimation_budget=256,
+        n_players=8, baseline_value=0.0,
+        Top 10 interactions:
+            (): 1.5283145711993955
+            (4, 7): 0.3442686728461907
+            (1, 6): 0.3318342718849081
+            # ... more interactions
+    )
 
 Contents
 --------
