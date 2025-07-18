@@ -147,7 +147,7 @@ def test_copula_imputation_single_feature_known(dummy_model) -> None:
     coalitions = np.array([[True, False, False]])
 
     imputer = GaussianCopulaImputer(
-        model=dummy_model, data=data, x=x_explain, n_mc_samples=1000, random_state=42
+        model=dummy_model, data=data, x=x_explain, sample_size=1000, random_state=42
     )
 
     imputed = imputer._impute(x_explain, coalitions)
@@ -174,7 +174,7 @@ def test_copula_imputer_value_function(dummy_model) -> None:
     coalitions = np.array([[True, False, False]])
 
     imputer = GaussianCopulaImputer(
-        model=dummy_model, data=data, x=x_explain, n_mc_samples=1000, random_state=42
+        model=dummy_model, data=data, x=x_explain, sample_size=1000, random_state=42
     )
     y_predicted = imputer.value_function(coalitions)
 

@@ -32,14 +32,14 @@ class GaussianCopulaImputer(GaussianImputerBase):
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
-        n_mc_samples: int = 1000,
+        sample_size: int = 1000,
         random_state: int | None = None,
     ) -> None:
         super().__init__(
             model=model,
             data=data,
             x=x,
-            n_mc_samples=n_mc_samples,
+            sample_size=sample_size,
             random_state=random_state,
         )
 
