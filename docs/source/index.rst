@@ -13,15 +13,46 @@ It adds the following functionalities:
 2. **Imputers:** Provides a *Gaussian* imputer for background data with normally distributed features, and its extension, the *Gaussian copula* imputer, suitable for arbitrary, non-normally distributed data
 3. **Coalition Finding:** Implements an efficient, heuristic algorithm for finding maximal and minimal coalitions for a (simplified) game
 
-The best way to get started is by following one of the :doc:`notebooks <notebooks>`, which provide a hands-on introduction to the usage of the library's modules while also explaining some of the theoretical concepts involved. Furthermore, an :doc:`API reference <api>` is provided.
+To get a short overview of the library's features, have a look at the :ref:`quick start <quick-start>` below.
+For a more in-depth tutorial, follow one of the :doc:`notebooks <notebooks>`. They provide a hands-on introduction to the usage of the library's modules while also explaining some of the theoretical concepts involved.
+Details about the library's interfaces can be found in the :doc:`API reference <api>`.
 
 .. warning::
     The ``Explainer``\ s implemented here rely on undocumented implementation details of ``scikit-learn`` for extracting training data from the model they explain.
     As a result, compatibility is not guaranteed across versions, and these implementations may break with future updates of ``scikit-learn``.
     The functionality has been tested and is confirmed to work only for ``scikit-learn==1.7.0``.
 
+.. _quick-start:
+
+Quick Start
+-----------
+
+Here's a short example showing how to explain the prediction of a weighted :math:`k`-nearest neighbors model:
+
+.. code-block:: python
+
+   >>> from sklearn.neighbors import KNeighborsClassifier
+   >>> from shapiq_student.explainer.knn import KNNExplainer, interaction_values_to_array
+   >>>
+   >>> X_train, X_test, y_train, y_test = ...  # Load some data set
+   >>> # Created a weighted classifier using `weights="distance"`
+   >>> model = KNeighborsClassifier(n_neighbors=7, weights="distance")
+   >>> model.fit(X_train, y_train)
+   >>>
+   >>> # Explain the prediction for class 0
+   >>> explainer = KNNExplainer(model, class_index=0)
+   >>> type(explainer)  # Explainer for weighted KNN models was selected automatically
+   <class 'shapiq_student.explainer.knn.weighted_knn.WeightedKNNExplainer'>
+   >>>
+   >>> iv = explainer.explain(X_test[0])
+   >>> sv = interaction_values_to_array(iv)  # Convert to array for easier handling
+   >>> sv
+   array([ 0.04347826, -0.00197628,  0.07894378, ... ])
+   >>> sv.shape[0] == X_train.shape[0]  # Every training data point is assigned a Shapley Value
+   True
+
 Contents
-~~~~~~~~
+--------
 
 .. toctree::
    :maxdepth: 2
