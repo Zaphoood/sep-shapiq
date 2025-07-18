@@ -18,7 +18,16 @@ from .base import GaussianImputerBase
 
 
 class GaussianCopulaImputer(GaussianImputerBase):
-    """Implements the Gaussian Copula approach for feature imputation in Shapley Value calculations."""
+    r"""Implements a Gaussian copula-based approach for imputation.
+
+    This method models feature dependence using a Gaussian copula, separating the modeling of marginal distributions
+    from their joint dependence structure. Each feature is first transformed to follow a standard normal distribution by
+    applying the empirical cumulative distribution function (CDF), followed by the standard normal quantile function.
+
+    Monte Carlo samples are then drawn from the conditional multivariate normal distribution in this transformed (Gaussian)
+    space, given the observed values in a coalition. These samples are finally transformed back to the original feature space
+    using the inverse of the empirical CDFs.
+    """
 
     QUANTILE_CLIP_EPSILON = 1e-10
     """Used for clipping values to the 'exclusive range' ``(0, 1)`` when evaluating a quantile function.
