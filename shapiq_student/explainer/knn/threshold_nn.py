@@ -1,4 +1,4 @@
-"""TKNN Classifier Explainer."""
+"""TNN Classifier Explainer."""
 
 from __future__ import annotations
 
