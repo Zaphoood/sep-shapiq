@@ -69,7 +69,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         empirical_cdf = np.clip(
             empirical_cdf, self.QUANTILE_CLIP_EPSILON, 1 - self.QUANTILE_CLIP_EPSILON
         )
-        transformed = norm.ppf(empirical_cdf)
+        transformed = cast("npt.NDArray[np.floating]", norm.ppf(empirical_cdf))
 
         return transformed
 
@@ -120,7 +120,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         x_empirical_cdf = np.clip(
             x_empirical_cdf, self.QUANTILE_CLIP_EPSILON, 1 - self.QUANTILE_CLIP_EPSILON
         )
-        x_transformed = norm.ppf(x_empirical_cdf)
+        x_transformed = cast("npt.NDArray[np.floating]", norm.ppf(x_empirical_cdf))
 
         return x_transformed
 
