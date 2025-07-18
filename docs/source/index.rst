@@ -24,6 +24,21 @@ Details about the library's interfaces can be found in the :doc:`API reference <
 
 .. _quick-start:
 
+Contents
+--------
+
+.. toctree::
+   :maxdepth: 2
+
+   Notebooks <notebooks>
+
+.. toctree::
+   :maxdepth: 2
+
+   api
+
+   citations
+
 Quick Start
 -----------
 
@@ -97,18 +112,3 @@ This example uses the ``GaussianImputer`` to explain the prediction of a random 
             (1, 6): 0.3318342718849081
             # ... more interactions
     )
-
-Contents
---------
-
-.. toctree::
-   :maxdepth: 2
-
-   Notebooks <notebooks>
-
-.. toctree::
-   :maxdepth: 2
-
-   api
-
-   citations
