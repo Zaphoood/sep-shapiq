@@ -34,6 +34,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
         *,
         sample_size: int = 1000,
         random_state: int | None = None,
+        verbose: bool = False,
     ) -> None:
         super().__init__(
             model=model,
@@ -41,6 +42,7 @@ class GaussianCopulaImputer(GaussianImputerBase):
             x=x,
             sample_size=sample_size,
             random_state=random_state,
+            verbose=verbose,
         )
 
         self._data_transformed = self._transform_to_gaussian(self.data)
