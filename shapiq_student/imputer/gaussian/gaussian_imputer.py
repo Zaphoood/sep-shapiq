@@ -124,10 +124,9 @@ class GaussianImputer(ConditionalImputer):
 
     @property
     def cov_mat(self) -> npt.NDArray[np.floating]:
-        """Compute the covariance matrix or return a cached value if already computed.
+        """The covariance matrix of the features.
 
-        Returns:
-            The covariance matrix of the data as an array.
+        This proprety is only computed once and then cached.
         """
         if self._cov_mat is None:
             self._cov_mat = self._ensure_positive_definite(np.cov(self.data.T))
