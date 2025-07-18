@@ -15,6 +15,11 @@ It adds the following functionalities:
 
 The best way to get started is by following one of the :doc:`notebooks <notebooks>`, which provide a hands-on introduction to the usage of the library's modules while also explaining some of the theoretical concepts involved. Furthermore, an :doc:`API reference <api>` is provided.
 
+.. warning::
+    The ``Explainer``\ s implemented here rely on undocumented implementation details of ``scikit-learn`` for extracting training data from the model they explain.
+    As a result, compatibility is not guaranteed across versions, and these implementations may break with future updates of ``scikit-learn``.
+    The functionality has been tested and is confirmed to work only for ``scikit-learn==1.7.0``.
+
 Contents
 ~~~~~~~~
 
