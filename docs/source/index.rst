@@ -30,17 +30,14 @@ Quick Start
 Explainers
 ~~~~~~~~~~
 
-Here's a short example showing how to explain the prediction of a weighted :math:`k`-nearest neighbors model:
-
-..
-    TODO: Make sure all code blocks are ready to be copied and executed (don't contain any '...' in the instructions etc.)
+Here's a short example showing how to use `KNNExplainer` to explain the prediction of a weighted `KNeighborsClassifier`:
 
 .. code-block:: python
 
-    >>> from sklearn.neighbors import KNeighborsClassifier
     >>> from sklearn.datasets import make_classification
-    >>> from shapiq_student.explainer.knn import KNNExplainer, interaction_values_to_array
     >>> from sklearn.model_selection import train_test_split
+    >>> from sklearn.neighbors import KNeighborsClassifier
+    >>> from shapiq_student.explainer.knn import KNNExplainer, interaction_values_to_array
     >>>
     >>> X, y = make_classification(n_samples=40)
     >>> X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
