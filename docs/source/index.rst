@@ -112,3 +112,5 @@ This example uses the ``GaussianImputer`` to explain the prediction of a random 
             (1, 6): 0.3318342718849081
             # ... more interactions
     )
+
+*(The outputs in the examples above have been truncated for readability.)*
