@@ -175,16 +175,6 @@ def _make_legend_handles(
     return handles
 
 
-def _axis_lims_center_origin(
-    points: npt.NDArray[np.floating], padding_percent: float = 0.2
-) -> tuple[tuple[int, int], tuple[int, int]]:
-    """Calculate the x and y limits such that the plot is square and centered around the origin."""
-    max_extent = np.abs(points).max()
-    limits = max_extent * (1 + padding_percent)
-
-    return (-limits, limits), (-limits, limits)
-
-
 def _axis_lims_center_mean(
     points: npt.NDArray[np.floating], padding_percent: float = 0.2
 ) -> tuple[tuple[int, int], tuple[int, int]]:
