@@ -1,4 +1,4 @@
-"""Implements the Gaussian copula approach for imputation."""
+"""Implements the Gaussian copula-based approach for imputation."""
 
 from __future__ import annotations
 
