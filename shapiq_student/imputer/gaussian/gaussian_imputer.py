@@ -1,9 +1,4 @@
-"""Gaussian approach for imputation in Shapley Value calculations.
-
-This module implements a Gaussian-based approach for generating samples in Shapley Value
-calculations. It uses multivariate normal distribution for sampling and handles
-continuous features only.
-"""
+"""Implements the Gaussian-based approach for imputation."""
 
 from __future__ import annotations
 
@@ -38,7 +33,7 @@ MAX_UNIQUE_VALUES_FOR_CATEGORICAL = 2
 
 
 class GaussianImputer(ConditionalImputer):
-    r"""Implements a Gaussian-based approach for imputation.
+    r"""Implements the Gaussian-based approach for imputation.
 
     This approach assumes that the features of the background data form a multivariate Gaussian distribution.
     The missing values are imputed by drawing Monte Carlo samples from the conditional distribution given the values of the features present in a coalition.

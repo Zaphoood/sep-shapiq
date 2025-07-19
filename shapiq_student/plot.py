@@ -31,9 +31,9 @@ def plot_points_shapley_2d(  # noqa: C901
     show_max: bool = False,
     min_size: float = 1,
 ) -> None:
-    """Plot a Shapley Values for a 2D training data set using matplotlib.
+    """Plot a Shapley values for a 2D training data set using matplotlib.
 
-    This function visualizes training data points with their associated Shapley Values, and optionally a test data point.
+    This function visualizes training data points with their associated Shapley values, and optionally a test data point.
     Each training point is shown with a marker size proportional to its absolute Shapley
     value. Positive values are shown as a filled circle and non-positve values as an emtpy circle.
 
@@ -50,7 +50,7 @@ def plot_points_shapley_2d(  # noqa: C901
         max_abs: Allows orverriding the maximum value used for scaling the marker sizes. Defaults to ``np.max(np.abs(shapley_values))``.
         show_max: Draw a black ring around each marker, representing the maximum absolute value.
         min_size: The minimum size of the scaled markers. It's recommended to set this to a small positive value
-            to prevent the smallest Shapley Values from becoming zero-size dots. Defaults to ``1``.
+            to prevent the smallest Shapley values from becoming zero-size dots. Defaults to ``1``.
 
     Raises:
         ValueError: If all Shapley values are zero.

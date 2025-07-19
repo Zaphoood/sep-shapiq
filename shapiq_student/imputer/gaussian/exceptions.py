@@ -15,7 +15,7 @@ class CategoricalFeatureError(ValueError):
         feature_names = [f"f{i + 1}" for i in feature_indices]
         message = (
             f"The following are categorical features: {', '.join(feature_names)}. "
-            "Gaussian approach does not support categorical features."
+            "Gaussian imputation does not support categorical features."
         )
         super().__init__(message)
         self.feature_indices = feature_indices

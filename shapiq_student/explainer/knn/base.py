@@ -23,8 +23,8 @@ class KNNExplainer(Explainer):
 
     Based on the model passed to the constructor, the class automatically detects between
     :class:`~shapiq_student.explainer.knn.NormalKNNExplainer` and
-    :class:`~shapiq_student.explainer.knn.WeightedKNNExplainer` for (weighted) k-nearest neighbor models,
-    as well as :class:`~shapiq_student.explainer.knn.ThresholdNNExplainer` for thresholded nearest neighbor models.
+    :class:`~shapiq_student.explainer.knn.WeightedKNNExplainer` for (weighted) :math:`k`-nearest neighbor models,
+    as well as :class:`~shapiq_student.explainer.knn.ThresholdNNExplainer` for threshold nearest neighbor models.
 
     For a detailed description of the different explainers, see the respective classes.
     """
@@ -130,13 +130,13 @@ def get_explainer_class(
 def interaction_values_from_array(
     shapley_values: npt.NDArray[np.floating],
 ) -> InteractionValues:
-    """Convert an array of Shapley Values to a ``shapiq.interaction_values.InteractionValues`` object.
+    """Convert an array of Shapley values to a ``shapiq.interaction_values.InteractionValues`` object.
 
     Args:
-        shapley_values: An ``np.ndarray`` containing the Shapley Value of the ith training point at index i.
+        shapley_values: An ``np.ndarray`` containing the Shapley value of the ith training point at index i.
 
     Returns:
-        An ``InteractionValues`` object containing the provided Shapley Values with an appropriate ``interaction_lookup`` dict and with ``min_order == max_order == 1`` set.
+        An ``InteractionValues`` object containing the provided Shapley values with an appropriate ``interaction_lookup`` dict and with ``min_order == max_order == 1`` set.
     """
     n_players = shapley_values.shape[0]
     interaction_lookup: dict[tuple[int, ...], int] = {(i,): i for i in range(n_players)}
@@ -155,7 +155,7 @@ def interaction_values_from_array(
 def interaction_values_to_array(
     interaction_values: InteractionValues,
 ) -> npt.NDArray[np.floating]:
-    """Extract an array of Shapley Values from a ``shapiq.interaction_values.InteractionValues`` object.
+    """Extract an array of Shapley values from a ``shapiq.interaction_values.InteractionValues`` object.
 
     Args:
         interaction_values: An InteractionValues object with ``max_order==1``
