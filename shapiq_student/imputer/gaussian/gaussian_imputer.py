@@ -1,9 +1,4 @@
-"""Gaussian approach for imputation in Shapley Value calculations.
-
-This module implements a Gaussian-based approach for generating samples in Shapley Value
-calculations. It uses multivariate normal distribution for sampling and handles
-continuous features only.
-"""
+"""Implements the Gaussian approach for imputation."""
 
 from __future__ import annotations
 

@@ -22,7 +22,7 @@ MODE_NORMAL = "normal"
 
 
 class _BruteForceNormalKNNExplainer(_CommonKNNExplainer):
-    """Brute force approach to computing Shapley Values for normal (unweighted) KNN models."""
+    """Brute force approach to computing Shapley values for normal (unweighted) KNN models."""
 
     @override
     def __init__(
@@ -64,7 +64,7 @@ class _BruteForceNormalKNNExplainer(_CommonKNNExplainer):
 class NormalKNNExplainer(_CommonKNNExplainer):
     r"""Explainer for unweighted KNN models.
 
-    Implements the algorithm proposed by `Jia et al. (2019)` [Jia19]_ to efficiently calculate Shapley Values for unweighted KNN models.
+    Implements the algorithm proposed by `Jia et al. (2019)` [Jia19]_ to efficiently calculate Shapley values for unweighted KNN models.
     The algorithm itself has a linear time complexity, but expects a sorted array of training points as input, resulting in a time complexity of :math:`O(N \log N)` for explaining a single data point.
     """
 

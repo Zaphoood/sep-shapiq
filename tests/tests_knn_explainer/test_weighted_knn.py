@@ -253,7 +253,7 @@ class TestWKNNSanity:
             WeightedKNNExplainer(model, class_index=0)
 
     def test_single_class(self):
-        """Tests that if the training data only consists of a single class, all Shapley Values are zero."""
+        """Tests that if the training data only consists of a single class, all Shapley values are zero."""
         n = 10
         rng = np.random.default_rng(seed=42)
         X_train = rng.normal(size=(n, 2))

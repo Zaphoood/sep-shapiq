@@ -1,4 +1,4 @@
-"""Copula's approach for imputation in Shapley Value calculations."""
+"""Implements the Gaussian copula approach for imputation."""
 
 from __future__ import annotations
 
