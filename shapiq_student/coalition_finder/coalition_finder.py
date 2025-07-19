@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -97,21 +97,26 @@ def coalition_finding_best_individuals(
     if max_size == 0:
         min_coal = ()
         max_coal = ()
+        min_val = cast(
+            "np.floating",
+            interaction_values.values[interaction_values.interaction_lookup[()]],
+        )
+        max_val = min_val
     else:
         player_scores = distribute_payoffs(interaction_values)
         # Sorts player indices by their scores
         players_sorted = np.argsort(player_scores)
 
-        min_coal = tuple(sorted(players_sorted[:max_size]))
-        max_coal = tuple(sorted(players_sorted[-max_size:]))
-
-    min_val = compute_simplified_game_utility(min_coal, interaction_values)
-    max_val = compute_simplified_game_utility(max_coal, interaction_values)
+        min_coal = sorted(players_sorted[:max_size])
+        max_coal = sorted(players_sorted[-max_size:])
+        # Return estimates of coalition utilities, not their real utility
+        min_val = np.sum(player_scores[min_coal])
+        max_val = np.sum(player_scores[max_coal])
 
     return min_max_coals_to_interaction_values(
-        min_coal,
+        tuple(min_coal),
         min_val,
-        max_coal,
+        tuple(max_coal),
         max_val,
         index=interaction_values.index,
         n_players=interaction_values.n_players,
@@ -145,9 +150,9 @@ def distribute_payoffs(interaction_values: InteractionValues) -> npt.NDArray[np.
 
 def min_max_coals_to_interaction_values(
     min_coal: tuple[int, ...],
-    min_val: float,
+    min_val: np.floating,
     max_coal: tuple[int, ...],
-    max_val: float,
+    max_val: np.floating,
     index: str,
     n_players: int,
 ) -> InteractionValues:
