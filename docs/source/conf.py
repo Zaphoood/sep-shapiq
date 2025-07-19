@@ -37,6 +37,7 @@ extensions = [
     "sphinx.ext.napoleon",  # Enable parsing of Google-style docstrings
     # Note: This requires 'pandoc' to be installed on the system
     "nbsphinx",  # Include Jupyter Notebooks
+    "sphinx_copybutton",
 ]
 
 templates_path = ["_templates"]
@@ -48,9 +49,15 @@ autodoc_default_options = {
     "members": True,  # Generate documentation for module members
     "special-members": "__init__",  # Also generate docs for __init__ methods
     "inherited-members": False,  # Exclude inherited members from documentation
+    "show-inheritance": True,  # Lists bases in class documention
 }
 autodoc_member_order = "bysource"
 autoclass_content = "class"  # Use the class docstring, not the docstring of its __init__ method
+
+# -- Copybutton
+
+# Exclude prompts (.gp) and outputs (.go) when copying code blocks
+copybutton_exclude = ".gp, .go"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
