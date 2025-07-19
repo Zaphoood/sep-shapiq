@@ -131,7 +131,7 @@ class ThresholdNNExplainer(KNNExplainer):
 
         # For entire dataset D
         c_D = n_train
-        c_x_tau_D = 1 + np.sum(in_neighborhood)
+        c_x_tau_D = 1 + len(neighbor_indices)
         c_plus_z_tau_D = np.sum(in_neighborhood & y_train_is_class_index)
 
         # For each training point z_i
