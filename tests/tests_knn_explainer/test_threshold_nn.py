@@ -110,7 +110,7 @@ class TestThresholdNNExplainer:
 
         Not all Shapley values should be zero.
 
-        Result should be -0.5. Reference: Formula (7) in Wang et al. arXiv:2308.15709v2.
+        Result should be -0.5. Reference: Formula (7) in Wang et al.
         """
         X_train = np.array([[1, 1, 1], [11, 11, 11]])
         y_train = np.array([0, 1])
