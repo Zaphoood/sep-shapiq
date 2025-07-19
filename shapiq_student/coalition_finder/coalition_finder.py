@@ -240,3 +240,27 @@ def subset_finding(
         raise ValueError(msg)
 
     return subset_finding_fn(interaction_values, max_size)
+
+
+def get_min_max_from_interaction_values(
+    iv: InteractionValues,
+) -> tuple[tuple[tuple[int, ...], float], tuple[tuple[int, ...], float]]:
+    """Given an InteractionValues object containing two coalitions, return a tuple with both coalitions as ``((min_coal, min_val), (max_coal, max_val))``."""
+    expected_number_of_coalitions = [1, 2]
+    n_coals = len(iv.interaction_lookup)
+    if n_coals not in expected_number_of_coalitions:
+        msg = f"Number of coalitions in InteractionValues must be one of: {', '.join(map(str, expected_number_of_coalitions))} coalitions but got {n_coals}"
+        raise ValueError(msg)
+
+    if n_coals == 1:
+        (coal, coal_idx) = next(iter(iv.interaction_lookup.items()))
+        coal_value = cast("float", iv.values[coal_idx])
+        return (coal, coal_value), (coal, coal_value)
+
+    (coal1, coal1_idx), (coal2, coal2_idx) = list(iv.interaction_lookup.items())
+    coal1_value = iv.values[coal1_idx]
+    coal2_value = iv.values[coal2_idx]
+
+    if coal2_value > coal1_value:
+        return (coal1, coal1_value), (coal2, coal2_value)
+    return (coal2, coal2_value), (coal1, coal1_value)
