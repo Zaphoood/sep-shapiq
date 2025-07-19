@@ -22,8 +22,6 @@ Details about the library's interfaces can be found in the :doc:`API reference <
     As a result, compatibility is not guaranteed across versions, and these implementations may break with future updates of ``scikit-learn``.
     The functionality has been tested and is confirmed to work only for ``scikit-learn==1.7.0``.
 
-.. _quick-start:
-
 Contents
 --------
 
@@ -38,6 +36,8 @@ Contents
    api
 
    citations
+
+.. _quick-start:
 
 Quick Start
 -----------
