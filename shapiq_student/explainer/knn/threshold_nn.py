@@ -136,8 +136,8 @@ class ThresholdNNExplainer(KNNExplainer):
 
         # For each training point z_i
         c = c_D - 1
-        c_x_tau = c_x_tau_D - in_neighborhood
-        c_plus_z_tau = c_plus_z_tau_D - (in_neighborhood & y_train_is_class_index)
+        c_x_tau = c_x_tau_D - in_neighborhood.astype(int)
+        c_plus_z_tau = c_plus_z_tau_D - (in_neighborhood & y_train_is_class_index).astype(int)
 
         a1 = np.zeros((n_train,), dtype=np.float64)
         mask = in_neighborhood & (c_x_tau >= 2)  # noqa: PLR2004
