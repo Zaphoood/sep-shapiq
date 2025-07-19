@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -15,7 +16,7 @@ from pathlib import Path
 from shapiq import ExactComputer, InteractionValues
 from shapiq.games.benchmark import SOUM
 
-from shapiq_student.coalition_finder.benchmark import benchmark
+from shapiq_student.coalition_finder.benchmark import benchmark, score_single_game
 
 
 def random_ivs_from_soums(
@@ -33,20 +34,16 @@ def random_ivs_from_soums(
         random_state += 1
 
 
-def benchmark_soums() -> None:
+def benchmark_soums(strategies: list[SubsetFindingStrategy], n_games: int = 30) -> None:
     """Benchmarks the coalition finding algorithm using Sum of Unanimity Games."""
-    n_games = 30
     n_players = 10
+    n_basis_games = 50
     coal_size = 4
     random_state = 42
     print(f"{n_games=}")
     print(f"{coal_size=}")
     print(f"{random_state=}")
 
-    strategies: list[SubsetFindingStrategy] = [
-        "solos",
-        "equal_payoff",
-    ]
     for strategy in strategies:
         print(f"\n==== {strategy=} ====")
         for explanation_order in range(1, 6):
@@ -57,7 +54,7 @@ def benchmark_soums() -> None:
                 ivs=random_ivs_from_soums(
                     n_games=n_games,
                     n_players=n_players,
-                    n_basis_games=50,
+                    n_basis_games=n_basis_games,
                     explanation_order=explanation_order,
                     random_state=random_state,
                 ),
@@ -108,9 +105,20 @@ def benchmark_precompute() -> None:
             print(f"score (max coal): {max_score:.3f}")
 
 
+def single_soum(strategy: SubsetFindingStrategy) -> None:
+    """Runs the given strategy on a single randomly generated SOUM game."""
+    logging.basicConfig(level=logging.DEBUG)
+    iv = next(
+        random_ivs_from_soums(
+            n_games=1, n_players=10, n_basis_games=50, explanation_order=3, random_state=42
+        )
+    )
+    score_single_game(iv, strategy=strategy, coal_size=4)
+
+
 def main() -> None:
     """The main entry point of the script."""
-    benchmark_soums()
+    benchmark_soums(strategies=["greedy"])
 
 
 if __name__ == "__main__":

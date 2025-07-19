@@ -10,6 +10,7 @@ import numpy as np
 from shapiq.interaction_values import InteractionValues
 
 from .strategies.equal_payoff import coalition_finding as coalition_finding_equal_payoff
+from .strategies.greedy import coalition_finding as coalition_finding_greedy
 from .strategies.solos import coalition_finding as coalition_finding_solos
 from .util import min_max_coals_to_interaction_values
 
@@ -106,12 +107,13 @@ def compute_simplified_game_utility(
     return total
 
 
-SubsetFindingStrategy = Literal["exhaustive_search", "equal_payoff", "solos"]
+SubsetFindingStrategy = Literal["exhaustive_search", "equal_payoff", "solos", "greedy"]
 SubsetFindingFunction = Callable[[InteractionValues, int], InteractionValues]
 SUBSET_FINDING_STRATEGIES: dict[SubsetFindingStrategy, SubsetFindingFunction] = {
     "exhaustive_search": coalition_finding_exhaustive_search,
     "equal_payoff": coalition_finding_equal_payoff,
     "solos": coalition_finding_solos,
+    "greedy": coalition_finding_greedy,
 }
 
 
