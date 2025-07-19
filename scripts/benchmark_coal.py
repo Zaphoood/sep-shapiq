@@ -45,7 +45,7 @@ def benchmark_soums() -> None:
     for explanation_order in range(1, 6):
         print(f"{explanation_order=}")
         avg_min_score, avg_max_score = benchmark(
-            strategy="best_individuals",
+            strategy="equal_payoff",
             coal_size=coal_size,
             ivs=random_ivs_from_soums(
                 n_games=n_games,
@@ -93,7 +93,7 @@ def benchmark_precompute() -> None:
             print(f"n_players: {iv.n_players}")
 
             min_score, max_score = benchmark(
-                strategy="best_individuals",
+                strategy="equal_payoff",
                 coal_size=coal_size,
                 ivs=[iv],
             )

@@ -78,7 +78,7 @@ def coalition_finding_exhaustive_search(
     )
 
 
-def coalition_finding_best_individuals(
+def coalition_finding_equal_payoff(
     interaction_values: InteractionValues,
     max_size: int,
 ) -> InteractionValues:
@@ -208,25 +208,25 @@ def compute_simplified_game_utility(
     return total
 
 
-SubsetFindingStrategy = Literal["exhaustive_search", "best_individuals"]
+SubsetFindingStrategy = Literal["exhaustive_search", "equal_payoff"]
 SubsetFindingFunction = Callable[[InteractionValues, int], InteractionValues]
 SUBSET_FINDING_STRATEGIES: dict[SubsetFindingStrategy, SubsetFindingFunction] = {
     "exhaustive_search": coalition_finding_exhaustive_search,
-    "best_individuals": coalition_finding_best_individuals,
+    "equal_payoff": coalition_finding_equal_payoff,
 }
 
 
 def subset_finding(
     interaction_values: InteractionValues,
     max_size: int,
-    strategy: SubsetFindingStrategy = "best_individuals",
+    strategy: SubsetFindingStrategy = "equal_payoff",
 ) -> InteractionValues:
     r"""Tries to find the maximizing and minimizing coalitions with size ``max_size`` for the given simplified game.
 
     Args:
         interaction_values: The interaction values from which the simplified game :math:`\hat v_e` is constructed.
         max_size: The size of the resulting maximizing and minimizing coalitions.
-        strategy: The strategy to use for finding the coalitions. Defaults to 'best_individuals'.
+        strategy: The strategy to use for finding the coalitions. Defaults to 'equal_payoff'.
 
     Returns:
         An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
