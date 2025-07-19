@@ -35,7 +35,7 @@ Contents
 
    api
 
-   citations
+   references
 
 .. _quick-start:
 
