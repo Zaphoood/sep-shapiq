@@ -10,6 +10,7 @@ from scipy.special import comb
 
 from .coalition_finder import (
     SubsetFindingStrategy,
+    compute_simplified_game_utility,
     evaluate_all_coalitions,
     get_min_max_from_interaction_values,
     subset_finding,
@@ -18,7 +19,6 @@ from .coalition_finder import (
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    import numpy.typing as npt
     from shapiq import InteractionValues
 
 
@@ -26,7 +26,7 @@ def score_single_game(
     interaction_values: InteractionValues,
     strategy: SubsetFindingStrategy,
     coal_size: int,
-) -> tuple[npt.NDArray[np.floating], int, int]:
+) -> tuple[int, int, int]:
     r"""Evaluates a subset finding strategy on a single game by calculating the ranks of the estimated minimal and maximal coalitions among all coalitions of the given size.
 
     Args:
@@ -35,30 +35,22 @@ def score_single_game(
         coal_size: The size of the resulting maximizing and minimizing coalitions.
 
     Returns:
-        A tuple ``(utilities, min_rank, max_rank)``, where ``utilities`` is an array containing the utilites of all
-        coalitions of size ``coal_size``, and ``min_rank`` and ``max_rank`` are the ranks of the estimated minimal and maximal coalitions respectively.
+        A tuple ``(n_coalitions, min_rank, max_rank)``, where ``n_coalitions`` is the number of all coalitions of size ``coal_size``,
+        and ``min_rank`` and ``max_rank`` are the ranks of the estimated minimal and maximal coalitions respectively.
     """
     estimate = subset_finding(interaction_values, max_size=coal_size, strategy=strategy)
     (min_coal, min_val_est), (max_coal, max_val_est) = get_min_max_from_interaction_values(estimate)
 
     n_coalitions = comb(interaction_values.n_players, coal_size, exact=True)
-    all_utilities = np.zeros(n_coalitions)
 
-    min_val_actual: float | None = None
-    max_val_actual: float | None = None
+    min_val_actual: float = compute_simplified_game_utility(min_coal, interaction_values)
+    max_val_actual: float = compute_simplified_game_utility(max_coal, interaction_values)
 
-    for i, (coalition, utility) in enumerate(
-        evaluate_all_coalitions(interaction_values, max_size=coal_size)
-    ):
-        all_utilities[i] = utility
-        if coalition == min_coal:
-            min_val_actual = utility
-        if coalition == max_coal:
-            max_val_actual = utility
-
-    if min_val_actual is None or max_val_actual is None:
-        msg = f"Unreachable: {min_val_actual=}, {max_val_actual=}"
-        raise RuntimeError(msg)
+    min_rank = 0
+    max_rank = 0
+    for _, utility in evaluate_all_coalitions(interaction_values, max_size=coal_size):
+        min_rank += utility <= min_val_actual
+        max_rank += utility <= max_val_actual
 
     logging.debug(
         "min coal %s, estimated %f, actual %f", str(min_coal), min_val_est, min_val_actual
@@ -67,10 +59,7 @@ def score_single_game(
         "max coal %s, estimated %f, actual %f", str(max_coal), max_val_est, max_val_actual
     )
 
-    min_rank = int(np.sum(all_utilities <= min_val_actual))
-    max_rank = int(np.sum(all_utilities <= max_val_actual))
-
-    return all_utilities, min_rank, max_rank
+    return n_coalitions, min_rank, max_rank
 
 
 def benchmark(
@@ -101,10 +90,7 @@ def benchmark(
     min_scores = []
     max_scores = []
     for iv in ivs:
-        utilities, min_rank, max_rank = score_single_game(
-            iv, strategy=strategy, coal_size=coal_size
-        )
-        n_total = utilities.shape[0]
+        n_total, min_rank, max_rank = score_single_game(iv, strategy=strategy, coal_size=coal_size)
 
         min_score = (n_total - min_rank) / (n_total - 1)
         max_score = (max_rank - 1) / (n_total - 1)
