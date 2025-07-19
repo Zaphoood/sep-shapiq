@@ -119,7 +119,7 @@ class ThresholdNNExplainer(KNNExplainer):
         # Following Theorem 17 and equation (7) (Wang et. al (2023) DOI: 2308.15709v2)
         # Counting queries defined in C2.2 (by Wang et. al (2023) DOI: 2308.15709v2)
         n_train = self.X_train.shape[0]
-        n_classes = len(self.y_train_indices)
+        n_classes = self.y_train_indices.shape[0]
 
         neighbor_indices = self._model.radius_neighbors(x.reshape(1, -1), return_distance=False)
         neighbor_indices = neighbor_indices[0]
