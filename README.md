@@ -21,4 +21,4 @@ This project is licensed under the [MIT License](https://github.com/mmschlk/shap
 
 ---
 
-Built with ❤️ by the shapiq_student team.
+Built with 🧌 by the shapiq_student team.
