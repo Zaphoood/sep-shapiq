@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.special import comb
-from shapiq import ExactComputer, Game, InteractionValues
 
 from .coalition_finder import (
     SubsetFindingStrategy,
@@ -20,6 +19,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     import numpy.typing as npt
+    from shapiq import InteractionValues
 
 
 def score_single_game(
@@ -75,13 +75,12 @@ def score_single_game(
 
 def benchmark(
     strategy: SubsetFindingStrategy,
-    games: Iterable[Game],
-    explanation_order: int,
+    ivs: Iterable[InteractionValues],
     coal_size: int,
 ) -> tuple[np.floating, np.floating]:
     """Evalutes the performance of a coalition finding strategy.
 
-    This is achieved by executing the coalition finding algorithm on a given set of games and ranking the estimated
+    This is achieved by executing the coalition finding algorithm on a given set of simplified games and ranking the estimated
     minimal and maximal coalitions among all coalitions of the same size, which are evaluated via brute force search.
 
     For each game, the estimated maximal coalition is assigned a score according to the rank of its utility among all
@@ -91,7 +90,7 @@ def benchmark(
 
     Args:
         strategy: The coalition finding strategy to evaluate.
-        games: An iterable of ``Game``s to use for evaluation.
+        ivs: An iterable of ``InteractionValues``s to use as simplified games for evaluation.
         explanation_order: The maximum order of the explanation from which the simplified game is constructed.
         coal_size: The size of the desired estimated minimal and maximal coalitions.
 
@@ -101,14 +100,9 @@ def benchmark(
     """
     min_scores = []
     max_scores = []
-    for game in games:
-        computer = ExactComputer(n_players=game.n_players, game=game)
-        interaction_values = computer(index="FSII", order=explanation_order)
-
+    for iv in ivs:
         utilities, min_rank, max_rank = score_single_game(
-            interaction_values,
-            strategy=strategy,
-            coal_size=coal_size,
+            iv, strategy=strategy, coal_size=coal_size
         )
         n_total = utilities.shape[0]
 

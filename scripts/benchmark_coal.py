@@ -6,20 +6,24 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+from shapiq import ExactComputer, InteractionValues
 from shapiq.games.benchmark import SOUM
 
 from shapiq_student.coalition_finder.benchmark import benchmark
 
 
-def generate_random_soums(
+def random_ivs_from_soums(
     n_games: int,
     n_players: int,
     n_basis_games: int,
+    explanation_order: int,
     random_state: int,
-) -> Iterator[SOUM]:
-    """Creates an iterator over randomly generated Sum of Unanimity Games (SOUMs)."""
+) -> Iterator[InteractionValues]:
+    """Creates an iterator over simplifed games generated from explanations of random Sum of Unanimity Games (SOUMs)."""
     for _ in range(n_games):
-        yield SOUM(n=n_players, n_basis_games=n_basis_games, random_state=random_state)
+        game = SOUM(n=n_players, n_basis_games=n_basis_games, random_state=random_state)
+        computer = ExactComputer(n_players=game.n_players, game=game)
+        yield computer(index="FSII", order=explanation_order)
         random_state += 1
 
 
@@ -39,10 +43,13 @@ def main() -> None:
         avg_min_score, avg_max_score = benchmark(
             strategy="best_individuals",
             coal_size=coal_size,
-            games=generate_random_soums(
-                n_games=n_games, n_players=n_players, n_basis_games=50, random_state=random_state
+            ivs=random_ivs_from_soums(
+                n_games=n_games,
+                n_players=n_players,
+                n_basis_games=50,
+                explanation_order=explanation_order,
+                random_state=random_state,
             ),
-            explanation_order=explanation_order,
         )
         print(f"avg score (min coal): {avg_min_score:.3f}")
         print(f"avg score (max coal): {avg_max_score:.3f}")
