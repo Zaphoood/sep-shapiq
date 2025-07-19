@@ -199,7 +199,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     The algorithm achieves a runtime complexity of :math:`O\bigl(\frac{k^2 N^2 W}{C}\bigr)`, where
 
     * :math:`k` is the defining hyperparameter of the :math:`k`-nearest neighbors model,
-    * :math:`N` is size of the training dataset,
+    * :math:`N` is the size of the training dataset,
     * :math:`W = 2^b` (where :math:`b` is the number of discretization bits) is the size of the *discretized weights space*,
     * :math:`C` is the number of classes of the training dataset.
 
