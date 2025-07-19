@@ -10,9 +10,9 @@ from shapiq.interaction_values import InteractionValues
 
 def min_max_coals_to_interaction_values(
     min_coal: tuple[int, ...],
-    min_val: np.floating,
+    min_val: float | np.floating,
     max_coal: tuple[int, ...],
-    max_val: np.floating,
+    max_val: float | np.floating,
     index: str,
     n_players: int,
 ) -> InteractionValues:
