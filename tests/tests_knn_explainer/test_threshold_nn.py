@@ -31,7 +31,7 @@ class TestThresholdNNExplainer:
         tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
 
         assert np.allclose(tnn_explainer.X_train, X_train)
-        assert np.allclose(tnn_explainer.y_train, y_train)
+        assert np.allclose(tnn_explainer.y_train_classes[tnn_explainer.y_train_indices], y_train)
         assert tnn_explainer.tau == tau
         assert set(tnn_explainer.y_train_classes) == set(y_train)
         assert tnn_explainer.class_index == class_index

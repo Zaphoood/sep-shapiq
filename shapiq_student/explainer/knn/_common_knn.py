@@ -57,7 +57,7 @@ class _CommonKNNExplainer(KNNExplainer):
         # The type of the superclass's `model` attribute is to broad, since it also allows for other KNN explainers
         # To circumvent this, we store the model separately in an attribute with a narrower type
         self.knn_model = model
-        self.k = self.knn_model.n_neighbors  # type: ignore[attr-defined]
+        self.k: int = self.knn_model.n_neighbors  # type: ignore[attr-defined]
 
 
 def get_knn_explainer_class(

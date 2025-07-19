@@ -42,12 +42,6 @@ class KNNExplainer(Explainer):
     y_train_classes: npt.NDArray[np.object_]
     """Classes that appear in the model's training data."""
 
-    y_train: npt.NDArray[np.object_]
-    """Training data labels extracted from the model. This array simply resolves the indirection of looking up class indices from ``y_train_indices`` in ``y_train_classes``."""
-
-    k: int
-    """The parameter ``k`` of the k-nearest neighbors model."""
-
     def __init__(
         self,
         model: KNeighborsClassifier | RadiusNeighborsClassifier,
@@ -103,7 +97,6 @@ class KNNExplainer(Explainer):
         if self.y_train_indices.ndim != 1:
             raise MultiOutputKNNError
         self.y_train_classes = cast("npt.NDArray[np.object_]", model.classes_)
-        self.y_train = self.y_train_classes[self.y_train_indices]
 
         # This is highly sketchy. We are relying on `shapiq` to handle `class_index == None` analogously, but there is no way to check, since they don't set `class_index` as an attribute of `shapiq.Explainer`
         if class_index is None:
