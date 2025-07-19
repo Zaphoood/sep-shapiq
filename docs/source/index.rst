@@ -68,7 +68,7 @@ Here's a short example showing how to use ``KNNExplainer`` to explain the predic
     >>> sv = interaction_values_to_array(iv)  # Convert to array for easier handling
     >>> sv
     array([ 0.06971687,  0.03333333,  0.09914777, ... ])
-    >>> sv.shape[0] == X_train.shape[0]  # Every training data point is assigned a Shapley Value
+    >>> sv.shape[0] == X_train.shape[0]  # Every training data point is assigned a Shapley value
     True
 
 Imputers
