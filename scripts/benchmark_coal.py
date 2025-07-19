@@ -26,8 +26,11 @@ def generate_random_soums(
 def main() -> None:
     """The main entry point of the script."""
     n_games = 10
+    n_players = 10
+    coal_size = 4
     random_state = 42
     print(f"{n_games=}")
+    print(f"{coal_size=}")
     print(f"{random_state=}")
     print()
 
@@ -35,9 +38,9 @@ def main() -> None:
         print(f"{explanation_order=}")
         avg_min_score, avg_max_score = benchmark(
             strategy="best_individuals",
-            coal_size=2,
+            coal_size=coal_size,
             games=generate_random_soums(
-                n_games=n_games, n_players=10, n_basis_games=50, random_state=random_state
+                n_games=n_games, n_players=n_players, n_basis_games=50, random_state=random_state
             ),
             explanation_order=explanation_order,
         )
