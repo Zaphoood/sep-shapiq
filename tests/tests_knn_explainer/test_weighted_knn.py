@@ -60,14 +60,24 @@ def random_test_datasets(
 ) -> Iterator[tuple[Dataset, int]]:
     """Randomly generates binary datasets for testing."""
     for _ in range(n_test_cases):
-        n_test_cases = int(rng.integers(n_train_min, n_train_max, endpoint=True))
-        X_train = rng.normal(size=(n_test_cases, 2))
-        y_train = rng.integers(0, n_classes, size=n_test_cases)
-        x_val = rng.normal(size=(1, 2))[0]
-
+        n_train = int(rng.integers(n_train_min, n_train_max, endpoint=True))
+        dataset = random_test_dataset(rng, n_train, n_classes)
         k = int(rng.integers(k_min, k_max, endpoint=True))
 
-        yield Dataset(X_train=X_train, y_train=y_train, x_val=x_val), k
+        yield dataset, k
+
+
+def random_test_dataset(
+    rng: np.random.Generator,
+    n_train: int,
+    n_classes: int = 2,
+) -> Dataset:
+    """Randomly generates single binary dataset for testing."""
+    X_train = rng.normal(size=(n_train, 2))
+    y_train = rng.integers(0, n_classes, size=n_train)
+    x_val = rng.normal(size=(1, 2))[0]
+
+    return Dataset(X_train=X_train, y_train=y_train, x_val=x_val)
 
 
 class TestWKNNValues:
@@ -179,6 +189,29 @@ class TestWKNNValues:
         model.fit(test_case.X_train, test_case.y_train)
         return model
 
+    def test_satisfies_efficiency(self):
+        """Tests that the explanation satisfies the efficiency property.
+
+        This means that the sum of all Shapley values is equal to the utility of the grand coalition.
+        """
+        for seed in range(10):
+            rng = np.random.default_rng(seed=seed)
+            dataset = random_test_dataset(rng, n_train=12, n_classes=2)
+            model = KNeighborsClassifier(n_neighbors=5, weights="distance")
+            model.fit(dataset.X_train, dataset.y_train)
+
+            for class_index in range(2):
+                explainer = WeightedKNNExplainer(model, class_index=class_index, n_bits=8)
+                sv = interaction_values_to_array(explainer.explain(dataset.x_val))
+                sv_sum = np.sum(sv)
+
+                _, weights_discrete = explainer._get_prepared_weights(dataset.x_val)
+                weights = explainer._undiscretize_weight(weights_discrete)
+                grand_coal_weights = np.sum(weights[: explainer.k])
+                grand_coal_utilty = int(grand_coal_weights >= 0)
+
+                assert np.isclose(sv_sum, grand_coal_utilty)
+
 
 class TestWKNNSanity:
     """Performs various sanity checks and tests helper functions."""
@@ -220,7 +253,7 @@ class TestWKNNSanity:
             WeightedKNNExplainer(model, class_index=0)
 
     def test_single_class(self):
-        """Tests that if the training data only consists of a single class, all Shapley Values are zero."""
+        """Tests that if the training data only consists of a single class, all Shapley values are zero."""
         n = 10
         rng = np.random.default_rng(seed=42)
         X_train = rng.normal(size=(n, 2))
@@ -234,7 +267,7 @@ class TestWKNNSanity:
 
         sv = interaction_values_to_array(explainer.explain(x_val))
 
-        assert np.allclose(sv, 0)
+        assert np.allclose(sv, 1 / X_train.shape[0])
 
     def test_mode(self):
         """Tests that the explainer mode is set correctly."""

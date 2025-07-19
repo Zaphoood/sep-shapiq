@@ -36,7 +36,7 @@ class _WeightedKNNExplainerBase(_CommonKNNExplainer):
 
         model_weights = self.knn_model.weights  # type: ignore[attr-defined]
         if model_weights != "distance":
-            msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
+            msg = f"KNeighborsClassifier must use weights='distance', but has weights='{model_weights}'"
             raise ValueError(msg)
 
     def _get_normalized_weights(
@@ -74,7 +74,7 @@ class _WeightedKNNExplainerBase(_CommonKNNExplainer):
 
 
 class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
-    """A brute force implementation of WKNN Shapley Values.
+    """A brute force algorithm for computing WKNN Shapley values.
 
     References:
         .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024.
@@ -103,7 +103,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
 
         n_classes = len(self.y_train_classes)
         if n_classes == 1:
-            return interaction_values_from_array(np.zeros((n_players,), dtype=np.float64))
+            return interaction_values_from_array(np.full(n_players, 1 / n_players))
 
         sortperm, weights = self._get_normalized_weights(x)
 
@@ -127,7 +127,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
         sortperm: npt.NDArray[np.integer],
         weights: npt.NDArray[np.floating],
     ) -> npt.NDArray[np.floating]:
-        """Computes the Shapley Values for a single binary-class classification game.
+        """Computes the Shapley values for a single binary-class classification game.
 
         Only training data points which have class index ``y_val`` or ``y_other`` are considered and all others ignored.
 
@@ -138,7 +138,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
             weights: Array of weights assigned to each training data point.
 
         Returns:
-            An ``np.ndarray`` of Shapley Values for each training data point.
+            An ``np.ndarray`` of Shapley values for each training data point.
         """
         if self.n_bits is not None:
             _wang_explainer = WeightedKNNExplainer(
@@ -154,26 +154,32 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
         y_train_sorted = self.y_train_indices[sortperm]
         y_val_mask = y_train_sorted == y_val
         y_other_mask = y_train_sorted == y_other
+
         for coalition_generator in product([False, True], repeat=self.X_train.shape[0]):
             coalition = np.array(list(coalition_generator))
 
-            # Utility function according to equation (15) in Wang et al. (2024)
+            # Utility function according to equation (15) in Wang et al. (2024), with the modification that the utility of the empty set is zero.
 
-            # Mask of k nearest training points of current coalition with class y_val or y_other
-            k_nearest_with_relevant_class = keep_first_n(
-                coalition & (y_val_mask | y_other_mask), self.k
-            )
-            y_val_nearest = y_val_mask & k_nearest_with_relevant_class
-            y_other_nearest = y_other_mask & k_nearest_with_relevant_class
-            utility = int(
-                _greater_or_close(np.sum(weights[y_val_nearest]), np.sum(weights[y_other_nearest]))
-            )
+            coalition_relevant_class = coalition & (y_val_mask | y_other_mask)
+            if np.any(coalition_relevant_class):
+                # Mask of k nearest training points of current coalition with class y_val or y_other
+                k_nearest_with_relevant_class = keep_first_n(coalition_relevant_class, self.k)
+                y_val_nearest = y_val_mask & k_nearest_with_relevant_class
+                y_other_nearest = y_other_mask & k_nearest_with_relevant_class
+                utility = int(
+                    _greater_or_close(
+                        np.sum(weights[y_val_nearest]), np.sum(weights[y_other_nearest])
+                    )
+                )
+            else:
+                # Empty coalition must be zero
+                utility = 0
 
             coalition_tuple = tuple(sorted(sortperm[coalition]))
             utilities[coalition_tuple] = utility
 
         game = LookupGame(n_players, utilities)
-        iv = game.exact_values("SII", order=1)
+        iv = game.exact_values("SV", order=1)
 
         return interaction_values_to_array(iv)
 
@@ -189,11 +195,11 @@ def _greater_or_close(a: np.floating, b: np.floating) -> np.bool:
 class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     r"""Explainer for weighted KNN models.
 
-    Implements the algorithm for efficiently computing exact Shapley Values for weighted KNN models proposed by `Wang et. al (2024)` [Wng24]_.
+    Implements the algorithm for efficiently computing exact Shapley values for weighted KNN models proposed by [Wng24]_.
     The algorithm achieves a runtime complexity of :math:`O\bigl(\frac{k^2 N^2 W}{C}\bigr)`, where
 
     * :math:`k` is the defining hyperparameter of the :math:`k`-nearest neighbors model,
-    * :math:`N` is size of the training dataset,
+    * :math:`N` is the size of the training dataset,
     * :math:`W = 2^b` (where :math:`b` is the number of discretization bits) is the size of the *discretized weights space*,
     * :math:`C` is the number of classes of the training dataset.
 
@@ -209,7 +215,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     ) -> None:
         """Initializes the class.
 
-        This methods extracts the training data as well as the parameter :math:`k` from the provided KNN model and stores them as class members.
+        This method extracts the training data as well as the parameter :math:`k` from the provided KNN model and stores them as class members.
 
         Args:
             model: The KNN model to explain. Must be an instance of ``sklearn.neighbors.KNeighborsClassifier``.
@@ -258,7 +264,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
 
         n_classes = len(self.y_train_classes)
         if n_classes == 1:
-            return interaction_values_from_array(np.zeros(n_players))
+            return interaction_values_from_array(np.full(n_players, 1 / n_players))
 
         sortperm, weights = self._get_prepared_weights(x)
 
@@ -303,7 +309,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     def _get_prepared_weights(
         self, x_val: npt.NDArray[np.floating]
     ) -> tuple[npt.NDArray[np.integer], npt.NDArray[np.integer]]:
-        """Returns weigths after normalization, discretization and sign-flipping."""
+        """Returns weights after normalization, discretization and sign-flipping."""
         sortperm, weights = self._get_normalized_weights(x_val)
         # Change sign of weights where class disagrees with class that is to be explained
         weights[(self.y_train_indices != self.class_index)[sortperm]] *= -1
@@ -372,7 +378,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         weights: npt.NDArray[np.integer],
     ) -> npt.NDArray[np.floating]:
         g_i = np.zeros((self.k,))
-        g_i[0] = 1 if self._is_weight_negative(weights[i]) else 0
+        g_i[0] = 0 if self._is_weight_negative(weights[i]) else 1
         for l in range(1, self.k):  # noqa: E741
             if y_i == y_val:
                 weight_range_begin = self._flip_weight_sign(weights[i])
@@ -395,7 +401,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         g_i: npt.NDArray[np.floating],
         weights: npt.NDArray[np.integer],
     ) -> float:
-        weight_sign = self._weight_sign(weights[i])
+        modified_weight_sign = self._modified_weight_sign(weights[i])
         first_summand = cast(
             "float",
             sum(g_i[l] / comb(n - 1, l) for l in range(min(self.k, n))) / n,  # noqa: E741
@@ -407,7 +413,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
             ),
         )
 
-        return weight_sign * (first_summand + second_summand)
+        return modified_weight_sign * (first_summand + second_summand)
 
     @overload
     def _discretize_weight(self, weight: float) -> int: ...
@@ -492,14 +498,12 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         """
         return weight_discrete < self.weights_space_zero
 
-    def _weight_sign(self, weight_discrete: np.integer) -> int:
-        """Implements the sign function for discretized weights.
+    def _modified_weight_sign(self, weight_discrete: np.integer) -> int:
+        """Implements a modified sign function for discretized weights.
 
-        Given some discretized weight index ``w^disc``, returns 1 if ``w > 0``, -1 if ``w < 0``, and 0 if ``w == 0```
+        It acts like a normal sign function but maps 0 to 1: Given some discretized weight index ``w^disc``, returns 1 if ``w >= 0`` and -1 if ``w < 0``.
         """
-        if weight_discrete > self.weights_space_zero:
+        if weight_discrete >= self.weights_space_zero:
             return 1
-        if weight_discrete < self.weights_space_zero:
-            return -1
 
-        return 0
+        return -1

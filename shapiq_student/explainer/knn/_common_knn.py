@@ -27,7 +27,7 @@ class _CommonKNNExplainer(KNNExplainer):
     ) -> None:
         """Initializes the class.
 
-        This methods extracts the training data as well as the parameter :math:`k` from the provided KNN model and stores them as class members.
+        This method extracts the training data as well as the parameter :math:`k` from the provided KNN model and stores them as class members.
 
         Args:
             model: The KNN model to explain. The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
@@ -57,7 +57,7 @@ class _CommonKNNExplainer(KNNExplainer):
         # The type of the superclass's `model` attribute is to broad, since it also allows for other KNN explainers
         # To circumvent this, we store the model separately in an attribute with a narrower type
         self.knn_model = model
-        self.k = self.knn_model.n_neighbors  # type: ignore[attr-defined]
+        self.k: int = self.knn_model.n_neighbors  # type: ignore[attr-defined]
 
 
 def get_knn_explainer_class(
