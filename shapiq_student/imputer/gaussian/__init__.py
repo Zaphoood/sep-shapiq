@@ -6,7 +6,7 @@ This package provides two imputer implementations:
 - ``GaussianCopulaImputer``: Uses Gaussian copulas to model arbitrary data as normal distributions.
 """
 
-from .copula_imputer import GaussianCopulaImputer
+from .gaussian_copula_imputer import GaussianCopulaImputer
 from .gaussian_imputer import GaussianImputer
 
 __all__ = ["GaussianImputer", "GaussianCopulaImputer"]
