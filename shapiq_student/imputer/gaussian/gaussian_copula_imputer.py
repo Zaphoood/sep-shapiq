@@ -55,7 +55,6 @@ class GaussianCopulaImputer(GaussianImputer):
         )
 
         self._data_transformed = self._transform_to_gaussian(self.data)
-        # The mean should be zero in theory but may differ in practice, therefore we still need to compute it
         self._mean_per_feature = np.mean(self._data_transformed, axis=0)
         self._cov_mat = self._ensure_positive_definite(np.cov(self._data_transformed.T))
         # Sorted data is required for the transformation back from Gaussian space to the original feature space
