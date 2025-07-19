@@ -2,12 +2,14 @@
 
 `shapiq_student` is a Python package that extends the functionalities of [`shapiq`](https://github.com/mmschlk/shapiq), a library for explaining machine learning models with Shapley interactions.
 
-Documentation for the library, including an API reference, can be found
-[here](https://zaphoood.github.io/sep-shapiq).
-
-## Quick Start
+## 🚀 Quick Start
 
 Install the package with `pip install shapiq-student`.
+
+## 📖 Documentation
+
+Documentation for the library, including an API reference, can be found
+[here](https://zaphoood.github.io/sep-shapiq).
 
 ## 🛠️ Development Guide
 
