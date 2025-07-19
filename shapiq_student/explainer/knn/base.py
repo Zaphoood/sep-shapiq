@@ -23,7 +23,7 @@ class KNNExplainer(Explainer):
 
     Based on the model passed to the constructor, the class automatically detects between
     :class:`~shapiq_student.explainer.knn.NormalKNNExplainer` and
-    :class:`~shapiq_student.explainer.knn.WeightedKNNExplainer` for (weighted) k-nearest neighbor models,
+    :class:`~shapiq_student.explainer.knn.WeightedKNNExplainer` for (weighted) :math:`k`-nearest neighbor models,
     as well as :class:`~shapiq_student.explainer.knn.ThresholdNNExplainer` for thresholded nearest neighbor models.
 
     For a detailed description of the different explainers, see the respective classes.

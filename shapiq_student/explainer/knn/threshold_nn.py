@@ -1,4 +1,4 @@
-"""TKNN Classifier Explainer."""
+"""Implements the Explainer for threshold nearest neighbor models."""
 
 from __future__ import annotations
 
@@ -24,17 +24,13 @@ MODE_THRESHOLD = "threshold"
 
 
 class _BruteForceTNNExplainer(KNNExplainer):
-    """Brute force approach for explaining TKNN Classifiers.
-
-    References:
-        Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
-    """
+    """Brute force approach for explaining TNN Classifiers."""
 
     def __init__(self, model: RadiusNeighborsClassifier, class_index: int | None = None) -> None:
         super().__init__(model, class_index=class_index)
         # The type of the superclass's `model` attribute is too broad, since it also allows for other KNN explainers
         # To circumvent this, we store the model separately in an attribute with a narrower type
-        self.tknn_model = model
+        self.tnn_model = model
         self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
 
     @property
@@ -47,7 +43,7 @@ class _BruteForceTNNExplainer(KNNExplainer):
         n_train = self.X_train.shape[0]
         n_classes = len(self.y_train_indices)
 
-        neighbor_indices = self.tknn_model.radius_neighbors(x.reshape(1, -1), return_distance=False)
+        neighbor_indices = self.tnn_model.radius_neighbors(x.reshape(1, -1), return_distance=False)
         neighbor_indices = neighbor_indices[0]
         in_neighborhood = np.zeros((n_train,), dtype=bool)
         in_neighborhood[neighbor_indices] = True

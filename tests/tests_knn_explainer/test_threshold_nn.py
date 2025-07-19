@@ -101,9 +101,9 @@ class TestThresholdNNExplainer:
 
         for i in range(len(set(y_train))):
             tnn_explainer = ThresholdNNExplainer(radius_model, class_index=i)
-            tknn_sv = interaction_values_to_array(tnn_explainer.explain(x_val))
-            assert np.isclose(tknn_sv[0], tknn_sv[1])
-            assert np.isclose(tknn_sv[2], tknn_sv[3])
+            tnn_sv = interaction_values_to_array(tnn_explainer.explain(x_val))
+            assert np.isclose(tnn_sv[0], tnn_sv[1])
+            assert np.isclose(tnn_sv[2], tnn_sv[3])
 
     def test_one_different_label_neighbor_in_threshold(self):
         """Tests ThresholdNNExplainer behavior when one neighbor is within threshold tau and of different label.
