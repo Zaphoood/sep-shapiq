@@ -4,7 +4,7 @@
 
 ## 🚀 Quick Start
 
-Install the package with `pip install shapiq-student`.
+Install the package with `pip install shapiq-student` and have a look at the [quick start guide](https://zaphoood.github.io/sep-shapiq/#quick-start).
 
 ## 📖 Documentation
 
