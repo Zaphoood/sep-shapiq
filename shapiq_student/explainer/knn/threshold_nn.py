@@ -111,9 +111,8 @@ class ThresholdNNExplainer(KNNExplainer):
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        # Efficient sv computation
-        # Following Theorem 17 and equation (7) in Wang et al. (2023) DOI: 2308.15709v2
-        # Counting queries defined in C2.2 ibid.
+        # Following Theorem 13 and equation (7) in Wang et al. (2023) DOI: 2308.15709v2
+        # Counting queries defined in C.2.2 ibid.
         n_train = self.X_train.shape[0]
         n_classes = self.y_train_indices.shape[0]
 
