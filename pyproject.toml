@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "shapiq-student"
+name = "shapiq_student"
 version = "0.1.0"
 description = "Extends the functionalities of the shapiq library with explainers for KNN models, Conditional Data Imputers, and a Coalition Finding Algorithm"
 requires-python = ">=3.10"
