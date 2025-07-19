@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
@@ -12,6 +12,28 @@ from itertools import combinations
 
 import numpy as np
 from shapiq.interaction_values import InteractionValues
+
+
+def evaluate_all_coalitions(
+    interaction_values: InteractionValues,
+    max_size: int,
+) -> Iterator[tuple[tuple[int, ...], float]]:
+    r"""Evaluates the utility of all coalitions of a given size of a simplified game :math:`\hat v_e`.
+
+    Args:
+        interaction_values: The interaction values from which the simplified game :math:`\hat v_e` is constructed.
+        max_size: The size of the resulting maximizing and minimizing coalitions.
+
+    Yields:
+        A tuple ``(coalition, utility)``, where ``coalition`` is an integer tuple of length ``max_size``.
+    """
+    if max_size < 0:
+        msg = f"Parameter 'max_size' must be non-negative, but was {max_size}"
+        raise ValueError(msg)
+
+    for coalition_indices in combinations(range(interaction_values.n_players), max_size):
+        utility = compute_simplified_game_utility(coalition_indices, interaction_values)
+        yield coalition_indices, utility
 
 
 def coalition_finding_exhaustive_search(
@@ -29,34 +51,28 @@ def coalition_finding_exhaustive_search(
     Returns:
         An ``InteractionValues`` object containing the maximizing and minimizing coalitions.
     """
-    if max_size < 0:
-        msg = f"Parameter 'max_size' must be non-negative, but was {max_size}"
-        raise ValueError(msg)
+    max_value = -np.inf
+    max_coalition: tuple[int, ...] | None = None
+    min_value = np.inf
+    min_coalition: tuple[int, ...] | None = None
 
-    max_val = -np.inf
-    max_coal: tuple[int, ...] | None = None
-    min_val = np.inf
-    min_coal: tuple[int, ...] | None = None
+    for coalition, utility in evaluate_all_coalitions(interaction_values, max_size):
+        if utility > max_value:
+            max_value = utility
+            max_coalition = coalition
+        if utility < min_value:
+            min_value = utility
+            min_coalition = coalition
 
-    for coalition_indices in combinations(range(interaction_values.n_players), max_size):
-        utility = compute_simplified_game_utility(coalition_indices, interaction_values)
-
-        if utility > max_val:
-            max_val = utility
-            max_coal = coalition_indices
-        if utility < min_val:
-            min_val = utility
-            min_coal = coalition_indices
-
-    if max_coal is None or min_coal is None:
+    if max_coalition is None or min_coalition is None:
         msg = "Unreachable"
         raise RuntimeError(msg)
 
     return min_max_coals_to_interaction_values(
-        tuple(min_coal),
-        min_val,
-        tuple(max_coal),
-        max_val,
+        min_coal=min_coalition,
+        min_val=min_value,
+        max_coal=max_coalition,
+        max_val=max_value,
         index=interaction_values.index,
         n_players=interaction_values.n_players,
     )
