@@ -12,9 +12,9 @@ from .coalition_finder import (
     SubsetFindingStrategy,
     compute_simplified_game_utility,
     evaluate_all_coalitions,
-    get_min_max_from_interaction_values,
     subset_finding,
 )
+from .util import get_min_max_from_interaction_values
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
