@@ -1,4 +1,4 @@
-"""Tests for the threshold nearest-neighbor explainer."""
+"""Tests for the threshold nearest neighbor explainer."""
 
 from __future__ import annotations
 
