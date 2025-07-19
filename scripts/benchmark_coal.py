@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -48,6 +49,7 @@ def benchmark_soums(strategies: list[SubsetFindingStrategy], n_games: int = 30) 
         print(f"\n==== {strategy=} ====")
         for explanation_order in range(1, 6):
             print(f"{explanation_order=}")
+            t_start = time.time()
             avg_min_score, avg_max_score = benchmark(
                 strategy=strategy,
                 coal_size=coal_size,
@@ -59,8 +61,11 @@ def benchmark_soums(strategies: list[SubsetFindingStrategy], n_games: int = 30) 
                     random_state=random_state,
                 ),
             )
+            t_end = time.time()
+            t_delta = t_end - t_start
             print(f"avg score (min coal): {avg_min_score:.3f}")
             print(f"avg score (max coal): {avg_max_score:.3f}")
+            print(f"t_delta: {t_delta:.2f} s")
 
 
 def load_iv(*, instance: Literal["a", "b", "c"], large: bool) -> InteractionValues:
@@ -118,7 +123,7 @@ def single_soum(strategy: SubsetFindingStrategy) -> None:
 
 def main() -> None:
     """The main entry point of the script."""
-    benchmark_soums(strategies=["greedy"])
+    benchmark_soums(strategies=["solos", "equal_payoff", "greedy"])
 
 
 if __name__ == "__main__":
