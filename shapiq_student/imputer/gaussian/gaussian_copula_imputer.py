@@ -18,7 +18,7 @@ from .gaussian_imputer import GaussianImputer
 
 
 class GaussianCopulaImputer(GaussianImputer):
-    r"""Implements a Gaussian copula-based approach for imputation.
+    r"""Implements the Gaussian copula-based approach for imputation according to [Aas21]_.
 
     This method models feature dependence using a Gaussian copula, separating the modeling of marginal distributions
     from their joint dependence structure. Each feature is first transformed to follow a standard normal distribution by
