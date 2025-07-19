@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from typing import Literal
 
+    from shapiq_student.coalition_finder.coalition_finder import SubsetFindingStrategy
+
 from pathlib import Path
 
 from shapiq import ExactComputer, InteractionValues
@@ -33,30 +35,35 @@ def random_ivs_from_soums(
 
 def benchmark_soums() -> None:
     """Benchmarks the coalition finding algorithm using Sum of Unanimity Games."""
-    n_games = 10
+    n_games = 30
     n_players = 10
     coal_size = 4
     random_state = 42
     print(f"{n_games=}")
     print(f"{coal_size=}")
     print(f"{random_state=}")
-    print()
 
-    for explanation_order in range(1, 6):
-        print(f"{explanation_order=}")
-        avg_min_score, avg_max_score = benchmark(
-            strategy="equal_payoff",
-            coal_size=coal_size,
-            ivs=random_ivs_from_soums(
-                n_games=n_games,
-                n_players=n_players,
-                n_basis_games=50,
-                explanation_order=explanation_order,
-                random_state=random_state,
-            ),
-        )
-        print(f"avg score (min coal): {avg_min_score:.3f}")
-        print(f"avg score (max coal): {avg_max_score:.3f}")
+    strategies: list[SubsetFindingStrategy] = [
+        "solos",
+        "equal_payoff",
+    ]
+    for strategy in strategies:
+        print(f"\n==== {strategy=} ====")
+        for explanation_order in range(1, 6):
+            print(f"{explanation_order=}")
+            avg_min_score, avg_max_score = benchmark(
+                strategy=strategy,
+                coal_size=coal_size,
+                ivs=random_ivs_from_soums(
+                    n_games=n_games,
+                    n_players=n_players,
+                    n_basis_games=50,
+                    explanation_order=explanation_order,
+                    random_state=random_state,
+                ),
+            )
+            print(f"avg score (min coal): {avg_min_score:.3f}")
+            print(f"avg score (max coal): {avg_max_score:.3f}")
 
 
 def load_iv(*, instance: Literal["a", "b", "c"], large: bool) -> InteractionValues:
@@ -103,7 +110,7 @@ def benchmark_precompute() -> None:
 
 def main() -> None:
     """The main entry point of the script."""
-    benchmark_precompute()
+    benchmark_soums()
 
 
 if __name__ == "__main__":
