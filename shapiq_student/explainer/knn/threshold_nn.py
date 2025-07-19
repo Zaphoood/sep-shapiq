@@ -76,7 +76,7 @@ class _BruteForceTNNExplainer(KNNExplainer):
 
 
 class ThresholdNNExplainer(KNNExplainer):
-    r"""Explainer for threshold nearest-neighbour models.
+    r"""Explainer for threshold nearest-neighbor models.
 
     Implements the algorithm for efficiently computing exact Shapley values for threshold nearest neighbor models proposed by Wang et al. (2023) [Wng23]_.
     The algorithm has a runtime complexity of :math:`O(N)` (when explaining a single data point), where :math:`N` is the number of training samples.
@@ -87,7 +87,7 @@ class ThresholdNNExplainer(KNNExplainer):
     ) -> None:
         r"""Initializes the class.
 
-        This methods extracts the training data and the threshold :math:`\tau` from the provided model and stores it as class members.
+        This method extracts the training data and the threshold :math:`\tau` from the provided model and stores it as class members.
 
         Args:
             model: The model to explain. The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
@@ -111,9 +111,8 @@ class ThresholdNNExplainer(KNNExplainer):
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        # Efficient sv computation
-        # Following Theorem 17 and equation (7) in Wang et al. (2023) DOI: 2308.15709v2
-        # Counting queries defined in C2.2 ibid.
+        # Following Theorem 13 and equation (7) in Wang et al. (2023) DOI: 2308.15709v2
+        # Counting queries defined in C.2.2 ibid.
         n_train = self.X_train.shape[0]
         n_classes = self.y_train_indices.shape[0]
 

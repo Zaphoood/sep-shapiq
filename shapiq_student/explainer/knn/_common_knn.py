@@ -27,7 +27,7 @@ class _CommonKNNExplainer(KNNExplainer):
     ) -> None:
         """Initializes the class.
 
-        This methods extracts the training data as well as the parameter :math:`k` from the provided KNN model and stores them as class members.
+        This method extracts the training data as well as the parameter :math:`k` from the provided KNN model and stores them as class members.
 
         Args:
             model: The KNN model to explain. The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
