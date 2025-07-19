@@ -132,12 +132,14 @@ class ThresholdNNExplainer(KNNExplainer):
         # For entire dataset D
         c_D = n_train
         c_x_tau_D = 1 + len(neighbor_indices)
-        c_plus_z_tau_D = np.sum(in_neighborhood & y_train_is_class_index)
+        c_plus_z_tau_D = cast("int", np.sum(in_neighborhood & y_train_is_class_index))
 
         # For each training point z_i
         c = c_D - 1
         c_x_tau = c_x_tau_D - in_neighborhood.astype(int)
-        c_plus_z_tau = c_plus_z_tau_D - (in_neighborhood & y_train_is_class_index).astype(int)
+        c_plus_z_tau = c_plus_z_tau_D - cast(
+            "npt.NDArray[np.integer]", (in_neighborhood & y_train_is_class_index).astype(int)
+        )
 
         a1 = np.zeros((n_train,), dtype=np.float64)
         mask = in_neighborhood & (c_x_tau >= 2)  # noqa: PLR2004
