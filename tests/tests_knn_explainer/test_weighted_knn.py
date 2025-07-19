@@ -146,7 +146,7 @@ class TestWKNNValues:
         n_test_cases = 3
         n_train_min = 10
         n_train_max = 10
-        n_bits = 8
+        n_bits = 10
         tolerance = 1e-10
 
         rng = np.random.default_rng(seed=43)
@@ -279,8 +279,8 @@ class TestWKNNSanity:
 
     def test_wknn_discretize_weights(self):
         """Tests the pre-processing of weights involved in the WKNN algorithm, and the weight sign flipping method."""
-        # Distances are [1, 0, 1, 4, 4] -> normalized weights are [3/4, 4/4, 3/4, 0, 0]
-        X_train = np.array([[-1, 0], [0, 0], [1, 0], [4, 0]])
+        # Distances are [1, 1, 2, 4] -> normalized weights are [1, 1, 1/2, 1/4]
+        X_train = np.array([[-1, 0], [1, 0], [2, 0], [4, 0]])
         y_train = np.array([0, 1, 1, 0])
         x_val = np.array([0, 0])
         class_index = 1
@@ -300,16 +300,15 @@ class TestWKNNSanity:
         assert weights_prepared.dtype in (np.int64, np.int32)
 
         zero_idx = k * 2**n_bits
-        assert weights_prepared[0] == zero_idx - 3
+        assert weights_prepared[0] == zero_idx - 4
         assert weights_prepared[1] == zero_idx + 4
-        assert weights_prepared[2] == zero_idx + 3
-
-        assert weights_prepared[3] == zero_idx
+        assert weights_prepared[2] == zero_idx + 2
+        assert weights_prepared[3] == zero_idx - 1
 
         assert np.all(
             explainer._flip_weight_sign(explainer._flip_weight_sign(weights_prepared))
             == weights_prepared
         )
 
-        assert explainer._flip_weight_sign(weights_prepared[0]) == weights_prepared[2]
-        assert explainer._flip_weight_sign(weights_prepared[2]) == weights_prepared[0]
+        assert explainer._flip_weight_sign(weights_prepared[0]) == weights_prepared[1]
+        assert explainer._flip_weight_sign(weights_prepared[1]) == weights_prepared[0]
