@@ -8,6 +8,7 @@ import sys
 from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
@@ -124,18 +125,7 @@ def plot_scores(df, constants, *, save=False, output_filename="plot.png"):
     plt.tight_layout()
 
     if save:
-        overwrite = "y"
-        if Path(output_filename).is_file():
-            overwrite = (
-                input(f"File '{output_filename}' already exists. Overwrite? (y/n): ")
-                .strip()
-                .lower()
-            )
-        if overwrite == "y":
-            plt.savefig(output_filename, dpi=200)
-            print(f"Plot saved to '{output_filename}'")
-        else:
-            print("Aborted saving plot.")
+        save_figure(plt, output_filename)
     else:
         plt.show()
 
@@ -164,6 +154,24 @@ def plot_time_vs_players(df, *, save=False, output_filename="time_plot.png"):
             color=strategy_colors[strategy],
         )
 
+    for strategy, exponent in [("greedy", 2), ("equal_payoff", 2), ("solos", 1)]:
+        current_df = df[df["strategy"] == strategy]
+        max_n_players = current_df["n_players"].max()
+        max_t_delta = current_df["t_delta"].max() * time_multiplier
+
+        pol_fac = max_t_delta / max_n_players**exponent
+        xs = np.arange(max_n_players + 1)
+        ys = pol_fac * xs**exponent
+        plt.plot(
+            xs,
+            ys,
+            linestyle="--",
+            color=strategy_colors[strategy],
+            linewidth=1,
+            alpha=0.6,
+            label=f"y~x^{exponent}",
+        )
+
     plt.xlabel("Number of Players")
     plt.ylabel(f"Time [{time_units}]")
     plt.grid(visible=True)
@@ -185,10 +193,22 @@ def plot_time_vs_players(df, *, save=False, output_filename="time_plot.png"):
     plt.tight_layout()
 
     if save:
-        plt.savefig(output_filename)
-        print(f"Plot saved to '{output_filename}'")
+        save_figure(plt, output_filename)
     else:
         plt.show()
+
+
+def save_figure(plt, output_filename):
+    overwrite = "y"
+    if Path(output_filename).is_file():
+        overwrite = (
+            input(f"File '{output_filename}' already exists. Overwrite? (y/n): ").strip().lower()
+        )
+    if overwrite == "y":
+        plt.savefig(output_filename, dpi=200)
+        print(f"Plot saved to '{output_filename}'")
+    else:
+        print("Aborted saving plot.")
 
 
 def main():

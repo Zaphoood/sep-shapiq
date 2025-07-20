@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 from pathlib import Path
 
-from shapiq import ExactComputer, InteractionValues
+from shapiq import ExactComputer, InconsistentKernelSHAPIQ, InteractionValues
 from shapiq.games.benchmark import SOUM
 
 from shapiq_student.coalition_finder.benchmark import benchmark, score_single_game, time_strategy
@@ -33,6 +33,24 @@ def random_ivs_from_soums(
         game = SOUM(n=n_players, n_basis_games=n_basis_games, random_state=random_state)
         computer = ExactComputer(n_players=game.n_players, game=game)
         yield computer(index="FSII", order=explanation_order)
+        random_state += 1
+
+
+def random_approximated_ivs_from_soums(
+    n_games: int,
+    n_players: int,
+    n_basis_games: int,
+    explanation_order: int,
+    random_state: int,
+    approximation_budget: int,
+) -> Iterator[InteractionValues]:
+    """Creates an iterator over simplifed games generated from explanations of random Sum of Unanimity Games (SOUMs)."""
+    for _ in range(n_games):
+        game = SOUM(n=n_players, n_basis_games=n_basis_games, random_state=random_state)
+        approximator = InconsistentKernelSHAPIQ(
+            n=n_players, random_state=random_state, index="SII", max_order=explanation_order
+        )
+        yield approximator(budget=approximation_budget, game=game)
         random_state += 1
 
 
@@ -115,6 +133,7 @@ def time_soums_game_sizes(
     strategies: list[SubsetFindingStrategy],
     n_games: int = 30,
     max_players=15,
+    players_step=1,
     *,
     save_to_csv: bool = False,
     out_dir: str = ".",
@@ -152,17 +171,18 @@ def time_soums_game_sizes(
 
     for strategy in strategies:
         print(f"\n==== {strategy=} ====")
-        for n_players in range(5, max_players + 1):
+        for n_players in range(5, max_players + 1, players_step):
             print(f"{n_players=}")
             avg_t_delta = time_strategy(
                 strategy=strategy,
                 coal_size=coal_size,
-                ivs=random_ivs_from_soums(
+                ivs=random_approximated_ivs_from_soums(
                     n_games=n_games,
                     n_players=n_players,
                     n_basis_games=n_basis_games,
                     explanation_order=explanation_order,
                     random_state=random_state,
+                    approximation_budget=100,
                 ),
             )
             print(f"avg t_delta: {avg_t_delta * 1000:.3f} ms")
@@ -244,8 +264,9 @@ def main() -> None:
     """The main entry point of the script."""
     time_soums_game_sizes(
         strategies=["solos", "equal_payoff", "greedy"],
-        n_games=30,
-        max_players=14,
+        n_games=10,
+        max_players=50,
+        players_step=5,
         save_to_csv=True,
         out_dir="benchmark_results",
     )
