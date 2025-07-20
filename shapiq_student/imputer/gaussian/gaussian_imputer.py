@@ -48,7 +48,7 @@ class GaussianImputer(ConditionalImputer):
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
-        sample_size: int = 1000,
+        sample_size: int = 100,
         random_state: int | None = None,
         verbose: bool = False,
     ) -> None:
@@ -59,7 +59,7 @@ class GaussianImputer(ConditionalImputer):
                 returning the model's predictions.
             data: The background data to use for the explainer as a ``np.ndarray`` of shape ``(n_samples, n_features)``.
             x: The explanation point as a ``np.ndarray`` of shape ``(1, n_features)`` or ``(n_features,)``. Defaults to ``None``.
-            sample_size: Number of Monte Carlo samples for imputation. Defaults to 1000.
+            sample_size: Number of Monte Carlo samples for imputation. Defaults to ``100``.
             random_state: The random state to use for sampling. Defaults to ``None``.
             verbose: A flag to enable verbose imputation, which will print a progress bar for model evaluation.
                 Note that this can slow down the imputation process. Defaults to ``False``.
@@ -224,7 +224,7 @@ class GaussianImputer(ConditionalImputer):
             coalitions: A boolean array of shape ``(n_coalitions, n_features)`` indicating which features are present (``True``) and which are missing (``False``).
 
         Returns:
-            The model's predictions on the imputed data points as an array of shape ``(n_coalitions, n_outputs)``.
+            The model's predictions on the imputed data points as an array of shape ``(n_coalitions,)``.
 
         Raises:
             RuntimeError: If no explanation point has been provided, neither in the constructor nor by calling ``fit()``.
@@ -233,10 +233,28 @@ class GaussianImputer(ConditionalImputer):
             msg = f"Must call {self.__class__.__name__}.fit(x) first before imputing"
             raise RuntimeError(msg)
 
-        return self.predict(self._impute(self.x.flatten(), coalitions))
+        n_coalitions = coalitions.shape[0]
+        samples = self._draw_samples(self.x.flatten(), coalitions)
 
-    def _impute(
+        predictions = np.zeros((n_coalitions, self.sample_size))
+        for i in range(n_coalitions):
+            predictions[i] = self.predict(samples[i])
+        coalition_values = cast("npt.NDArray[np.floating]", np.mean(predictions, axis=1))
+
+        return coalition_values
+
+    def _draw_samples(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
     ) -> npt.NDArray[np.floating]:
-        mc_samples = self._sample_monte_carlo(x, coalitions)
-        return cast("npt.NDArray[np.floating]", np.mean(mc_samples, axis=1))
+        """Draw samples for the given coalitions to be used for computing the utility.
+
+        This function should be overriden by a subclass, if the Monte Carlo sampling needs to be wrapped in any kind of transformation.
+
+        Args:
+            x: The explanation point as an array of shape ``(n_features,)``.
+            coalitions: A set of coalitions as an array of shape ``(n_coalitions, n_features)``.
+
+        Returns:
+            Samples draw for each coalition as an array of shape ``(n_coalitions, n_samples, n_features)``.
+        """
+        return self._sample_monte_carlo(x, coalitions)

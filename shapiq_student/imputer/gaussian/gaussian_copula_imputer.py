@@ -41,7 +41,7 @@ class GaussianCopulaImputer(GaussianImputer):
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
-        sample_size: int = 1000,
+        sample_size: int = 100,
         random_state: int | None = None,
         verbose: bool = False,
     ) -> None:
@@ -177,18 +177,29 @@ class GaussianCopulaImputer(GaussianImputer):
 
         return x_original
 
-    def _impute(
+    def _draw_samples(
         self, x: npt.NDArray[np.floating], coalitions: npt.NDArray[np.bool]
     ) -> npt.NDArray[np.floating]:
+        """Draw samples for the given coalitions to be used for computing the utility.
+
+        The explanation point ``x`` is first transformed to Gaussian space. Then, samples are drawn,
+        and finally the samples are transformed back to the original feature space.
+
+        Args:
+            x: The explanation point as an array of shape ``(n_features,)``.
+            coalitions: A set of coalitions as an array of shape ``(n_coalitions, n_features)``.
+
+        Returns:
+            Samples draw for each coalition as an array of shape ``(n_coalitions, n_samples, n_features)``.
+        """
         x_transformed = self._transform_point_to_gaussian(self.data, x)
 
-        gaussian_samples = self._sample_monte_carlo(x_transformed, coalitions)
+        samples_gaussian = self._sample_monte_carlo(x_transformed, coalitions)
 
-        samples_backtransformed = np.zeros_like(gaussian_samples)
+        samples_backtransformed = np.zeros_like(samples_gaussian)
         for coal_idx in range(coalitions.shape[0]):
             samples_backtransformed[coal_idx] = self._transform_from_gaussian(
-                gaussian_samples[coal_idx]
+                samples_gaussian[coal_idx]
             )
-        imputed = cast("npt.NDArray[np.floating]", np.mean(samples_backtransformed, axis=1))
 
-        return imputed
+        return samples_backtransformed

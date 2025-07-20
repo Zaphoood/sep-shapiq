@@ -62,17 +62,20 @@ def test_gaussian_imputation_single_feature_known(dummy_model) -> None:
     rng = np.random.default_rng(seed=42)
     x_train = rng.multivariate_normal(mean, cov, size=10000)
     x_explain = np.array([1.0, np.nan, np.nan])
-    coalition = np.array([True, False, False])
+    coalitions = np.array([[True, False, False]])
 
     imputer = GaussianImputer(
         model=dummy_model,
         data=x_train,
         x=x_explain,
+        sample_size=1000,
     )
-    result = imputer._impute(x_explain, np.atleast_2d(coalition))
-    imputed_features = result[0, ~coalition]
+    samples = imputer._draw_samples(x_explain, coalitions)
+    assert samples.shape == (coalitions.shape[0], imputer.sample_size, mean.shape[0])
 
-    np.testing.assert_allclose(imputed_features, [0.8, 0.5], atol=0.1)
+    samples_avg = np.mean(samples[0, :, ~coalitions[0]], axis=1)
+
+    np.testing.assert_allclose(samples_avg, [0.8, 0.5], atol=0.1)
 
 
 def test_gaussian_imputer_value_function(dummy_model):
@@ -94,7 +97,7 @@ def test_gaussian_imputer_value_function(dummy_model):
     rng = np.random.default_rng(seed=42)
     x_train = rng.multivariate_normal(mean, cov, size=10000)
 
-    imputer = GaussianImputer(data=x_train, x=x_explain[0], model=dummy_model)
+    imputer = GaussianImputer(data=x_train, x=x_explain[0], model=dummy_model, sample_size=1000)
     y_predicted = imputer.value_function(np.atleast_2d(coalition))
 
     np.testing.assert_allclose(y_predicted, y_expected, atol=0.1)
