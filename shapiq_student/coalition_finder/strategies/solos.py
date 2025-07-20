@@ -28,8 +28,8 @@ def coalition_finding(
         An InteractionValues object containing the maximizing and minimizing coalitions together with their utilities.
     """
     if max_size == 0:
-        min_coal = ()
-        max_coal = ()
+        min_coal = []
+        max_coal = []
         min_val = cast(
             "np.floating",
             interaction_values.values[interaction_values.interaction_lookup[()]],

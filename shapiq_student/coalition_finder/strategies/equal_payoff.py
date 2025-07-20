@@ -43,8 +43,8 @@ def coalition_finding(
         # Sorts player indices by their scores
         players_sorted = np.argsort(player_scores)
 
-        min_coal = sorted(players_sorted[:max_size])
-        max_coal = sorted(players_sorted[-max_size:])
+        min_coal = sorted(players_sorted[:max_size])  # type: ignore[type-var,assignment]
+        max_coal = sorted(players_sorted[-max_size:])  # type: ignore[type-var,assignment]
         # Return estimates of coalition utilities, not their real utility
         min_val = np.sum(player_scores[min_coal])
         max_val = np.sum(player_scores[max_coal])

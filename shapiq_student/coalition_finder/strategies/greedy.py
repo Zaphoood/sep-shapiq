@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, TypeAlias, cast
+from typing import TYPE_CHECKING, TypeAlias
 
 from shapiq_student.coalition_finder.util import min_max_coals_to_interaction_values
 
 if TYPE_CHECKING:
-    import numpy as np
     from shapiq.interaction_values import InteractionValues
 
 Coalition: TypeAlias = tuple[int, ...]
@@ -32,10 +31,7 @@ def coalition_finding(  # noqa: C901
     """
     if max_size == 0:
         empty_coal = ()
-        empty_val = cast(
-            "np.floating",
-            interaction_values.values[interaction_values.interaction_lookup[empty_coal]],
-        )
+        empty_val = interaction_values.values[interaction_values.interaction_lookup[empty_coal]]
 
         return min_max_coals_to_interaction_values(
             empty_coal,
@@ -61,10 +57,10 @@ def coalition_finding(  # noqa: C901
             affiliations[player].add(i)
         coals_by_order[len(coalition)].add(i)
 
-    min_coal = []
-    empty_val = 0
-    max_coal = []
-    max_val = 0
+    min_coal: list[int] = []
+    empty_val = 0.0
+    max_coal: list[int] = []
+    max_val = 0.0
     while len(min_coal) < max_size:
         min_joiner: int | None = None
         min_increase = float("inf")
@@ -114,7 +110,7 @@ def _get_joining_increase(
 ) -> float:
     """Compute the increase in payoff when adding a given ``player`` to the ``coalition``."""
     new_coalition = {*coalition, player}
-    increase = 0
+    increase = 0.0
 
     player_affiliations = affiliations[player]
     for order in range(1, len(new_coalition) + 1):
