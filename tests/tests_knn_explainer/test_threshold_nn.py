@@ -44,7 +44,7 @@ class TestThresholdNNExplainer:
             ThresholdNNExplainer(model, class_index=0)
 
     def test_zero_radius_model(self):
-        """Tests behavior when calling RadiusNeighborsClassifier with radius zero. Should return all shapley values zero."""
+        """Tests behavior when calling RadiusNeighborsClassifier with radius zero. Should return all Shapley values zero."""
         X_train = np.array([[1, 2, 3], [4, 5, 6]])
         y_train = np.array([0, 1])
         x_val = np.array([10, 10, 10])
@@ -59,7 +59,7 @@ class TestThresholdNNExplainer:
     def test_one_same_label_neighbor_in_threshold(self):
         """Tests ThresholdNNExplainer behavior when one neighbor is within threshold tau and of same label.
 
-        Not all shapley values should be zero.
+        Not all Shapley values should be zero.
 
         The resulting Shapley values should be 0.5 for exactly one player and zero for the other. Reference: Formula (7) in Wang et al. [Wng23]_.
         """
@@ -77,7 +77,7 @@ class TestThresholdNNExplainer:
         assert np.sum(np.isclose(sv, 0.5, atol=1e-6)) == 1
 
     def test_no_neighbors_in_threshold(self):
-        """Tests behavior when no neighbors are within threshold tau. All shapley values should be zero."""
+        """Tests behavior when no neighbors are within threshold tau. All Shapley values should be zero."""
         X_train = np.array([[10, 10, 10], [11, 11, 11]])
         y_train = np.array([0, 1])
         tau = 1
@@ -126,7 +126,7 @@ class TestThresholdNNExplainer:
         assert np.sum(np.isclose(sv, -0.5, atol=1e-6)) == 1
 
     def test_point_on_threshold(self):
-        """Tests that training point located exactly on threshold will be included and return non-zero shapley values."""
+        """Tests that training point located exactly on threshold will be included and return non-zero Shapley values."""
         test_cases = 6
         for i in (number + 1 for number in range(test_cases)):
             tau = i
@@ -162,12 +162,12 @@ class TestThresholdNNExplainer:
         All Shapley values should have the same negative value.
         """
         X_train = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5], [11, 11, 11]])
-        y_train = np.array([0, 1, 0, 1, 0, 1])
+        y_train = np.array([0, 1, 2, 3, 4, 5])
         tau = 20
         x_val = np.array([2, 1, 1])
         radius_model = RadiusNeighborsClassifier(radius=tau)
         radius_model.fit(X_train, y_train)
-        class_index = 7
+        class_index = 10
         tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
         sv = interaction_values_to_array(tnn_explainer.explain(x_val))
         assert np.all(sv < 0)
