@@ -73,7 +73,6 @@ ignore = [
     "PLR0913", # too many arguments (>5)
     "TD003",  # TODOs can be written without an issue link
     "FIX002",  # TODO: remove for final submission but allows todos in code for now
-    # TODO(mmschlk): extend this list below if you need to ignore more rules (do this with care)
 ]
 exclude = [
     ".bzr",
