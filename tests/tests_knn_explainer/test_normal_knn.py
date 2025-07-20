@@ -60,7 +60,7 @@ class TestNormalKNNExplainer:
     def test_all_same_label_neighbors(self):
         """Tests NormalKNNExplainer behavior when a model is trained on only same label neighbors and k is equal to the amount of training points.
 
-        Expected behavior: All Shapley values should have the same constant value 1/n.
+        Expected behavior: All Shapley values should have the same constant value 1/n (where n is the amount fo training samples).
         """
         X_train = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4]])
         y_train = [0, 0, 0, 0]
