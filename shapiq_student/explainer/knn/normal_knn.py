@@ -68,8 +68,6 @@ class NormalKNNExplainer(_CommonKNNExplainer):
     The algorithm itself has a linear time complexity, but expects a sorted array of training points as input, resulting in a time complexity of :math:`O(N \log N)` for explaining a single data point.
     """
 
-    # TODO(Zaphoood): Explain functionality in class docstring
-
     @override
     def __init__(
         self,

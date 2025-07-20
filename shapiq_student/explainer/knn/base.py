@@ -29,10 +29,6 @@ class KNNExplainer(Explainer):
     For a detailed description of the different explainers, see the respective classes.
     """
 
-    # TODO(Zaphoood): The base class allows `model` to be a `Callable`, which we don't allow -- violates Liskov subsitution principle
-    model: KNeighborsClassifier | RadiusNeighborsClassifier  # type: ignore[assignment]
-    """The model provided in the constructor."""
-
     X_train: npt.NDArray[np.floating]
     """Training data features extracted from the model."""
 
@@ -89,8 +85,6 @@ class KNNExplainer(Explainer):
                 )
 
         super().__init__(model, data=None, class_index=class_index, index="SV", max_order=1)
-
-        self.model = model
 
         self.X_train = model._fit_X  # type: ignore[union-attr] # noqa: SLF001
         self.y_train_indices = cast("npt.NDArray[np.integer]", model._y)  # type: ignore[union-attr] # noqa: SLF001
