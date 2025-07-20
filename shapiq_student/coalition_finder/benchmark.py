@@ -1,4 +1,5 @@
 """Provides benchmarking tools for coalition finding algorithms."""
+# pragma: exclude file
 
 from __future__ import annotations
 

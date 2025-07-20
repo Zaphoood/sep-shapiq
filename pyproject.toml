@@ -162,6 +162,9 @@ minversion = "8.0"
 exclude_lines = [
     "if TYPE_CHECKING",
 ]
+exclude_also = [
+    '\A(?s:.*# pragma: exclude file.*)\Z',
+]
 
 [tool.mypy]
 python_version = "3.10"
