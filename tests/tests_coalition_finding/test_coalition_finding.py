@@ -5,11 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+import pytest
 from shapiq import InteractionValues
 
+from shapiq_student.coalition_finder.benchmark import random_approximated_ivs_from_soums
 from shapiq_student.coalition_finder.coalition_finder import (
     coalition_finding_exhaustive_search,
     compute_simplified_game_utility,
+    subset_finding,
 )
 from shapiq_student.coalition_finder.strategies.equal_payoff import (
     coalition_finding as coalition_finding_equal_payoff,
@@ -154,6 +157,22 @@ class TestBestIndividuals:
         (min_coal, _), (max_coal, _) = get_min_max_from_interaction_values(iv_min_max)
         assert min_coal == expected_min_coal
         assert max_coal == expected_max_coal
+
+
+@pytest.mark.parametrize("strategy", ["greedy", "solos", "equal_payoff"])
+def test_all_strategies_can_be_called(strategy):
+    """Tests that all strategies can be called."""
+    soum = next(
+        random_approximated_ivs_from_soums(
+            n_games=1,
+            n_players=10,
+            n_basis_games=50,
+            explanation_order=3,
+            random_state=42,
+            approximation_budget=100,
+        )
+    )
+    subset_finding(soum, max_size=4, strategy=strategy)
 
 
 def interaction_values_from_payoffs(
