@@ -76,7 +76,7 @@ class TestNormalKNNExplainer:
         assert np.allclose(sv, 1 / len(X_train))
 
     def test_all_diffent_label_neighbors(self):
-        """Tests NormalKNNExplainer behavior when a model is trained on only same label neighbors and k is equal to amount of training points.
+        """Tests NormalKNNExplainer behavior when a model is trained on only differnt label neighbors and k is equal to amount of training points.
 
         Expected behavior: All shapley values should be 0.
         """
@@ -92,6 +92,23 @@ class TestNormalKNNExplainer:
 
         assert len(sv) == len(X_train)
         assert np.allclose(sv, 0)
+
+    def test_class_index_out_of_bounds(self):
+        """Tests behavior when class_index is out of bounds. An out-of-bounds class_index is allowed by shapiq Explainer Base.
+
+        All Shapley values should be zero.
+        """
+        X_train = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5], [11, 11, 11]])
+        y_train = np.array([0, 1, 0, 1, 0, 1])
+        k = 6
+        x_val = np.array([2, 1, 1])
+        model = KNeighborsClassifier(n_neighbors=k)
+        model.fit(X_train, y_train)
+        class_index = 7
+        explainer = NormalKNNExplainer(model, class_index=class_index)
+        sv = interaction_values_to_array(explainer.explain(x_val))
+        assert np.allclose(sv, 0)
+        assert len(set(sv)) == 1
 
     def test_agrees_with_brute_force(self):
         """Test that the result of NormalKNNExplainer agrees with that of the brute force implementation.

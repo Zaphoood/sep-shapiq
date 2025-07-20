@@ -156,6 +156,23 @@ class TestThresholdNNExplainer:
             sv = interaction_values_to_array(tnn_explainer.explain(x_val))
             assert np.allclose(sv, 0)
 
+    def test_class_index_out_of_bounds(self):
+        """Tests behavior when class_index is out of bounds. An out-of-bounds class_index is allowed by shapiq Explainer Base.
+
+        All Shapley values should have the same negative value.
+        """
+        X_train = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5], [11, 11, 11]])
+        y_train = np.array([0, 1, 0, 1, 0, 1])
+        tau = 20
+        x_val = np.array([2, 1, 1])
+        radius_model = RadiusNeighborsClassifier(radius=tau)
+        radius_model.fit(X_train, y_train)
+        class_index = 7
+        tnn_explainer = ThresholdNNExplainer(radius_model, class_index=class_index)
+        sv = interaction_values_to_array(tnn_explainer.explain(x_val))
+        assert np.all(sv < 0)
+        assert len(set(sv)) == 1
+
     def test_compare_with_brute_force_on_iris(self):
         """Tests the correctness of the ThresholdNNExplainer by comparing its results to the baseline brute force implementation.
 
