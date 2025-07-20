@@ -41,7 +41,7 @@ class GaussianCopulaImputer(GaussianImputer):
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
-        sample_size: int = 1000,
+        sample_size: int = 100,
         random_state: int | None = None,
         verbose: bool = False,
     ) -> None:

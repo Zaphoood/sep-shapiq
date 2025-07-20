@@ -48,7 +48,7 @@ class GaussianImputer(ConditionalImputer):
         data: npt.NDArray[np.floating],
         x: npt.NDArray[np.floating] | None = None,
         *,
-        sample_size: int = 1000,
+        sample_size: int = 100,
         random_state: int | None = None,
         verbose: bool = False,
     ) -> None:
@@ -59,7 +59,7 @@ class GaussianImputer(ConditionalImputer):
                 returning the model's predictions.
             data: The background data to use for the explainer as a ``np.ndarray`` of shape ``(n_samples, n_features)``.
             x: The explanation point as a ``np.ndarray`` of shape ``(1, n_features)`` or ``(n_features,)``. Defaults to ``None``.
-            sample_size: Number of Monte Carlo samples for imputation. Defaults to 1000.
+            sample_size: Number of Monte Carlo samples for imputation. Defaults to ``100``.
             random_state: The random state to use for sampling. Defaults to ``None``.
             verbose: A flag to enable verbose imputation, which will print a progress bar for model evaluation.
                 Note that this can slow down the imputation process. Defaults to ``False``.
