@@ -58,12 +58,14 @@ class _WeightedKNNExplainerBase(_CommonKNNExplainer):
         distances = distances[0]
         sortperm = sortperm[0]
 
-        max_dist = distances[-1]
-        min_dist = distances[0]
-        if np.isclose(min_dist, max_dist):
-            weights = np.full_like(distances, 1)
+        # Replicate sklearn behavior: if any training points are zero distance
+        # from the test point, those points get weight 1 and all others 0
+        zero_dist = np.isclose(distances, 0)
+        if np.any(zero_dist):
+            weights = np.zeros_like(distances)
+            weights[zero_dist] = 1
         else:
-            weights = (max_dist - distances) / (max_dist - min_dist)
+            weights = distances[0] / distances
 
         return sortperm, weights
 
