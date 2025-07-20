@@ -122,8 +122,18 @@ def plot_scores(df, constants, *, save=False, output_filename="plot.png"):
     plt.tight_layout()
 
     if save:
-        plt.savefig(output_filename)
-        print(f"Plot saved to '{output_filename}'")
+        overwrite = "y"
+        if Path(output_filename).is_file():
+            overwrite = (
+                input(f"File '{output_filename}' already exists. Overwrite? (y/n): ")
+                .strip()
+                .lower()
+            )
+        if overwrite == "y":
+            plt.savefig(output_filename, dpi=200)
+            print(f"Plot saved to '{output_filename}'")
+        else:
+            print("Aborted saving plot.")
     else:
         plt.show()
 
