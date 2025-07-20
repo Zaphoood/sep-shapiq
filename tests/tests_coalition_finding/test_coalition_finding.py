@@ -8,12 +8,14 @@ import numpy as np
 from shapiq import InteractionValues
 
 from shapiq_student.coalition_finder.coalition_finder import (
-    coalition_finding_best_individuals,
     coalition_finding_exhaustive_search,
     compute_simplified_game_utility,
-    distribute_payoffs,
-    get_min_max_from_interaction_values,
 )
+from shapiq_student.coalition_finder.strategies.equal_payoff import (
+    coalition_finding as coalition_finding_equal_payoff,
+    distribute_payoffs,
+)
+from shapiq_student.coalition_finder.util import get_min_max_from_interaction_values
 
 
 @dataclass
@@ -148,7 +150,7 @@ class TestBestIndividuals:
         expected_max_coal = (0, 1)
 
         iv = interaction_values_from_payoffs(payoffs, index="SII")
-        iv_min_max = coalition_finding_best_individuals(iv, max_size=max_size)
+        iv_min_max = coalition_finding_equal_payoff(iv, max_size=max_size)
         (min_coal, _), (max_coal, _) = get_min_max_from_interaction_values(iv_min_max)
         assert min_coal == expected_min_coal
         assert max_coal == expected_max_coal
