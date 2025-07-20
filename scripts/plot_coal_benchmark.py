@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
@@ -68,6 +69,7 @@ def plot_scores(df, constants, *, save=False, output_filename="plot.png"):
             color=strategy_colors[strategy],
             linewidth=2,
             alpha=1,
+            marker="o",
             label=f"{strategy} (avg)",
         )
 
@@ -138,6 +140,57 @@ def plot_scores(df, constants, *, save=False, output_filename="plot.png"):
         plt.show()
 
 
+def plot_time_vs_players(df, *, save=False, output_filename="time_plot.png"):
+    """Plot t_delta vs number of players, grouped by strategy."""
+    plt.figure(figsize=(10, 7))
+
+    time_units = "ms"
+    time_multiplier = 1000
+
+    # Use default matplotlib colors
+    default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    strategies = df["strategy"].unique()
+    strategy_colors = {
+        strategy: default_colors[i % len(default_colors)] for i, strategy in enumerate(strategies)
+    }
+
+    for strategy, group in df.groupby("strategy"):
+        group_sorted = group.sort_values("n_players")
+        plt.plot(
+            group_sorted["n_players"],
+            group_sorted["t_delta"] * time_multiplier,
+            marker="o",
+            label=strategy,
+            color=strategy_colors[strategy],
+        )
+
+    plt.xlabel("Number of Players")
+    plt.ylabel(f"Time [{time_units}]")
+    plt.grid(visible=True)
+
+    # Construct plot title including n_games, explanation_order, coal_size
+    title_parts = []
+    for key in ["n_games", "explanation_order", "coal_size"]:
+        unique_vals = df[key].unique()
+        if len(unique_vals) == 1:
+            title_parts.append(f"{key}={unique_vals[0]}")
+        else:
+            # If multiple values, show range
+            title_parts.append(f"{key}=[{unique_vals.min()}, {unique_vals.max()}]")
+
+    title = "Time vs Number of Players\n(" + ", ".join(title_parts) + ")"
+    plt.title(title)
+
+    plt.legend(title="Strategy")
+    plt.tight_layout()
+
+    if save:
+        plt.savefig(output_filename)
+        print(f"Plot saved to '{output_filename}'")
+    else:
+        plt.show()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Plot strategy benchmark results from a CSV file.")
     parser.add_argument("csv_path", help="Path to the CSV file with benchmark results.")
@@ -146,6 +199,12 @@ def main():
     )
     parser.add_argument(
         "--output", default="plot.png", help="Filename for the saved plot (default: plot.png)."
+    )
+    parser.add_argument(
+        "--plot-type",
+        choices=["score", "time"],
+        default="score",
+        help="Type of plot to generate: 'score' (default) or 'time'",
     )
 
     args = parser.parse_args()
@@ -157,7 +216,14 @@ def main():
     df = load_data(args.csv_path)
     constants = validate_constants(df, ["n_players", "n_games"])
     df = compute_mean_score(df)
-    plot_scores(df, constants, save=args.save, output_filename=args.output)
+
+    if args.plot_type == "score":
+        plot_scores(df, constants, save=args.save, output_filename=args.output)
+    elif args.plot_type == "time":
+        plot_time_vs_players(df, save=args.save, output_filename=args.output)
+    else:
+        print(f"Unknown plot type '{args.plot_type}'. Allowed values are 'score' and 'time'.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
