@@ -3,13 +3,14 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "shapiq-student"
+name = "shapiq_student"
 version = "0.1.0"
 description = "Extends the functionalities of the shapiq library with explainers for KNN models, Conditional Data Imputers, and a Coalition Finding Algorithm"
 requires-python = ">=3.10"
 license = "MIT"
 dependencies = [
     "shap>=0.48.0",
+    "matplotlib>=3.10.3",
     "shapiq==1.3.0",
 ]
 
@@ -34,6 +35,7 @@ docs = [
     "furo>=2024.8.6",
     "nbsphinx>=0.9.7",
     "sphinx>=8.1.3",
+    "sphinx-copybutton>=0.5.2",
 ]
 dev = [
     "build>=1.2.2.post1",
@@ -71,8 +73,6 @@ ignore = [
     "RET504", # Unnecessary assignment to {name} before return statement
     "PLR0913", # too many arguments (>5)
     "TD003",  # TODOs can be written without an issue link
-    "FIX002",  # TODO: remove for final submission but allows todos in code for now
-    # TODO(mmschlk): extend this list below if you need to ignore more rules (do this with care)
 ]
 exclude = [
     ".bzr",
@@ -103,7 +103,6 @@ exclude = [
     "venv",
     "docs/build",
 ]
-# TODO(mmschlk): you can add more exclusions here if you want to ignore certain files  (do this with care)
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
     "I002", # __init__.py does not have to import required modules
@@ -128,7 +127,7 @@ exclude = [
     "INP001",  # implicit package is okay here
     "T201",  # print is okay in scripts
 ]
-"docs/source/notebooks/**/*.ipynb" = [
+"docs/source/notebooks/*" = [
     "E402",  # Module level import not at top of file
     "T20",  # Notebooks can have print statements
     "D",  # docstrings are not required in notebooks
@@ -160,6 +159,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
+python_version = "3.10"
 strict = true
 
 [[tool.mypy.overrides]]

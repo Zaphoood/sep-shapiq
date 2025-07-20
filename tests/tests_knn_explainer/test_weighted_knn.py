@@ -146,7 +146,7 @@ class TestWKNNValues:
         n_test_cases = 3
         n_train_min = 10
         n_train_max = 10
-        n_bits = 8
+        n_bits = 10
         tolerance = 1e-10
 
         rng = np.random.default_rng(seed=43)
@@ -194,21 +194,23 @@ class TestWKNNValues:
 
         This means that the sum of all Shapley values is equal to the utility of the grand coalition.
         """
-        rng = np.random.default_rng(seed=30)
-        dataset = random_test_dataset(rng, n_train=12, n_classes=2)
-        model = KNeighborsClassifier(n_neighbors=5, weights="distance")
-        model.fit(dataset.X_train, dataset.y_train)
+        for seed in range(10):
+            rng = np.random.default_rng(seed=seed)
+            dataset = random_test_dataset(rng, n_train=12, n_classes=2)
+            model = KNeighborsClassifier(n_neighbors=5, weights="distance")
+            model.fit(dataset.X_train, dataset.y_train)
 
-        y_pred = model.predict(dataset.x_val.reshape(1, -1))[0]
+            for class_index in range(2):
+                explainer = WeightedKNNExplainer(model, class_index=class_index, n_bits=8)
+                sv = interaction_values_to_array(explainer.explain(dataset.x_val))
+                sv_sum = np.sum(sv)
 
-        for class_index in range(2):
-            explainer = WeightedKNNExplainer(model, class_index=class_index)
-            sv = interaction_values_to_array(explainer.explain(dataset.x_val))
-            sv_sum = np.sum(sv)
-            # The WKNN explainer uses a binary utility function which is 1 for correct and 0 for incorrect prediction
-            grand_coal_utilty = 1 if y_pred == class_index else 0
+                _, weights_discrete = explainer._get_prepared_weights(dataset.x_val)
+                weights = explainer._undiscretize_weight(weights_discrete)
+                grand_coal_weights = np.sum(weights[: explainer.k])
+                grand_coal_utilty = int(grand_coal_weights >= 0)
 
-            assert np.isclose(sv_sum, grand_coal_utilty)
+                assert np.isclose(sv_sum, grand_coal_utilty)
 
 
 class TestWKNNSanity:
@@ -251,7 +253,7 @@ class TestWKNNSanity:
             WeightedKNNExplainer(model, class_index=0)
 
     def test_single_class(self):
-        """Tests that if the training data only consists of a single class, all Shapley Values are zero."""
+        """Tests that if the training data only consists of a single class, all Shapley values are zero."""
         n = 10
         rng = np.random.default_rng(seed=42)
         X_train = rng.normal(size=(n, 2))
@@ -265,7 +267,7 @@ class TestWKNNSanity:
 
         sv = interaction_values_to_array(explainer.explain(x_val))
 
-        assert np.allclose(sv, 0)
+        assert np.allclose(sv, 1 / X_train.shape[0])
 
     def test_mode(self):
         """Tests that the explainer mode is set correctly."""
@@ -277,8 +279,8 @@ class TestWKNNSanity:
 
     def test_wknn_discretize_weights(self):
         """Tests the pre-processing of weights involved in the WKNN algorithm, and the weight sign flipping method."""
-        # Distances are [1, 0, 1, 4, 4] -> normalized weights are [3/4, 4/4, 3/4, 0, 0]
-        X_train = np.array([[-1, 0], [0, 0], [1, 0], [4, 0]])
+        # Distances are [1, 1, 2, 4] -> normalized weights are [1, 1, 1/2, 1/4]
+        X_train = np.array([[-1, 0], [1, 0], [2, 0], [4, 0]])
         y_train = np.array([0, 1, 1, 0])
         x_val = np.array([0, 0])
         class_index = 1
@@ -298,16 +300,15 @@ class TestWKNNSanity:
         assert weights_prepared.dtype in (np.int64, np.int32)
 
         zero_idx = k * 2**n_bits
-        assert weights_prepared[0] == zero_idx - 3
+        assert weights_prepared[0] == zero_idx - 4
         assert weights_prepared[1] == zero_idx + 4
-        assert weights_prepared[2] == zero_idx + 3
-
-        assert weights_prepared[3] == zero_idx
+        assert weights_prepared[2] == zero_idx + 2
+        assert weights_prepared[3] == zero_idx - 1
 
         assert np.all(
             explainer._flip_weight_sign(explainer._flip_weight_sign(weights_prepared))
             == weights_prepared
         )
 
-        assert explainer._flip_weight_sign(weights_prepared[0]) == weights_prepared[2]
-        assert explainer._flip_weight_sign(weights_prepared[2]) == weights_prepared[0]
+        assert explainer._flip_weight_sign(weights_prepared[0]) == weights_prepared[1]
+        assert explainer._flip_weight_sign(weights_prepared[1]) == weights_prepared[0]

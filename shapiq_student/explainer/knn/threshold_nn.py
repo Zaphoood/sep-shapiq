@@ -1,4 +1,4 @@
-"""TKNN Classifier Explainer."""
+"""Implements the Explainer for threshold nearest neighbor models."""
 
 from __future__ import annotations
 
@@ -24,17 +24,13 @@ MODE_THRESHOLD = "threshold"
 
 
 class _BruteForceTNNExplainer(KNNExplainer):
-    """Brute force approach for explaining TKNN Classifiers.
-
-    References:
-        Based on the paper by Wang et. al (2023) DOI: 2308.15709v2.
-    """
+    """Brute force approach for explaining TNN Classifiers."""
 
     def __init__(self, model: RadiusNeighborsClassifier, class_index: int | None = None) -> None:
         super().__init__(model, class_index=class_index)
         # The type of the superclass's `model` attribute is too broad, since it also allows for other KNN explainers
         # To circumvent this, we store the model separately in an attribute with a narrower type
-        self.tknn_model = model
+        self.tnn_model = model
         self.tau = cast("float", model.radius)  # type: ignore[attr-defined]
 
     @property
@@ -47,7 +43,7 @@ class _BruteForceTNNExplainer(KNNExplainer):
         n_train = self.X_train.shape[0]
         n_classes = len(self.y_train_indices)
 
-        neighbor_indices = self.tknn_model.radius_neighbors(x.reshape(1, -1), return_distance=False)
+        neighbor_indices = self.tnn_model.radius_neighbors(x.reshape(1, -1), return_distance=False)
         neighbor_indices = neighbor_indices[0]
         in_neighborhood = np.zeros((n_train,), dtype=bool)
         in_neighborhood[neighbor_indices] = True
@@ -64,7 +60,7 @@ class _BruteForceTNNExplainer(KNNExplainer):
 
             n_coal_nhood = np.sum(coal_nhood)
 
-            # Utility function according to equation (3) in paper by Wang et. al (2023) DOI: 2308.15709v2
+            # Utility function according to equation (3) in paper by Wang et al. (2023) DOI: 2308.15709v2
             if n_coal_nhood == 0:
                 utility = 1 / n_classes
             else:
@@ -80,9 +76,9 @@ class _BruteForceTNNExplainer(KNNExplainer):
 
 
 class ThresholdNNExplainer(KNNExplainer):
-    r"""Explainer for threshold nearest-neighbour models.
+    r"""Explainer for threshold nearest-neighbor models.
 
-    Implements the algorithm for efficiently computing exact Shapley Values for threshold nearest-neighbor models proposed by `Wang et. al (2023)` [Wng23]_.
+    Implements the algorithm for efficiently computing exact Shapley values for threshold nearest neighbor models proposed by Wang et al. (2023) [Wng23]_.
     The algorithm has a runtime complexity of :math:`O(N)` (when explaining a single data point), where :math:`N` is the number of training samples.
     """
 
@@ -91,7 +87,7 @@ class ThresholdNNExplainer(KNNExplainer):
     ) -> None:
         r"""Initializes the class.
 
-        This methods extracts the training data and the threshold :math:`\tau` from the provided model and stores it as class members.
+        This method extracts the training data and the threshold :math:`\tau` from the provided model and stores it as class members.
 
         Args:
             model: The model to explain. The model must not use multi-output classification, i.e. the ``y`` value provided to ``model.fit(X, y)`` must be a 1D vector.
@@ -110,16 +106,15 @@ class ThresholdNNExplainer(KNNExplainer):
     @property
     @override
     def mode(self) -> str:
-        """This explainer's mode, which is ``"treshold"``."""
+        """This explainer's mode, which is ``"threshold"``."""
         return MODE_THRESHOLD
 
     @override
     def explain_function(self, x: npt.NDArray[np.floating]) -> InteractionValues:
-        # Efficient sv computation
-        # Following Theorem 17 and equation (7) (Wang et. al (2023) DOI: 2308.15709v2)
-        # Counting queries defined in C2.2 (by Wang et. al (2023) DOI: 2308.15709v2)
+        # Following Theorem 13 and equation (7) in Wang et al. (2023) DOI: 2308.15709v2
+        # Counting queries defined in C.2.2 ibid.
         n_train = self.X_train.shape[0]
-        n_classes = len(self.y_train_indices)
+        n_classes = self.y_train_indices.shape[0]
 
         neighbor_indices = self._model.radius_neighbors(x.reshape(1, -1), return_distance=False)
         neighbor_indices = neighbor_indices[0]
@@ -131,13 +126,15 @@ class ThresholdNNExplainer(KNNExplainer):
 
         # For entire dataset D
         c_D = n_train
-        c_x_tau_D = 1 + np.sum(in_neighborhood)
-        c_plus_z_tau_D = np.sum(in_neighborhood & y_train_is_class_index)
+        c_x_tau_D = 1 + len(neighbor_indices)
+        c_plus_z_tau_D = cast("int", np.sum(in_neighborhood & y_train_is_class_index))
 
         # For each training point z_i
         c = c_D - 1
-        c_x_tau = c_x_tau_D - in_neighborhood
-        c_plus_z_tau = c_plus_z_tau_D - (in_neighborhood & y_train_is_class_index)
+        c_x_tau = c_x_tau_D - in_neighborhood.astype(int)
+        c_plus_z_tau = c_plus_z_tau_D - cast(
+            "npt.NDArray[np.integer]", (in_neighborhood & y_train_is_class_index).astype(int)
+        )
 
         a1 = np.zeros((n_train,), dtype=np.float64)
         mask = in_neighborhood & (c_x_tau >= 2)  # noqa: PLR2004

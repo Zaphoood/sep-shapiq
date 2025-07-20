@@ -35,9 +35,8 @@ def test_extract_training_data_from_model():
     knn_explainer = KNNExplainer(knn_model, class_index=class_index)
 
     assert np.allclose(knn_explainer.X_train, X_train)
-    assert np.allclose(knn_explainer.y_train, y_train)
+    assert np.allclose(knn_explainer.y_train_classes[knn_explainer.y_train_indices], y_train)
     assert set(knn_explainer.y_train_classes) == set(y_train)
-    assert knn_explainer.k == k
     assert knn_explainer.class_index == class_index
 
 

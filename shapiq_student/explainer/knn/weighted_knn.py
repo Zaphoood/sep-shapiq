@@ -58,12 +58,14 @@ class _WeightedKNNExplainerBase(_CommonKNNExplainer):
         distances = distances[0]
         sortperm = sortperm[0]
 
-        max_dist = distances[-1]
-        min_dist = distances[0]
-        if np.isclose(min_dist, max_dist):
-            weights = np.full_like(distances, 1)
+        # Replicate sklearn behavior: if any training points are zero distance
+        # from the test point, those points get weight 1 and all others 0
+        zero_dist = np.isclose(distances, 0)
+        if np.any(zero_dist):
+            weights = np.zeros_like(distances)
+            weights[zero_dist] = 1
         else:
-            weights = (max_dist - distances) / (max_dist - min_dist)
+            weights = distances[0] / distances
 
         return sortperm, weights
 
@@ -74,7 +76,7 @@ class _WeightedKNNExplainerBase(_CommonKNNExplainer):
 
 
 class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
-    """A brute force implementation of WKNN Shapley Values.
+    """A brute force algorithm for computing WKNN Shapley values.
 
     References:
         .. [Wng24] Wang, Jiachen T., Prateek Mittal, and Ruoxi Jia. "Efficient data shapley for weighted nearest neighbor algorithms." International Conference on Artificial Intelligence and Statistics. PMLR, 2024.
@@ -103,7 +105,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
 
         n_classes = len(self.y_train_classes)
         if n_classes == 1:
-            return interaction_values_from_array(np.zeros((n_players,), dtype=np.float64))
+            return interaction_values_from_array(np.full(n_players, 1 / n_players))
 
         sortperm, weights = self._get_normalized_weights(x)
 
@@ -127,7 +129,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
         sortperm: npt.NDArray[np.integer],
         weights: npt.NDArray[np.floating],
     ) -> npt.NDArray[np.floating]:
-        """Computes the Shapley Values for a single binary-class classification game.
+        """Computes the Shapley values for a single binary-class classification game.
 
         Only training data points which have class index ``y_val`` or ``y_other`` are considered and all others ignored.
 
@@ -138,7 +140,7 @@ class _BruteForceWKNNExplainer(_WeightedKNNExplainerBase):
             weights: Array of weights assigned to each training data point.
 
         Returns:
-            An ``np.ndarray`` of Shapley Values for each training data point.
+            An ``np.ndarray`` of Shapley values for each training data point.
         """
         if self.n_bits is not None:
             _wang_explainer = WeightedKNNExplainer(
@@ -195,11 +197,11 @@ def _greater_or_close(a: np.floating, b: np.floating) -> np.bool:
 class WeightedKNNExplainer(_WeightedKNNExplainerBase):
     r"""Explainer for weighted KNN models.
 
-    Implements the algorithm for efficiently computing exact Shapley Values for weighted KNN models proposed by `Wang et. al (2024)` [Wng24]_.
+    Implements the algorithm for efficiently computing exact Shapley values for weighted KNN models proposed by [Wng24]_.
     The algorithm achieves a runtime complexity of :math:`O\bigl(\frac{k^2 N^2 W}{C}\bigr)`, where
 
     * :math:`k` is the defining hyperparameter of the :math:`k`-nearest neighbors model,
-    * :math:`N` is size of the training dataset,
+    * :math:`N` is the size of the training dataset,
     * :math:`W = 2^b` (where :math:`b` is the number of discretization bits) is the size of the *discretized weights space*,
     * :math:`C` is the number of classes of the training dataset.
 
@@ -264,7 +266,7 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
 
         n_classes = len(self.y_train_classes)
         if n_classes == 1:
-            return interaction_values_from_array(np.zeros(n_players))
+            return interaction_values_from_array(np.full(n_players, 1 / n_players))
 
         sortperm, weights = self._get_prepared_weights(x)
 
@@ -290,8 +292,6 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         # Maps an index from the sorted subgame weights/labels to the sorted multi-class weights/labels
         subgame = np.arange(self.n_train)[subgame_mask]
         weights_subgame = weights[subgame]
-
-        # TODO(Zaphoood): This is extremely slow (> 30 sec for 800 training samples)
 
         sv = np.zeros(self.n_train)
         for i in range(n_subgame):
