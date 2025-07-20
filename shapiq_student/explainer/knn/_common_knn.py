@@ -59,6 +59,10 @@ class _CommonKNNExplainer(KNNExplainer):
         self.knn_model = model
         self.k: int = self.knn_model.n_neighbors  # type: ignore[attr-defined]
 
+        if self.k <= 1:
+            msg = f"Only values of k > 1 are supported, but the model has k={self.k}"
+            raise ValueError(msg)
+
 
 def get_knn_explainer_class(
     model: KNeighborsClassifier,

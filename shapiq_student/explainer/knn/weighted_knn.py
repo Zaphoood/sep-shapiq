@@ -233,10 +233,6 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         """
         super().__init__(model, class_index)
 
-        if self.k <= 1:
-            msg = f"Only values of k > 1 are supported, but {self.k=}"
-            raise ValueError(msg)
-
         model_weights = self.knn_model.weights  # type: ignore[attr-defined]
         if model_weights != "distance":
             msg = f"KNeighboursClassifier must use weights='distance', but has weights='{model_weights}'"
