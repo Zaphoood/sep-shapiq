@@ -10,3 +10,4 @@ The Notebooks listed below exemplify and explain the usage of the explainers and
    notebooks/explainers_1.ipynb
    notebooks/explainers_2.ipynb
    notebooks/imputers.ipynb
+   notebooks/coalition_finding.ipynb
