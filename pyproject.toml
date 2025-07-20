@@ -72,7 +72,6 @@ ignore = [
     "RET504", # Unnecessary assignment to {name} before return statement
     "PLR0913", # too many arguments (>5)
     "TD003",  # TODOs can be written without an issue link
-    "FIX002",  # TODOs are okay (^_^)b
 ]
 exclude = [
     ".bzr",
