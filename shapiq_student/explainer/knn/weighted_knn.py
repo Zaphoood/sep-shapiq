@@ -293,8 +293,6 @@ class WeightedKNNExplainer(_WeightedKNNExplainerBase):
         subgame = np.arange(self.n_train)[subgame_mask]
         weights_subgame = weights[subgame]
 
-        # TODO(Zaphoood): This is extremely slow (> 30 sec for 800 training samples)
-
         sv = np.zeros(self.n_train)
         for i in range(n_subgame):
             y_i = cast("int", self.y_train_indices[sortperm[subgame[i]]])
