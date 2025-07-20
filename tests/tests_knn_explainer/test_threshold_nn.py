@@ -157,7 +157,7 @@ class TestThresholdNNExplainer:
             assert np.allclose(sv, 0)
 
     def test_class_index_out_of_bounds(self):
-        """Tests behavior when class_index is out of bounds. An out-of-bounds class_index is allowed by shapiq Explainer Base.
+        """Tests behavior when class_index is out of bounds.
 
         All Shapley values should have the same negative value.
         """
