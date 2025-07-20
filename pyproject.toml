@@ -42,6 +42,7 @@ dev = [
     "twine>=6.1.0",
     "notebook>=7.3.3",
     "ipywidgets",
+    "pyqt5>=5.15.11",
     {include-group = "test"},
     {include-group = "lint"},
     {include-group = "types"},
@@ -126,6 +127,10 @@ exclude = [
 "**/scripts/*.py" = [
     "INP001",  # implicit package is okay here
     "T201",  # print is okay in scripts
+    "D103",
+    "PD901",
+    "ANN001",
+    "ANN201",
 ]
 "docs/source/notebooks/*" = [
     "E402",  # Module level import not at top of file
@@ -156,6 +161,9 @@ minversion = "8.0"
 [tool.coverage.report]
 exclude_lines = [
     "if TYPE_CHECKING",
+]
+exclude_also = [
+    '\A(?s:.*# pragma: exclude file.*)\Z',
 ]
 
 [tool.mypy]
