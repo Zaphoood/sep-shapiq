@@ -127,6 +127,10 @@ exclude = [
 "**/scripts/*.py" = [
     "INP001",  # implicit package is okay here
     "T201",  # print is okay in scripts
+    "D103",
+    "PD901",
+    "ANN001",
+    "ANN201",
 ]
 "docs/source/notebooks/*" = [
     "E402",  # Module level import not at top of file
