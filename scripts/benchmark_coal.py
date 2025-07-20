@@ -18,7 +18,7 @@ from pathlib import Path
 from shapiq import ExactComputer, InteractionValues
 from shapiq.games.benchmark import SOUM
 
-from shapiq_student.coalition_finder.benchmark import benchmark, score_single_game
+from shapiq_student.coalition_finder.benchmark import benchmark, score_single_game, time_strategy
 
 
 def random_ivs_from_soums(
@@ -77,8 +77,7 @@ def benchmark_soums(
             for coal_size in range(3, 6):
                 print(f"{explanation_order=}")
                 print(f"{coal_size=}")
-                t_start = time.time()
-                avg_min_score, avg_max_score = benchmark(
+                avg_min_score, avg_max_score, avg_t_delta = benchmark(
                     strategy=strategy,
                     coal_size=coal_size,
                     ivs=random_ivs_from_soums(
@@ -89,11 +88,9 @@ def benchmark_soums(
                         random_state=random_state,
                     ),
                 )
-                t_end = time.time()
-                t_delta = t_end - t_start
                 print(f"avg score (min coal): {avg_min_score:.3f}")
                 print(f"avg score (max coal): {avg_max_score:.3f}")
-                print(f"t_delta: {t_delta:.2f} s")
+                print(f"avg t_delta: {avg_t_delta * 1000:.2f} ms")
 
                 if save_to_csv:
                     with out_path.open("a") as f:
@@ -109,9 +106,84 @@ def benchmark_soums(
                                 "explanation_order": explanation_order,
                                 "avg_min_score": avg_min_score,
                                 "avg_max_score": avg_max_score,
-                                "t_delta": t_delta,
+                                "t_delta": avg_t_delta,
                             }
                         )
+
+
+def time_soums_game_sizes(
+    strategies: list[SubsetFindingStrategy],
+    n_games: int = 30,
+    max_players=15,
+    *,
+    save_to_csv: bool = False,
+    out_dir: str = ".",
+) -> None:
+    """Benchmarks the coalition finding algorithm using Sum of Unanimity Games for a number of different game sizes."""
+    n_basis_games = 50
+    random_state = 42
+    coal_size = 4
+    explanation_order = 2
+    print(f"{n_games=}")
+    print(f"{random_state=}")
+    print(f"{explanation_order=}")
+    print(f"{coal_size=}")
+
+    out_dir_path = Path(out_dir)
+    out_dir_path.mkdir(exist_ok=True)
+    timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
+    out_path = out_dir_path / f"{timestamp}_benchmark.csv"
+    fieldnames = [
+        "strategy",
+        "n_games",
+        "n_players",
+        "n_basis_games",
+        "coal_size",
+        "random_state",
+        "explanation_order",
+        "avg_min_score",
+        "avg_max_score",
+        "t_delta",
+    ]
+    if save_to_csv:
+        with out_path.open("a") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+
+    for strategy in strategies:
+        print(f"\n==== {strategy=} ====")
+        for n_players in range(5, max_players + 1):
+            print(f"{n_players=}")
+            avg_t_delta = time_strategy(
+                strategy=strategy,
+                coal_size=coal_size,
+                ivs=random_ivs_from_soums(
+                    n_games=n_games,
+                    n_players=n_players,
+                    n_basis_games=n_basis_games,
+                    explanation_order=explanation_order,
+                    random_state=random_state,
+                ),
+            )
+            print(f"avg t_delta: {avg_t_delta * 1000:.3f} ms")
+
+            if save_to_csv:
+                with out_path.open("a") as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writerow(
+                        {
+                            "strategy": strategy,
+                            "n_games": n_games,
+                            "n_players": n_players,
+                            "n_basis_games": n_basis_games,
+                            "coal_size": coal_size,
+                            "random_state": random_state,
+                            "explanation_order": explanation_order,
+                            "avg_min_score": -1,
+                            "avg_max_score": -1,
+                            "t_delta": avg_t_delta,
+                        }
+                    )
 
 
 def load_iv(*, instance: Literal["a", "b", "c"], large: bool) -> InteractionValues:
@@ -147,13 +219,14 @@ def benchmark_precompute() -> None:
             iv = load_iv(instance=instance, large=False)
             print(f"n_players: {iv.n_players}")
 
-            min_score, max_score = benchmark(
+            min_score, max_score, t_delta = benchmark(
                 strategy="equal_payoff",
                 coal_size=coal_size,
                 ivs=[iv],
             )
             print(f"score (min coal): {min_score:.3f}")
             print(f"score (max coal): {max_score:.3f}")
+            print(f"t_delta: {t_delta:.3f}")
 
 
 def single_soum(strategy: SubsetFindingStrategy) -> None:
@@ -169,9 +242,10 @@ def single_soum(strategy: SubsetFindingStrategy) -> None:
 
 def main() -> None:
     """The main entry point of the script."""
-    benchmark_soums(
+    time_soums_game_sizes(
         strategies=["solos", "equal_payoff", "greedy"],
-        n_games=100,
+        n_games=30,
+        max_players=14,
         save_to_csv=True,
         out_dir="benchmark_results",
     )
