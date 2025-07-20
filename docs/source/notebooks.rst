@@ -7,4 +7,6 @@ The Notebooks listed below exemplify and explain the usage of the explainers and
    :glob:
    :maxdepth: 1
 
-   notebooks/*
+   notebooks/explainers_1.ipynb
+   notebooks/explainers_2.ipynb
+   notebooks/imputers.ipynb
