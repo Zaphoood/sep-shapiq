@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.special import comb
+from shapiq import ExactComputer, InconsistentKernelSHAPIQ, InteractionValues
+from shapiq.games.benchmark import SOUM
 
 from .coalition_finder import (
     SubsetFindingStrategy,
@@ -18,7 +20,7 @@ from .coalition_finder import (
 from .util import get_min_max_from_interaction_values
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Iterator
 
     from shapiq import InteractionValues
 
@@ -141,3 +143,36 @@ def time_strategy(
     avg_t_delta = np.mean(t_deltas)
 
     return avg_t_delta
+
+
+def random_ivs_from_soums(
+    n_games: int,
+    n_players: int,
+    n_basis_games: int,
+    explanation_order: int,
+    random_state: int,
+) -> Iterator[InteractionValues]:
+    """Creates an iterator over simplifed games generated from explanations of random Sum of Unanimity Games (SOUMs)."""
+    for _ in range(n_games):
+        game = SOUM(n=n_players, n_basis_games=n_basis_games, random_state=random_state)
+        computer = ExactComputer(n_players=game.n_players, game=game)
+        yield computer(index="FSII", order=explanation_order)
+        random_state += 1
+
+
+def random_approximated_ivs_from_soums(
+    n_games: int,
+    n_players: int,
+    n_basis_games: int,
+    explanation_order: int,
+    random_state: int,
+    approximation_budget: int,
+) -> Iterator[InteractionValues]:
+    """Creates an iterator over simplifed games generated from explanations of random Sum of Unanimity Games (SOUMs)."""
+    for _ in range(n_games):
+        game = SOUM(n=n_players, n_basis_games=n_basis_games, random_state=random_state)
+        approximator = InconsistentKernelSHAPIQ(
+            n=n_players, random_state=random_state, index="SII", max_order=explanation_order
+        )
+        yield approximator(budget=approximation_budget, game=game)
+        random_state += 1
