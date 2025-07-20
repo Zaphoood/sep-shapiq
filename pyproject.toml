@@ -103,7 +103,6 @@ exclude = [
     "venv",
     "docs/build",
 ]
-# TODO(mmschlk): you can add more exclusions here if you want to ignore certain files  (do this with care)
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
     "I002", # __init__.py does not have to import required modules
