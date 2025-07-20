@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import logging
 import time
 from typing import TYPE_CHECKING
@@ -35,37 +36,82 @@ def random_ivs_from_soums(
         random_state += 1
 
 
-def benchmark_soums(strategies: list[SubsetFindingStrategy], n_games: int = 30) -> None:
+def benchmark_soums(
+    strategies: list[SubsetFindingStrategy],
+    n_games: int = 30,
+    *,
+    save_to_csv: bool = False,
+    out_dir: str = ".",
+) -> None:
     """Benchmarks the coalition finding algorithm using Sum of Unanimity Games."""
     n_players = 10
     n_basis_games = 50
-    coal_size = 4
     random_state = 42
     print(f"{n_games=}")
-    print(f"{coal_size=}")
     print(f"{random_state=}")
+
+    out_dir_path = Path(out_dir)
+    out_dir_path.mkdir(exist_ok=True)
+    timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
+    out_path = out_dir_path / f"{timestamp}_benchmark.csv"
+    fieldnames = [
+        "strategy",
+        "n_games",
+        "n_players",
+        "n_basis_games",
+        "coal_size",
+        "random_state",
+        "explanation_order",
+        "avg_min_score",
+        "avg_max_score",
+        "t_delta",
+    ]
+    if save_to_csv:
+        with out_path.open("a") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
 
     for strategy in strategies:
         print(f"\n==== {strategy=} ====")
         for explanation_order in range(1, 6):
-            print(f"{explanation_order=}")
-            t_start = time.time()
-            avg_min_score, avg_max_score = benchmark(
-                strategy=strategy,
-                coal_size=coal_size,
-                ivs=random_ivs_from_soums(
-                    n_games=n_games,
-                    n_players=n_players,
-                    n_basis_games=n_basis_games,
-                    explanation_order=explanation_order,
-                    random_state=random_state,
-                ),
-            )
-            t_end = time.time()
-            t_delta = t_end - t_start
-            print(f"avg score (min coal): {avg_min_score:.3f}")
-            print(f"avg score (max coal): {avg_max_score:.3f}")
-            print(f"t_delta: {t_delta:.2f} s")
+            for coal_size in range(3, 6):
+                print(f"{explanation_order=}")
+                print(f"{coal_size=}")
+                t_start = time.time()
+                avg_min_score, avg_max_score = benchmark(
+                    strategy=strategy,
+                    coal_size=coal_size,
+                    ivs=random_ivs_from_soums(
+                        n_games=n_games,
+                        n_players=n_players,
+                        n_basis_games=n_basis_games,
+                        explanation_order=explanation_order,
+                        random_state=random_state,
+                    ),
+                )
+                t_end = time.time()
+                t_delta = t_end - t_start
+                print(f"avg score (min coal): {avg_min_score:.3f}")
+                print(f"avg score (max coal): {avg_max_score:.3f}")
+                print(f"t_delta: {t_delta:.2f} s")
+
+                if save_to_csv:
+                    with out_path.open("a") as f:
+                        writer = csv.DictWriter(f, fieldnames=fieldnames)
+                        writer.writerow(
+                            {
+                                "strategy": strategy,
+                                "n_games": n_games,
+                                "n_players": n_players,
+                                "n_basis_games": n_basis_games,
+                                "coal_size": coal_size,
+                                "random_state": random_state,
+                                "explanation_order": explanation_order,
+                                "avg_min_score": avg_min_score,
+                                "avg_max_score": avg_max_score,
+                                "t_delta": t_delta,
+                            }
+                        )
 
 
 def load_iv(*, instance: Literal["a", "b", "c"], large: bool) -> InteractionValues:
@@ -123,7 +169,12 @@ def single_soum(strategy: SubsetFindingStrategy) -> None:
 
 def main() -> None:
     """The main entry point of the script."""
-    benchmark_soums(strategies=["solos", "equal_payoff", "greedy"])
+    benchmark_soums(
+        strategies=["solos", "equal_payoff", "greedy"],
+        n_games=100,
+        save_to_csv=True,
+        out_dir="benchmark_results",
+    )
 
 
 if __name__ == "__main__":
