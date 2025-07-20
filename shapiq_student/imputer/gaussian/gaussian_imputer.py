@@ -239,7 +239,7 @@ class GaussianImputer(ConditionalImputer):
         predictions = np.zeros((n_coalitions, self.sample_size))
         for i in range(n_coalitions):
             predictions[i] = self.predict(samples[i])
-        coalition_values = np.mean(predictions, axis=1)
+        coalition_values = cast("npt.NDArray[np.floating]", np.mean(predictions, axis=1))
 
         return coalition_values
 
