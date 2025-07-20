@@ -98,7 +98,7 @@ This example uses the ``GaussianImputer`` to explain the prediction of a random 
     >>> model.fit(X_train, y_train)
     RandomForestRegressor(...)
     >>>
-    >>> gaussian_imputer = GaussianImputer(model=model.predict, data=X_train, sample_size=1000)
+    >>> gaussian_imputer = GaussianImputer(model=model.predict, data=X_train, sample_size=100)
     >>> explainer = TabularExplainer(
     ...     model=model, data=X_train, index="SII", max_order=2, imputer=gaussian_imputer
     ... )

@@ -150,15 +150,16 @@ def test_copula_imputation_single_feature_known(dummy_model) -> None:
         model=dummy_model, data=data, x=x_explain, sample_size=1000, random_state=42
     )
 
-    imputed = imputer._impute(x_explain, coalitions)
+    samples = imputer._draw_samples(x_explain, coalitions)
 
-    assert imputed.shape == (coalitions.shape[0], x_explain.shape[0])
+    assert samples.shape == (coalitions.shape[0], imputer.sample_size, x_explain.shape[0])
+    samples_avg = np.mean(samples, axis=1)
 
-    # We can't predict exact values, but they should be within a reasonable range
+    # We can't predict exact values, but they should be within a reasonable range on average
     lower_bound = -2
     upper_bound = 4
-    assert np.all(imputed[0, 1:] >= lower_bound)
-    assert np.all(imputed[0, 1:] <= upper_bound)
+    assert np.all(samples_avg[0, 1:] >= lower_bound)
+    assert np.all(samples_avg[0, 1:] <= upper_bound)
 
 
 def test_copula_imputer_value_function(dummy_model) -> None:
